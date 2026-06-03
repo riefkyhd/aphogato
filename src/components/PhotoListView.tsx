@@ -102,16 +102,35 @@ function ListPreview({ photo }: { photo: Photo | null }) {
   );
 }
 
+function SelectedGroupDivider({ count }: { count: number }) {
+  return (
+    <div
+      className="flex items-center gap-3 px-3 py-2 border-b border-border bg-bg-primary"
+      aria-hidden
+    >
+      <div className="h-px flex-1 bg-border" />
+      <span className="shrink-0 text-[10px] uppercase tracking-label text-text-muted">
+        ─── Selected ({count}) ───
+      </span>
+      <div className="h-px flex-1 bg-border" />
+    </div>
+  );
+}
+
 export function PhotoListView({
   photos,
   mode,
   selectedIds,
   onToggleSelect,
+  showSelectedDivider = false,
+  selectedGroupCount = 0,
 }: {
   photos: Photo[];
   mode: "gallery" | "dashboard";
   selectedIds: Set<string>;
   onToggleSelect?: (id: string) => void;
+  showSelectedDivider?: boolean;
+  selectedGroupCount?: number;
 }) {
   const interactive = mode === "gallery" && Boolean(onToggleSelect);
   const [focusedIndex, setFocusedIndex] = useState(0);
@@ -134,6 +153,13 @@ export function PhotoListView({
       setFocusedIndex(0);
       return;
     }
+    if (previewId && photos.some((p) => p.id === previewId)) {
+      const idx = photos.findIndex((p) => p.id === previewId);
+      if (idx >= 0 && idx !== focusedIndex) {
+        setFocusedIndex(idx);
+      }
+      return;
+    }
     if (focusedIndex >= photos.length) {
       setFocusedIndex(photos.length - 1);
     }
@@ -144,7 +170,7 @@ export function PhotoListView({
 
   useEffect(() => {
     scrollRowIntoView(focusedIndex);
-  }, [focusedIndex, scrollRowIntoView]);
+  }, [focusedIndex, scrollRowIntoView, photos]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -246,6 +272,11 @@ export function PhotoListView({
                   <ListPreview photo={ph} />
                 </div>
               )}
+              {showSelectedDivider &&
+                selectedGroupCount > 0 &&
+                index === selectedGroupCount - 1 && (
+                  <SelectedGroupDivider count={selectedGroupCount} />
+                )}
             </Fragment>
           );
         })}

@@ -89,7 +89,7 @@ export function GallerySelector({
         }
       }
     },
-    [storageKey]
+    [storageKey, token]
   );
 
   useEffect(() => {
