@@ -5,8 +5,16 @@ import { RefreshCw } from "lucide-react";
 import {
   GALLERY_ERROR_CODES,
   GALLERY_MESSAGES,
+  selectionLimitMessage,
   staleSelectionMessage,
 } from "@/lib/galleryErrors";
+import { normalizeProject } from "@/lib/normalizeProject";
+import {
+  formatSelectionCount,
+  isOverSelectionLimit,
+  normalizeMaxPhotoSelection,
+  selectionAtLimitMessage,
+} from "@/lib/photoSelectionLimit";
 import {
   findStaleSelectionIds,
   pruneSelectionToPhotos,
@@ -132,7 +140,7 @@ export function GallerySelector({
         previousSelected?: Set<string>;
       }
     ) => {
-      setProject(data.project);
+      setProject(normalizeProject(data.project));
       setPhotos(data.photos);
 
       const prunedCount = options.previousSelected
@@ -271,14 +279,26 @@ export function GallerySelector({
     return () => window.clearTimeout(timer);
   }, [syncNotice]);
 
+  const maxSelection = normalizeMaxPhotoSelection(project.max_photo_selection);
   const selectedCount = selected.size;
+  const overSelectionLimit = isOverSelectionLimit(selectedCount, maxSelection);
+  const selectionLimitReached = selectedCount >= maxSelection;
 
   function toggle(id: string) {
     if (!photos.some((p) => p.id === id)) return;
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+        setError(null);
+        return next;
+      }
+      if (prev.size >= maxSelection) {
+        setError(selectionAtLimitMessage(maxSelection));
+        return prev;
+      }
+      next.add(id);
+      setError(null);
       return next;
     });
   }
@@ -295,6 +315,10 @@ export function GallerySelector({
 
   async function submitSelection() {
     if (selectedCount === 0) return;
+    if (overSelectionLimit) {
+      setError(selectionLimitMessage(selectedCount, maxSelection));
+      return;
+    }
     setError(null);
     setSubmitting(true);
     const wasUpdate = previouslyConfirmed || project.status !== "pending";
@@ -335,6 +359,15 @@ export function GallerySelector({
           setError(GALLERY_MESSAGES.galleryNotFound);
           return;
         }
+        if (
+          res.status === 400 &&
+          json.code === GALLERY_ERROR_CODES.SELECTION_LIMIT
+        ) {
+          setError(
+            json.error ?? selectionLimitMessage(selectedCount, maxSelection)
+          );
+          return;
+        }
         setError(json.error ?? GALLERY_MESSAGES.saveFailed);
         return;
       }
@@ -355,7 +388,7 @@ export function GallerySelector({
       );
 
       if (json.project) {
-        setProject(json.project);
+        setProject(normalizeProject(json.project));
       }
 
       const refresh = await fetchGallery(token);
@@ -411,8 +444,14 @@ export function GallerySelector({
             </h1>
             {project.client_name && (
               <p className="mt-3 text-text-secondary text-[14px] leading-relaxed">
-                Hi {project.client_name}, select the photos you&rsquo;d like
-                edited.
+                Hi {project.client_name}, select up to {maxSelection} photo
+                {maxSelection === 1 ? "" : "s"} you&rsquo;d like edited.
+              </p>
+            )}
+            {!project.client_name && (
+              <p className="mt-3 text-text-secondary text-[14px] leading-relaxed">
+                Select up to {maxSelection} photo
+                {maxSelection === 1 ? "" : "s"} for editing.
               </p>
             )}
             <p className="mt-4 text-[11px] uppercase tracking-label text-text-muted">
@@ -455,6 +494,7 @@ export function GallerySelector({
           viewStorageId={token}
           selectedIds={selected}
           onToggleSelect={toggle}
+          selectionLimitReached={selectionLimitReached}
           ready={ready}
         />
       )}
@@ -467,8 +507,15 @@ export function GallerySelector({
           WebkitBackdropFilter: "blur(8px)",
         }}
       >
-        <span className="text-[11px] uppercase tracking-label text-text-primary">
-          {selectedCount} photo{selectedCount === 1 ? "" : "s"} selected
+        <span
+          className={
+            overSelectionLimit
+              ? "text-[11px] uppercase tracking-label text-status-editing"
+              : "text-[11px] uppercase tracking-label text-text-primary"
+          }
+        >
+          {formatSelectionCount(selectedCount, maxSelection)}
+          {overSelectionLimit ? " · deselect extras to save" : ""}
         </span>
         <div className="flex items-center gap-3">
           <Button
@@ -486,7 +533,12 @@ export function GallerySelector({
             loading={submitting}
             onClick={submitSelection}
             disabled={
-              submitting || syncing || !ready || selectedCount === 0 || total === 0
+              submitting ||
+              syncing ||
+              !ready ||
+              selectedCount === 0 ||
+              total === 0 ||
+              overSelectionLimit
             }
           >
             {submitting

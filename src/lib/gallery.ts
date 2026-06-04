@@ -1,5 +1,6 @@
 import "server-only";
 import { createAdminSupabase } from "@/lib/supabase/admin";
+import { normalizeProject } from "@/lib/normalizeProject";
 import type { Photo, Project } from "@/lib/types";
 
 export type GalleryData = {
@@ -33,7 +34,7 @@ export async function loadGalleryByToken(
   }
 
   const all = (photos ?? []) as Photo[];
-  const p = project as Project;
+  const p = normalizeProject(project as Project);
 
   return {
     project: p,

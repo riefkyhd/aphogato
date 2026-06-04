@@ -32,6 +32,7 @@ export function PhotoGallerySection({
   managePreviewId,
   onClearManageSelection,
   onDeletePhotos,
+  selectionLimitReached = false,
   ready = true,
 }: {
   photos: Photo[];
@@ -39,6 +40,7 @@ export function PhotoGallerySection({
   viewStorageId: string;
   selectedIds: Set<string>;
   onToggleSelect?: (id: string) => void;
+  selectionLimitReached?: boolean;
   manageSelectedIds?: Set<string>;
   onManagePhotoActivate?: (id: string, meta: ManagePhotoActivateMeta) => void;
   onManagePhotoMarquee?: (ids: string[], mergeBase?: string[]) => void;
@@ -187,6 +189,7 @@ export function PhotoGallerySection({
             mode={mode}
             selectedIds={selectedIds}
             onToggleSelect={onToggleSelect}
+            selectionLimitReached={selectionLimitReached}
             manageSelectedIds={manageSelectedIds}
             onManagePhotoActivate={onManagePhotoActivate}
             onManagePhotoMarquee={onManagePhotoMarquee}
@@ -206,6 +209,7 @@ export function PhotoGallerySection({
             mode={mode}
             selectedIds={selectedIds}
             onToggleSelect={onToggleSelect}
+            selectionLimitReached={selectionLimitReached}
             manageSelectedIds={manageSelectedIds}
             onManagePhotoActivate={onManagePhotoActivate}
             managePreviewId={managePreviewId}

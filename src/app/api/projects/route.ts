@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { requireAuth } from "@/lib/api/requireAuth";
+import { parseMaxPhotoSelectionInput } from "@/lib/photoSelectionLimit";
 import { resolveUniqueCloudinaryFolder } from "@/lib/resolveCloudinaryFolder";
 
 export const runtime = "nodejs";
@@ -10,7 +11,7 @@ export async function POST(request: Request) {
   if (!auth.ok) return auth.response;
   const { supabase } = auth;
 
-  let body: { name?: string; client_name?: string };
+  let body: { name?: string; client_name?: string; max_photo_selection?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -35,6 +36,11 @@ export async function POST(request: Request) {
     );
   }
 
+  const maxParsed = parseMaxPhotoSelectionInput(body.max_photo_selection);
+  if (!maxParsed.ok) {
+    return NextResponse.json({ error: maxParsed.error }, { status: 400 });
+  }
+
   const gallery_token = nanoid();
   const { data: project, error: projectError } = await supabase
     .from("projects")
@@ -44,6 +50,7 @@ export async function POST(request: Request) {
       cloudinary_folder,
       gallery_token,
       status: "pending",
+      max_photo_selection: maxParsed.value,
     })
     .select("id, cloudinary_folder")
     .single();

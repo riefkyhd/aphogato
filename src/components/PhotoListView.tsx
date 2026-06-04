@@ -224,6 +224,7 @@ export function PhotoListView({
   mode,
   selectedIds,
   onToggleSelect,
+  selectionLimitReached = false,
   manageSelectedIds,
   onManagePhotoActivate,
   managePreviewId = null,
@@ -235,6 +236,7 @@ export function PhotoListView({
   mode: "gallery" | "dashboard";
   selectedIds: Set<string>;
   onToggleSelect?: (id: string) => void;
+  selectionLimitReached?: boolean;
   manageSelectedIds?: Set<string>;
   onManagePhotoActivate?: (id: string, meta: ManagePhotoActivateMeta) => void;
   managePreviewId?: string | null;
@@ -243,6 +245,15 @@ export function PhotoListView({
   className?: string;
 }) {
   const galleryInteractive = mode === "gallery" && Boolean(onToggleSelect);
+
+  const galleryToggleSelect = useCallback(
+    (id: string) => {
+      if (!onToggleSelect) return;
+      if (selectionLimitReached && !selectedIds.has(id)) return;
+      onToggleSelect(id);
+    },
+    [onToggleSelect, selectionLimitReached, selectedIds]
+  );
   const manageInteractive =
     mode === "dashboard" &&
     Boolean(onManagePhotoActivate && manageSelectedIds);
@@ -267,8 +278,8 @@ export function PhotoListView({
     : false;
 
   const previewToggle =
-    galleryInteractive && previewPhoto && onToggleSelect
-      ? () => onToggleSelect(previewPhoto.id)
+    galleryInteractive && previewPhoto
+      ? () => galleryToggleSelect(previewPhoto.id)
       : undefined;
 
   const selectLabel = "Select photo";
@@ -354,8 +365,8 @@ export function PhotoListView({
             ctrlKey: e.ctrlKey,
             metaKey: e.metaKey,
           });
-        } else if (galleryInteractive && onToggleSelect) {
-          onToggleSelect(ph.id);
+        } else if (galleryInteractive) {
+          galleryToggleSelect(ph.id);
         }
       }
     },
@@ -366,7 +377,7 @@ export function PhotoListView({
       manageInteractive,
       galleryInteractive,
       onManagePhotoActivate,
-      onToggleSelect,
+      galleryToggleSelect,
       setPreviewId,
     ]
   );
@@ -449,8 +460,8 @@ export function PhotoListView({
                     selected={isCheckSelected}
                     interactive
                     onToggle={
-                      onToggleSelect
-                        ? () => onToggleSelect(ph.id)
+                      galleryInteractive
+                        ? () => galleryToggleSelect(ph.id)
                         : undefined
                     }
                   />
@@ -462,8 +473,8 @@ export function PhotoListView({
                     photo={ph}
                     selected={isCheckSelected}
                     onToggle={
-                      onToggleSelect
-                        ? () => onToggleSelect(ph.id)
+                      galleryInteractive
+                        ? () => galleryToggleSelect(ph.id)
                         : undefined
                     }
                     selectLabel={selectLabel}

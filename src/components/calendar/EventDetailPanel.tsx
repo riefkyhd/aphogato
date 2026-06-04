@@ -1,6 +1,8 @@
 "use client";
 
+import { useCallback, useEffect, useRef, useState } from "react";
 import { format, parseISO } from "date-fns";
+import { useTouchLike } from "@/hooks/useTouchLike";
 import { formatSyncedAgo } from "@/lib/calendar/parseSyncedAt";
 import { X } from "lucide-react";
 import Link from "next/link";
@@ -8,15 +10,22 @@ import { EventStatusDot } from "@/components/calendar/EventStatusDot";
 import { ShootTypeBadge } from "@/components/calendar/ShootTypeBadge";
 import { Button } from "@/components/ui/Button";
 import { formatEventTimeRange } from "@/lib/calendar/calendarHelpers";
-import type { CalendarEvent } from "@/lib/types";
+import { formatMoney } from "@/lib/finance/formatMoney";
+import type { CalendarEvent, IncomeEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+const DISMISS_DRAG_PX = 72;
+const AXIS_LOCK_PX = 10;
+
 export type CalendarProject = { id: string; name: string };
+
+type DragMode = "none" | "pending" | "horizontal";
 
 export function EventDetailPanel({
   event,
   projects,
   isGoogleConnected,
+  income,
   open,
   onEdit,
   onDelete,
@@ -25,11 +34,121 @@ export function EventDetailPanel({
   event: CalendarEvent | null;
   projects: CalendarProject[];
   isGoogleConnected: boolean;
+  income: IncomeEntry | null;
   open: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onClose: () => void;
 }) {
+  const touchLike = useTouchLike();
+  const [dragX, setDragX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragXRef = useRef(0);
+  const dragRef = useRef<{
+    mode: DragMode;
+    startX: number;
+    startY: number;
+    pointerId: number | null;
+  }>({ mode: "none", startX: 0, startY: 0, pointerId: null });
+
+  useEffect(() => {
+    if (!open) {
+      setDragX(0);
+      setIsDragging(false);
+      dragXRef.current = 0;
+      dragRef.current = {
+        mode: "none",
+        startX: 0,
+        startY: 0,
+        pointerId: null,
+      };
+    }
+  }, [open]);
+
+  const resetDrag = useCallback(() => {
+    dragRef.current = {
+      mode: "none",
+      startX: 0,
+      startY: 0,
+      pointerId: null,
+    };
+    dragXRef.current = 0;
+    setDragX(0);
+    setIsDragging(false);
+  }, []);
+
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent<HTMLElement>) => {
+      if (!touchLike || !open || !event || e.button !== 0) return;
+      dragRef.current = {
+        mode: "pending",
+        startX: e.clientX,
+        startY: e.clientY,
+        pointerId: e.pointerId,
+      };
+      e.currentTarget.setPointerCapture(e.pointerId);
+    },
+    [touchLike, open, event]
+  );
+
+  const handlePointerMove = useCallback((e: React.PointerEvent<HTMLElement>) => {
+    const drag = dragRef.current;
+    if (drag.mode === "none" || drag.pointerId !== e.pointerId) return;
+
+    const dx = e.clientX - drag.startX;
+    const dy = e.clientY - drag.startY;
+
+    if (drag.mode === "pending") {
+      if (Math.abs(dx) < AXIS_LOCK_PX && Math.abs(dy) < AXIS_LOCK_PX) return;
+      if (Math.abs(dy) > Math.abs(dx)) {
+        resetDrag();
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+          e.currentTarget.releasePointerCapture(e.pointerId);
+        }
+        return;
+      }
+      drag.mode = "horizontal";
+      setIsDragging(true);
+    }
+
+    if (drag.mode === "horizontal") {
+      e.preventDefault();
+      const next = Math.max(0, dx);
+      dragXRef.current = next;
+      setDragX(next);
+    }
+  }, [resetDrag]);
+
+  const handlePointerEnd = useCallback(
+    (e: React.PointerEvent<HTMLElement>) => {
+      const drag = dragRef.current;
+      if (drag.pointerId !== e.pointerId) return;
+
+      if (drag.mode === "horizontal" && dragXRef.current >= DISMISS_DRAG_PX) {
+        const width = e.currentTarget.offsetWidth;
+        dragXRef.current = width;
+        setDragX(width);
+        setIsDragging(false);
+        dragRef.current = {
+          mode: "none",
+          startX: 0,
+          startY: 0,
+          pointerId: null,
+        };
+        window.setTimeout(() => onClose(), 300);
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+          e.currentTarget.releasePointerCapture(e.pointerId);
+        }
+        return;
+      }
+      resetDrag();
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    },
+    [onClose, resetDrag]
+  );
+
   const linkedProject = event?.project_id
     ? projects.find((p) => p.id === event.project_id)
     : null;
@@ -53,14 +172,30 @@ export function EventDetailPanel({
         className={cn(
           "fixed right-0 top-[60px] bottom-0 z-40 w-full max-w-full sm:max-w-[380px]",
           "bg-bg-secondary border-l border-border shadow-xl",
-          "transform transition-transform duration-300 ease-out",
-          open && event ? "translate-x-0" : "translate-x-full"
+          "transform duration-300 ease-out",
+          isDragging ? "transition-none touch-none" : "transition-transform touch-pan-y",
+          open && event && dragX === 0 ? "translate-x-0" : "",
+          !open || !event ? "translate-x-full" : ""
         )}
+        style={dragX > 0 ? { transform: `translateX(${dragX}px)` } : undefined}
         aria-hidden={!open || !event}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerEnd}
+        onPointerCancel={handlePointerEnd}
       >
         {event && (
-          <div className="flex h-full flex-col p-4 sm:p-6 overflow-y-auto">
-            <div className="flex items-start justify-between gap-4 mb-6">
+          <div className="flex h-full flex-col overflow-y-auto">
+            {touchLike && (
+              <div
+                className="flex shrink-0 justify-center pt-2 pb-1 sm:hidden"
+                aria-hidden
+              >
+                <div className="h-1 w-10 rounded-full bg-border/80" />
+              </div>
+            )}
+            <div className="flex h-full flex-col p-4 sm:p-6">
+              <div className="flex items-start justify-between gap-4 mb-6">
               <h2 className="text-base sm:text-lg font-light tracking-[0.05em] uppercase text-text-primary pr-2">
                 {event.title}
               </h2>
@@ -147,6 +282,27 @@ export function EventDetailPanel({
               )}
             </dl>
 
+            <div className="border-t border-border pt-4 mt-2">
+              <p className="text-[11px] uppercase tracking-label text-text-muted mb-1">
+                Client income
+              </p>
+              {income ? (
+                <p className="text-[15px] text-status-delivered tabular-nums">
+                  {formatMoney(income.amount, income.currency)}
+                </p>
+              ) : (
+                <p className="text-[12px] text-text-secondary">
+                  Not recorded yet — add in Edit or{" "}
+                  <Link
+                    href="/dashboard/finance"
+                    className="text-text-primary hover:underline"
+                  >
+                    Finance
+                  </Link>
+                </p>
+              )}
+            </div>
+
             <div className="border-t border-border pt-4 mt-4">
               <p className="text-[11px] uppercase tracking-label text-text-muted mb-2">
                 Google Calendar
@@ -187,6 +343,7 @@ export function EventDetailPanel({
               >
                 Delete
               </Button>
+            </div>
             </div>
           </div>
         )}

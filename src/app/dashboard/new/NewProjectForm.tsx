@@ -7,6 +7,7 @@ import { PageLoadingOverlay } from "@/components/PageLoadingOverlay";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { DEFAULT_MAX_PHOTO_SELECTION } from "@/lib/photoSelectionLimit";
 
 type CreatePhase = "idle" | "creating" | "opening";
 
@@ -14,6 +15,9 @@ export function NewProjectForm() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [clientName, setClientName] = useState("");
+  const [maxSelection, setMaxSelection] = useState(
+    String(DEFAULT_MAX_PHOTO_SELECTION)
+  );
   const [phase, setPhase] = useState<CreatePhase>("idle");
 
   const busy = phase !== "idle";
@@ -28,6 +32,7 @@ export function NewProjectForm() {
         body: JSON.stringify({
           name,
           client_name: clientName,
+          max_photo_selection: Number(maxSelection),
         }),
       });
       const json = await res.json();
@@ -70,6 +75,22 @@ export function NewProjectForm() {
           onChange={(e) => setClientName(e.target.value)}
           placeholder="Salma"
         />
+      </div>
+      <div>
+        <Label htmlFor="max-selection">Max photos client can select</Label>
+        <Input
+          id="max-selection"
+          type="number"
+          min={1}
+          max={999}
+          required
+          value={maxSelection}
+          onChange={(e) => setMaxSelection(e.target.value)}
+        />
+        <p className="mt-2 text-[12px] text-text-muted leading-relaxed">
+          Each project has its own limit. You can change it later on the project
+          page.
+        </p>
       </div>
       <Button type="submit" loading={busy} disabled={busy}>
         {phase === "creating"

@@ -37,6 +37,12 @@ export async function Navbar() {
               Projects
             </Link>
             <Link
+              href="/dashboard/finance"
+              className="text-[12px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors"
+            >
+              Finance
+            </Link>
+            <Link
               href="/dashboard/calendar"
               className="relative inline-flex items-center gap-1.5 text-[12px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors"
               aria-label={

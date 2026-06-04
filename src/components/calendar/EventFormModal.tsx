@@ -26,6 +26,7 @@ export function EventFormModal({
   event,
   projects,
   saving,
+  initialIncomeAmount,
   onSave,
   onClose,
 }: {
@@ -33,6 +34,7 @@ export function EventFormModal({
   initialDate?: Date | null;
   event?: CalendarEvent | null;
   projects: CalendarProject[];
+  initialIncomeAmount?: string;
   saving: boolean;
   onSave: (payload: Record<string, unknown>) => void;
   onClose: () => void;
@@ -49,6 +51,7 @@ export function EventFormModal({
   const [status, setStatus] = useState<EventStatus>("scheduled");
   const [notes, setNotes] = useState("");
   const [projectId, setProjectId] = useState("");
+  const [incomeAmount, setIncomeAmount] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -63,6 +66,7 @@ export function EventFormModal({
       setStatus(event.status);
       setNotes(event.notes ?? "");
       setProjectId(event.project_id ?? "");
+      setIncomeAmount(initialIncomeAmount ?? "");
     } else {
       setTitle("");
       setClientName("");
@@ -78,8 +82,9 @@ export function EventFormModal({
       setStatus("scheduled");
       setNotes("");
       setProjectId("");
+      setIncomeAmount("");
     }
-  }, [open, event, initialDate]);
+  }, [open, event, initialDate, initialIncomeAmount]);
 
   const handleStartTimeChange = useCallback(
     (value: string) => {
@@ -142,6 +147,7 @@ export function EventFormModal({
       status,
       notes: notes || null,
       project_id: projectId || null,
+      income_amount: incomeAmount.trim() || null,
     });
   }
 
@@ -284,6 +290,19 @@ export function EventFormModal({
                 </option>
               ))}
             </select>
+          </div>
+          <div>
+            <Label htmlFor="ev-income">Client income (IDR)</Label>
+            <Input
+              id="ev-income"
+              inputMode="numeric"
+              placeholder="e.g. 1500000"
+              value={incomeAmount}
+              onChange={(e) => setIncomeAmount(e.target.value)}
+            />
+            <p className="mt-1 text-[11px] text-text-muted">
+              Optional. Saved to Finance and linked to this event.
+            </p>
           </div>
           <div>
             <Label htmlFor="ev-notes">Notes</Label>

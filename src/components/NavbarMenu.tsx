@@ -61,6 +61,9 @@ export function NavbarMenu({ shootsToday }: { shootsToday: number }) {
             <Link href="/dashboard" className={linkClass}>
               Projects
             </Link>
+            <Link href="/dashboard/finance" className={linkClass}>
+              Finance
+            </Link>
             <Link
               href="/dashboard/calendar"
               className={cn(linkClass, "flex items-center gap-2")}

@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { rateLimitOrResponse } from "@/lib/api/withRateLimit";
 import {
   GALLERY_ERROR_CODES,
+  selectionLimitMessage,
   staleSelectionMessage,
 } from "@/lib/galleryErrors";
+import { normalizeMaxPhotoSelection } from "@/lib/photoSelectionLimit";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -31,7 +33,7 @@ export async function PATCH(request: Request) {
 
   const { data: project, error: projectError } = await supabase
     .from("projects")
-    .select("id, status")
+    .select("id, status, max_photo_selection")
     .eq("gallery_token", token)
     .single();
 
@@ -46,6 +48,19 @@ export async function PATCH(request: Request) {
   }
 
   const uniqueSelectedIds = [...new Set(selectedIds)];
+  const maxSelection = normalizeMaxPhotoSelection(project.max_photo_selection);
+
+  if (uniqueSelectedIds.length > maxSelection) {
+    return NextResponse.json(
+      {
+        error: selectionLimitMessage(uniqueSelectedIds.length, maxSelection),
+        code: GALLERY_ERROR_CODES.SELECTION_LIMIT,
+        maxSelection,
+        selectedCount: uniqueSelectedIds.length,
+      },
+      { status: 400 }
+    );
+  }
 
   let validIds = new Set<string>();
   if (uniqueSelectedIds.length > 0) {

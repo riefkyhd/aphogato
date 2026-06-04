@@ -20,6 +20,11 @@ import { useProjectPhotoUpload } from "@/hooks/useProjectPhotoUpload";
 import { useSyncServerPhotos } from "@/hooks/useSyncServerPhotos";
 import { sortPhotosNewestFirst } from "@/lib/sortPhotos";
 import { ProjectActions } from "./ProjectActions";
+import { ProjectMaxSelection } from "./ProjectMaxSelection";
+import {
+  isOverSelectionLimit,
+  normalizeMaxPhotoSelection,
+} from "@/lib/photoSelectionLimit";
 import type { Photo, Project } from "@/lib/types";
 
 export function ProjectDetailClient({
@@ -30,6 +35,7 @@ export function ProjectDetailClient({
   initialPhotos: Photo[];
 }) {
   const router = useRouter();
+  const [projectState, setProjectState] = useState(project);
   const [photos, setPhotos] = useState(() =>
     sortPhotosNewestFirst(initialPhotos)
   );
@@ -48,7 +54,7 @@ export function ProjectDetailClient({
 
   useSyncServerPhotos(initialPhotos, setPhotos);
 
-  const upload = useProjectPhotoUpload(project.id, setPhotosSorted);
+  const upload = useProjectPhotoUpload(projectState.id, setPhotosSorted);
 
   const photoIds = useMemo(() => photos.map((p) => p.id), [photos]);
   const manage = usePhotoManageSelection(photoIds);
@@ -66,9 +72,18 @@ export function ProjectDetailClient({
     onDropFiles: handleDropFiles,
   });
 
+  const maxSelection = normalizeMaxPhotoSelection(
+    projectState.max_photo_selection
+  );
+
   const clientSelectedCount = useMemo(
     () => photos.filter((ph) => ph.is_selected).length,
     [photos]
+  );
+
+  const clientOverLimit = isOverSelectionLimit(
+    clientSelectedCount,
+    maxSelection
   );
 
   const clientSelectedIds = useMemo(
@@ -90,7 +105,7 @@ export function ProjectDetailClient({
     if (photosToDelete.length === 0) return;
     setDeleting(true);
     try {
-      const res = await fetch(`/api/projects/${project.id}/photos`, {
+      const res = await fetch(`/api/projects/${projectState.id}/photos`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -124,7 +139,7 @@ export function ProjectDetailClient({
   async function confirmDeleteProject() {
     setDeletingProject(true);
     try {
-      const res = await fetch(`/api/projects/${project.id}`, {
+      const res = await fetch(`/api/projects/${projectState.id}`, {
         method: "DELETE",
       });
       const json = await res.json().catch(() => ({}));
@@ -151,7 +166,7 @@ export function ProjectDetailClient({
       <RefreshRouteOnMount />
       {isDragging && (
         <PhotoDropHint
-          projectName={project.name}
+          projectName={projectState.name}
           fileCount={draggedFileCount}
         />
       )}
@@ -199,28 +214,44 @@ export function ProjectDetailClient({
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between mb-10">
           <div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-light tracking-[0.05em] uppercase break-words">
-              {project.name}
+              {projectState.name}
             </h1>
             <p className="mt-2 text-text-secondary text-[14px]">
-              {project.client_name ?? "—"}
+              {projectState.client_name ?? "—"}
             </p>
             <div className="mt-3">
-              <StatusDot status={project.status as ProjectStatus} />
+              <StatusDot status={projectState.status as ProjectStatus} />
             </div>
           </div>
           <ProjectActions
-            projectId={project.id}
-            galleryToken={project.gallery_token}
-            status={project.status as ProjectStatus}
+            projectId={projectState.id}
+            galleryToken={projectState.gallery_token}
+            status={projectState.status as ProjectStatus}
             photos={photos}
             onPhotosSynced={setPhotosSorted}
             upload={upload}
           />
         </div>
 
+        <div className="mb-6 max-w-md">
+          <ProjectMaxSelection
+            project={projectState}
+            clientSelectedCount={clientSelectedCount}
+            onUpdated={setProjectState}
+          />
+        </div>
+
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
-          <p className="text-[11px] uppercase tracking-label text-text-secondary">
-            {clientSelectedCount} of {photos.length} chosen by client
+          <p
+            className={
+              clientOverLimit
+                ? "text-[11px] uppercase tracking-label text-status-editing"
+                : "text-[11px] uppercase tracking-label text-text-secondary"
+            }
+          >
+            {clientSelectedCount} / {maxSelection} client picks
+            {photos.length > 0 ? ` · ${photos.length} in gallery` : ""}
+            {clientOverLimit ? " · over limit" : ""}
           </p>
           {photos.length > 0 && (
             <>
@@ -247,7 +278,7 @@ export function ProjectDetailClient({
           <PhotoGallerySection
             photos={photos}
             mode="dashboard"
-            viewStorageId={project.gallery_token}
+            viewStorageId={projectState.gallery_token}
             selectedIds={clientSelectedIds}
             manageSelectedIds={manage.manageSelected}
             onManagePhotoActivate={manageActivation.activate}

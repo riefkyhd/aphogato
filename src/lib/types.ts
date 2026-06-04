@@ -8,6 +8,7 @@ export interface Project {
   gallery_token: string;
   created_at: string;
   status: ProjectStatus;
+  max_photo_selection: number;
 }
 
 export interface Photo {
@@ -42,4 +43,43 @@ export interface CalendarEvent {
   google_event_id: string | null;
   synced_at: string | null;
   created_at: string;
+}
+
+export interface IncomeEntry {
+  id: string;
+  event_id: string | null;
+  entry_date: string;
+  amount: number;
+  currency: string;
+  client_name: string | null;
+  description: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface ExpenseEntry {
+  id: string;
+  event_id: string | null;
+  entry_date: string;
+  amount: number;
+  currency: string;
+  category: string;
+  description: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface FinanceMonthSummary {
+  month: number;
+  income: number;
+  expenses: number;
+  net: number;
+}
+
+export interface FinanceSummary {
+  year: number;
+  totalIncome: number;
+  totalExpenses: number;
+  net: number;
+  months: FinanceMonthSummary[];
 }

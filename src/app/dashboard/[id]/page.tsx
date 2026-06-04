@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { ProjectDetailClient } from "./ProjectDetailClient";
+import { normalizeProject } from "@/lib/normalizeProject";
 import type { Photo, Project } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +29,7 @@ export default async function ProjectDetailPage({
 
   return (
     <ProjectDetailClient
-      project={project as Project}
+      project={normalizeProject(project as Project)}
       initialPhotos={(photos ?? []) as Photo[]}
     />
   );

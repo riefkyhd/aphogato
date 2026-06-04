@@ -14,7 +14,8 @@ import {
 } from "@/components/calendar/EventDetailPanel";
 import { EventFormModal } from "@/components/calendar/EventFormModal";
 import { Button } from "@/components/ui/Button";
-import type { CalendarEvent } from "@/lib/types";
+import { parseMoneyInput } from "@/lib/finance/formatMoney";
+import type { CalendarEvent, IncomeEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type ViewMode = "month" | "list";
@@ -22,13 +23,18 @@ type ViewMode = "month" | "list";
 export function CalendarClient({
   initialEvents,
   projects,
+  initialIncomeByEventId,
   isGoogleConnected,
 }: {
   initialEvents: CalendarEvent[];
   projects: CalendarProject[];
+  initialIncomeByEventId: Record<string, IncomeEntry>;
   isGoogleConnected: boolean;
 }) {
   const [events, setEvents] = useState<CalendarEvent[]>(initialEvents);
+  const [incomeByEventId, setIncomeByEventId] = useState(
+    initialIncomeByEventId
+  );
   const [view, setView] = useState<ViewMode>("month");
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
   const [panelEvent, setPanelEvent] = useState<CalendarEvent | null>(null);
@@ -68,15 +74,52 @@ export function CalendarClient({
     setModalOpen(true);
   }, [panelEvent]);
 
+  const saveEventIncome = useCallback(
+    async (
+      eventId: string,
+      incomeRaw: unknown,
+      shootDate: string,
+      clientName: string | null
+    ) => {
+      const raw =
+        typeof incomeRaw === "string" ? incomeRaw.trim() : "";
+      if (!raw) return;
+      const amount = parseMoneyInput(raw);
+      if (amount === null) {
+        toast.error("Invalid income amount");
+        throw new Error("invalid income");
+      }
+      const res = await fetch("/api/finance/income", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event_id: eventId,
+          amount,
+          entry_date: shootDate,
+          client_name: clientName,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        toast.error(json.error ?? "Failed to save income");
+        throw new Error("income save failed");
+      }
+      const entry = json as IncomeEntry;
+      setIncomeByEventId((prev) => ({ ...prev, [eventId]: entry }));
+    },
+    []
+  );
+
   const handleSave = useCallback(
     async (payload: Record<string, unknown>) => {
+      const { income_amount: incomeRaw, ...eventPayload } = payload;
       setSaving(true);
       try {
         if (editingEvent) {
           const res = await fetch(`/api/calendar/events/${editingEvent.id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
+            body: JSON.stringify(eventPayload),
           });
           const json = await res.json();
           if (!res.ok) {
@@ -88,12 +131,18 @@ export function CalendarClient({
             prev.map((e) => (e.id === updated.id ? updated : e))
           );
           setPanelEvent((p) => (p?.id === updated.id ? updated : p));
+          await saveEventIncome(
+            updated.id,
+            incomeRaw,
+            updated.shoot_date,
+            updated.client_name
+          );
           toast.success("Event updated");
         } else {
           const res = await fetch("/api/calendar/events", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
+            body: JSON.stringify(eventPayload),
           });
           const json = await res.json();
           if (!res.ok) {
@@ -106,11 +155,23 @@ export function CalendarClient({
               a.shoot_date.localeCompare(b.shoot_date)
             )
           );
+          await saveEventIncome(
+            created.id,
+            incomeRaw,
+            created.shoot_date,
+            created.client_name
+          );
           toast.success("Event created");
         }
         setModalOpen(false);
         setEditingEvent(null);
       } catch (err) {
+        if (
+          err instanceof Error &&
+          (err.message === "invalid income" || err.message === "income save failed")
+        ) {
+          return;
+        }
         toast.error(
           err instanceof Error ? err.message : "Failed to save event"
         );
@@ -118,8 +179,17 @@ export function CalendarClient({
         setSaving(false);
       }
     },
-    [editingEvent]
+    [editingEvent, saveEventIncome]
   );
+
+  const panelIncome = panelEvent
+    ? incomeByEventId[panelEvent.id] ?? null
+    : null;
+  const editIncomeAmount = editingEvent
+    ? incomeByEventId[editingEvent.id]?.amount != null
+      ? String(incomeByEventId[editingEvent.id]!.amount)
+      : ""
+    : "";
 
   const requestDelete = useCallback(() => {
     if (!panelEvent) return;
@@ -316,6 +386,7 @@ export function CalendarClient({
           event={panelEvent}
           projects={projects}
           isGoogleConnected={isGoogleConnected}
+          income={panelIncome}
           open={panelOpen}
           onEdit={openEditEvent}
           onDelete={requestDelete}
@@ -328,6 +399,7 @@ export function CalendarClient({
         initialDate={formInitialDate}
         event={editingEvent}
         projects={projects}
+        initialIncomeAmount={editIncomeAmount}
         saving={saving}
         onSave={handleSave}
         onClose={() => {

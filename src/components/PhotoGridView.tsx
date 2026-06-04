@@ -11,6 +11,7 @@ export function PhotoGridView({
   mode,
   selectedIds,
   onToggleSelect,
+  selectionLimitReached = false,
   manageSelectedIds,
   onManagePhotoActivate,
   onManagePhotoMarquee,
@@ -20,6 +21,7 @@ export function PhotoGridView({
   mode: "gallery" | "dashboard";
   selectedIds: Set<string>;
   onToggleSelect?: (id: string) => void;
+  selectionLimitReached?: boolean;
   manageSelectedIds?: Set<string>;
   onManagePhotoActivate?: (id: string, meta: ManagePhotoActivateMeta) => void;
   onManagePhotoMarquee?: (ids: string[], mergeBase?: string[]) => void;
@@ -41,9 +43,11 @@ export function PhotoGridView({
         getKey={(ph) => ph.id}
         renderItem={(ph) => {
           const isSelected = selectedIds.has(ph.id);
+          const selectBlocked = selectionLimitReached && !isSelected;
           return (
             <SelectablePhotoCell
               selected={isSelected}
+              selectDisabled={selectBlocked}
               onToggle={() => onToggleSelect(ph.id)}
               aria-label={`${isSelected ? "Deselect" : "Select"} ${ph.filename}`}
             >
