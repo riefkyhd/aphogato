@@ -224,9 +224,10 @@ export function ProjectDetailClient({
           </p>
           {photos.length > 0 && (
             <p className="text-[11px] text-text-muted">
-              Click a photo to preview and mark for deletion · click again to
-              close · Ctrl+click or long-press to select multiple · Ctrl+A
-              select all · Esc clear
+              Grid: click to select · click outside to clear · drag on photos or
+              gaps to box-select (updates live) · Ctrl+drag adds to selection ·
+              Ctrl+click or long-press for multi-select · Ctrl+A select all · Esc
+              clear
             </p>
           )}
         </div>
@@ -244,6 +245,7 @@ export function ProjectDetailClient({
             selectedIds={clientSelectedIds}
             manageSelectedIds={manage.manageSelected}
             onManagePhotoActivate={manageActivation.activate}
+            onManagePhotoMarquee={manage.setMarqueeHits}
             managePreviewId={manageActivation.previewId}
             onClearManageSelection={manageActivation.clearAll}
             onDeletePhotos={() => setDeleteDialogOpen(true)}

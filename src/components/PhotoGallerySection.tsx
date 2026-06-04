@@ -28,6 +28,7 @@ export function PhotoGallerySection({
   onToggleSelect,
   manageSelectedIds,
   onManagePhotoActivate,
+  onManagePhotoMarquee,
   managePreviewId,
   onClearManageSelection,
   onDeletePhotos,
@@ -40,6 +41,7 @@ export function PhotoGallerySection({
   onToggleSelect?: (id: string) => void;
   manageSelectedIds?: Set<string>;
   onManagePhotoActivate?: (id: string, meta: ManagePhotoActivateMeta) => void;
+  onManagePhotoMarquee?: (ids: string[], mergeBase?: string[]) => void;
   managePreviewId?: string | null;
   onClearManageSelection?: () => void;
   onDeletePhotos?: () => void;
@@ -167,30 +169,52 @@ export function PhotoGallerySection({
           <PhotoViewToggle view={view} onChange={handleViewChange} />
         </div>
       </div>
-      {view === "grid" ? (
-        <PhotoGridView
-          key={layoutKey}
-          photos={displayPhotos}
-          mode={mode}
-          selectedIds={selectedIds}
-          onToggleSelect={onToggleSelect}
-          manageSelectedIds={manageSelectedIds}
-          onManagePhotoActivate={onManagePhotoActivate}
-        />
-      ) : (
-        <PhotoListView
-          key={layoutKey}
-          photos={displayPhotos}
-          mode={mode}
-          selectedIds={selectedIds}
-          onToggleSelect={onToggleSelect}
-          manageSelectedIds={manageSelectedIds}
-          onManagePhotoActivate={onManagePhotoActivate}
-          managePreviewId={managePreviewId}
-          showSelectedDivider={showListDivider}
-          selectedGroupCount={selectedCount}
-        />
-      )}
+      <div
+        key={layoutKey}
+        className="relative h-[min(70vh,720px)] min-h-[320px]"
+      >
+        <div
+          data-photo-grid-scroll
+          className={
+            view === "grid"
+              ? "absolute inset-0 overflow-y-auto"
+              : "absolute inset-0 overflow-hidden invisible pointer-events-none"
+          }
+          aria-hidden={view !== "grid"}
+        >
+          <PhotoGridView
+            photos={displayPhotos}
+            mode={mode}
+            selectedIds={selectedIds}
+            onToggleSelect={onToggleSelect}
+            manageSelectedIds={manageSelectedIds}
+            onManagePhotoActivate={onManagePhotoActivate}
+            onManagePhotoMarquee={onManagePhotoMarquee}
+            onClearManageSelection={onClearManageSelection}
+          />
+        </div>
+        <div
+          className={
+            view === "list"
+              ? "absolute inset-0 flex flex-col overflow-hidden"
+              : "absolute inset-0 flex flex-col overflow-hidden invisible pointer-events-none"
+          }
+          aria-hidden={view !== "list"}
+        >
+          <PhotoListView
+            photos={displayPhotos}
+            mode={mode}
+            selectedIds={selectedIds}
+            onToggleSelect={onToggleSelect}
+            manageSelectedIds={manageSelectedIds}
+            onManagePhotoActivate={onManagePhotoActivate}
+            managePreviewId={managePreviewId}
+            showSelectedDivider={showListDivider}
+            selectedGroupCount={selectedCount}
+            className="h-full min-h-0"
+          />
+        </div>
+      </div>
     </div>
   );
 }

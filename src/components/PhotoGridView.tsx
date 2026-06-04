@@ -1,8 +1,6 @@
 import { MasonryColumnGrid } from "@/components/MasonryColumnGrid";
-import { ClientPickIndicator } from "@/components/ClientPickIndicator";
 import { MasonryPhoto } from "@/components/MasonryPhoto";
-import { ManagePhotoCell } from "@/components/ManagePhotoCell";
-import { ManageSelectionOverlay } from "@/components/ManageSelectionOverlay";
+import { ManagePhotoGrid } from "@/components/ManagePhotoGrid";
 import { SelectablePhotoCell } from "@/components/SelectablePhotoCell";
 import { SelectionOverlay } from "@/components/SelectionOverlay";
 import type { ManagePhotoActivateMeta } from "@/lib/managePhotoActivate";
@@ -15,6 +13,8 @@ export function PhotoGridView({
   onToggleSelect,
   manageSelectedIds,
   onManagePhotoActivate,
+  onManagePhotoMarquee,
+  onClearManageSelection,
 }: {
   photos: Photo[];
   mode: "gallery" | "dashboard";
@@ -22,8 +22,17 @@ export function PhotoGridView({
   onToggleSelect?: (id: string) => void;
   manageSelectedIds?: Set<string>;
   onManagePhotoActivate?: (id: string, meta: ManagePhotoActivateMeta) => void;
+  onManagePhotoMarquee?: (ids: string[], mergeBase?: string[]) => void;
+  onClearManageSelection?: () => void;
 }) {
-  const manageMode = mode === "dashboard" && Boolean(onManagePhotoActivate);
+  const manageMode =
+    mode === "dashboard" &&
+    Boolean(
+      onManagePhotoActivate &&
+        onManagePhotoMarquee &&
+        onClearManageSelection &&
+        manageSelectedIds
+    );
 
   if (mode === "gallery" && onToggleSelect) {
     return (
@@ -53,27 +62,12 @@ export function PhotoGridView({
 
   if (manageMode && manageSelectedIds && onManagePhotoActivate) {
     return (
-      <MasonryColumnGrid
-        items={photos}
-        getKey={(ph) => ph.id}
-        renderItem={(ph) => {
-          const isManageSelected = manageSelectedIds.has(ph.id);
-          return (
-            <ManagePhotoCell
-              selected={isManageSelected}
-              onActivate={(meta) => onManagePhotoActivate(ph.id, meta)}
-              aria-label={`${ph.filename}${isManageSelected ? ", selected for deletion" : ""}`}
-            >
-              <MasonryPhoto
-                src={ph.cloudinary_url}
-                alt={ph.filename}
-                className="pointer-events-none select-none transition duration-200 group-hover:brightness-105"
-              />
-              {ph.is_selected && <ClientPickIndicator />}
-              {isManageSelected && <ManageSelectionOverlay />}
-            </ManagePhotoCell>
-          );
-        }}
+      <ManagePhotoGrid
+        photos={photos}
+        manageSelectedIds={manageSelectedIds}
+        onManagePhotoActivate={onManagePhotoActivate}
+        onManagePhotoMarquee={onManagePhotoMarquee!}
+        onClearManageSelection={onClearManageSelection!}
       />
     );
   }

@@ -229,6 +229,7 @@ export function PhotoListView({
   managePreviewId = null,
   showSelectedDivider = false,
   selectedGroupCount = 0,
+  className,
 }: {
   photos: Photo[];
   mode: "gallery" | "dashboard";
@@ -239,6 +240,7 @@ export function PhotoListView({
   managePreviewId?: string | null;
   showSelectedDivider?: boolean;
   selectedGroupCount?: number;
+  className?: string;
 }) {
   const galleryInteractive = mode === "gallery" && Boolean(onToggleSelect);
   const manageInteractive =
@@ -377,13 +379,16 @@ export function PhotoListView({
 
   return (
     <div
-      className="flex flex-col lg:flex-row lg:min-h-[min(70vh,720px)] border-t border-border"
+      className={cn(
+        "flex h-full min-h-0 flex-col lg:flex-row border-t border-border",
+        className
+      )}
       tabIndex={0}
       onKeyDown={handleKeyDown}
     >
       <div
         ref={listRef}
-        className="w-full lg:w-[40%] lg:max-h-[min(70vh,720px)] overflow-y-auto bg-bg-primary lg:border-r border-border"
+        className="w-full flex-1 min-h-0 overflow-y-auto bg-bg-primary lg:w-[40%] lg:border-r border-border"
       >
         {photos.map((ph, index) => {
           const isPreviewing = previewId === ph.id;
@@ -476,7 +481,7 @@ export function PhotoListView({
         })}
       </div>
 
-      <div className="hidden lg:flex w-[60%] flex-col lg:max-h-[min(70vh,720px)]">
+      <div className="hidden lg:flex min-h-0 w-[60%] flex-1 flex-col overflow-hidden">
         <ListPreview
           photo={previewPhoto}
           selected={previewSelected}

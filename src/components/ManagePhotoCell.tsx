@@ -5,6 +5,9 @@ import { useLongPress } from "@/hooks/useLongPress";
 import type { ManagePhotoActivateMeta } from "@/lib/managePhotoActivate";
 
 type ManagePhotoCellProps = {
+  photoId: string;
+  registerRef?: (id: string, el: HTMLElement | null) => void;
+  suppressClickRef?: React.MutableRefObject<boolean>;
   children: React.ReactNode;
   selected: boolean;
   onActivate: (meta: ManagePhotoActivateMeta) => void;
@@ -13,6 +16,9 @@ type ManagePhotoCellProps = {
 };
 
 export function ManagePhotoCell({
+  photoId,
+  registerRef,
+  suppressClickRef,
   children,
   selected,
   onActivate,
@@ -31,8 +37,10 @@ export function ManagePhotoCell({
   }
 
   return (
-    <div className={cn("break-inside-avoid mb-[2px] w-full", className)}>
+    <div className={cn("w-full", className)}>
       <div
+        ref={(el) => registerRef?.(photoId, el)}
+        data-photo-cell
         className={cn(
           "relative w-full cursor-pointer touch-manipulation group overflow-hidden",
           selected && "ring-2 ring-text-primary ring-offset-1 ring-offset-bg-primary"
@@ -41,9 +49,13 @@ export function ManagePhotoCell({
         tabIndex={0}
         aria-label={ariaLabel}
         aria-pressed={selected}
-        onClick={(e) =>
-          onActivate({ ctrlKey: e.ctrlKey, metaKey: e.metaKey })
-        }
+        onClick={(e) => {
+          if (suppressClickRef?.current) {
+            suppressClickRef.current = false;
+            return;
+          }
+          onActivate({ ctrlKey: e.ctrlKey, metaKey: e.metaKey });
+        }}
         onKeyDown={handleKeyDown}
         {...longPressHandlers}
       >

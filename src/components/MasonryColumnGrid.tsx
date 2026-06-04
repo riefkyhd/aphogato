@@ -22,12 +22,14 @@ export function MasonryColumnGrid<T>({
     [items, columnCount]
   );
 
+  const gapClass = className ?? "gap-[2px]";
+
   return (
-    <div className={cn("flex gap-[2px]", className)}>
+    <div className={cn("flex", gapClass)}>
       {columns.map((column, colIdx) => (
         <div
           key={colIdx}
-          className="flex min-w-0 flex-1 flex-col gap-[2px]"
+          className={cn("flex min-w-0 flex-1 flex-col", gapClass)}
         >
           {column.map((item) => (
             <Fragment key={getKey(item)}>{renderItem(item)}</Fragment>

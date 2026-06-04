@@ -25,7 +25,7 @@ export function SelectablePhotoCell({
   }
 
   return (
-    <div className={cn("break-inside-avoid mb-[2px] w-full", className)}>
+    <div className={cn("w-full", className)}>
       <div
         className="relative w-full cursor-pointer touch-manipulation group overflow-hidden"
         role="button"

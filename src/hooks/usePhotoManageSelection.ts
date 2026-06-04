@@ -29,6 +29,29 @@ export function usePhotoManageSelection(photoIds: string[]) {
     setManageSelected(new Set([id]));
   }, []);
 
+  const selectMany = useCallback((ids: string[], additive: boolean) => {
+    setManageSelected((prev) => {
+      if (additive) {
+        const next = new Set(prev);
+        for (const id of ids) next.add(id);
+        return next;
+      }
+      return new Set(ids);
+    });
+  }, []);
+
+  /** Marquee: replace selection, or union with mergeBase when Ctrl/Cmd-dragging. */
+  const setMarqueeHits = useCallback(
+    (ids: string[], mergeBase?: string[]) => {
+      if (mergeBase) {
+        setManageSelected(new Set([...mergeBase, ...ids]));
+      } else {
+        setManageSelected(new Set(ids));
+      }
+    },
+    []
+  );
+
   const selectAll = useCallback(() => {
     setManageSelected(new Set(photoIds));
   }, [photoIds]);
@@ -66,6 +89,8 @@ export function usePhotoManageSelection(photoIds: string[]) {
     manageSelected,
     toggle,
     selectOnly,
+    selectMany,
+    setMarqueeHits,
     selectAll,
     clear,
     count: manageSelected.size,
