@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { Loader2, Upload } from "lucide-react";
+import { Upload } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { IMAGE_UPLOAD_ACCEPT } from "@/lib/imageUploadFiles";
 import type { ProjectPhotoUpload } from "@/hooks/useProjectPhotoUpload";
@@ -26,15 +26,11 @@ export function PhotoUploadButton({ upload }: { upload: ProjectPhotoUpload }) {
       <Button
         type="button"
         variant="secondary"
+        loading={uploading}
         disabled={uploading}
-        className="inline-flex items-center gap-2"
         onClick={() => inputRef.current?.click()}
       >
-        {uploading ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-        ) : (
-          <Upload className="h-3.5 w-3.5" aria-hidden />
-        )}
+        {!uploading && <Upload className="h-3.5 w-3.5 shrink-0" aria-hidden />}
         {uploading ? "Uploading…" : "Upload photos"}
       </Button>
     </div>

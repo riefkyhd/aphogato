@@ -70,6 +70,7 @@ export function DeleteProjectDialog({
             ref={confirmRef}
             type="button"
             onClick={onConfirm}
+            loading={deleting}
             disabled={deleting}
             className="!bg-status-editing !border-status-editing hover:opacity-90"
           >

@@ -3,19 +3,24 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { PageLoadingOverlay } from "@/components/PageLoadingOverlay";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+
+type CreatePhase = "idle" | "creating" | "opening";
 
 export function NewProjectForm() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [clientName, setClientName] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [phase, setPhase] = useState<CreatePhase>("idle");
+
+  const busy = phase !== "idle";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
+    setPhase("creating");
     try {
       const res = await fetch("/api/projects", {
         method: "POST",
@@ -28,20 +33,25 @@ export function NewProjectForm() {
       const json = await res.json();
       if (!res.ok) {
         toast.error(json.error ?? "Failed to create project");
+        setPhase("idle");
         return;
       }
       toast.success("Project created");
+      setPhase("opening");
       router.push(`/dashboard/${json.id}`);
       router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setLoading(false);
+      setPhase("idle");
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <>
+      {phase === "opening" && (
+        <PageLoadingOverlay message="Opening your new project…" />
+      )}
+    <form onSubmit={handleSubmit} className="space-y-6" aria-busy={busy}>
       <div>
         <Label htmlFor="name">Project name</Label>
         <Input
@@ -61,9 +71,14 @@ export function NewProjectForm() {
           placeholder="Salma"
         />
       </div>
-      <Button type="submit" disabled={loading}>
-        {loading ? "Creating…" : "Create project"}
+      <Button type="submit" loading={busy} disabled={busy}>
+        {phase === "creating"
+          ? "Creating…"
+          : phase === "opening"
+            ? "Opening project…"
+            : "Create project"}
       </Button>
     </form>
+    </>
   );
 }

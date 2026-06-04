@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { BackNavLink } from "@/components/BackNavLink";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { DeletePhotosDialog } from "@/components/DeletePhotosDialog";
@@ -16,6 +16,7 @@ import { usePhotoDropZone } from "@/hooks/usePhotoDropZone";
 import { useManagePhotoActivation } from "@/hooks/useManagePhotoActivation";
 import { usePhotoManageSelection } from "@/hooks/usePhotoManageSelection";
 import { useProjectPhotoUpload } from "@/hooks/useProjectPhotoUpload";
+import { useSyncServerPhotos } from "@/hooks/useSyncServerPhotos";
 import { sortPhotosNewestFirst } from "@/lib/sortPhotos";
 import { ProjectActions } from "./ProjectActions";
 import type { Photo, Project } from "@/lib/types";
@@ -37,9 +38,18 @@ export function ProjectDetailClient({
   const [deletingProject, setDeletingProject] = useState(false);
 
   const setPhotosSorted = useCallback(
-    (next: Photo[]) => setPhotos(sortPhotosNewestFirst(next)),
-    []
+    (next: Photo[]) => {
+      setPhotos(sortPhotosNewestFirst(next));
+      router.refresh();
+    },
+    [router]
   );
+
+  useSyncServerPhotos(initialPhotos, setPhotos);
+
+  useEffect(() => {
+    router.refresh();
+  }, [project.id, router]);
 
   const upload = useProjectPhotoUpload(project.id, setPhotosSorted);
 
@@ -166,13 +176,13 @@ export function ProjectDetailClient({
 
       <main className="px-6 md:px-10 py-10">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-          <Link
+          <BackNavLink
             href="/dashboard"
             className="inline-flex items-center gap-2 text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors"
           >
             <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
             All projects
-          </Link>
+          </BackNavLink>
           <Button
             type="button"
             variant="secondary"

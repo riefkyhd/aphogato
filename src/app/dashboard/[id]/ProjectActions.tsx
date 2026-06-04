@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { PhotoUploadButton } from "@/components/PhotoUploadButton";
@@ -190,14 +189,13 @@ export function ProjectActions({
       <Button
         variant="secondary"
         onClick={syncGallery}
+        loading={syncing}
         disabled={syncing}
-        className="inline-flex items-center gap-2"
       >
-        {syncing && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />}
         {syncing ? "Syncing…" : "Sync gallery"}
       </Button>
       {nextStatus && (
-        <Button onClick={advanceStatus} disabled={statusBusy}>
+        <Button onClick={advanceStatus} loading={statusBusy} disabled={statusBusy}>
           {statusBusy ? "Updating…" : STATUS_LABEL[status]}
         </Button>
       )}

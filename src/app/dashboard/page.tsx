@@ -1,18 +1,15 @@
-import Link from "next/link";
-import Image from "next/image";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { cloudinaryLoader } from "@/lib/cloudinaryLoader";
-import { StatusDot, type ProjectStatus } from "@/components/StatusDot";
-import type { Project, Photo } from "@/lib/types";
+import { NavigatingLink } from "@/components/NavigatingLink";
+import { RefreshRouteOnMount } from "@/components/RefreshRouteOnMount";
+import {
+  ProjectCard,
+  type ProjectCardData,
+} from "@/components/ProjectCard";
+import type { Project } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-interface ProjectWithCover extends Project {
-  cover?: Pick<Photo, "cloudinary_url"> | null;
-  photo_count: number;
-}
-
-async function loadProjects(): Promise<ProjectWithCover[]> {
+async function loadProjects(): Promise<ProjectCardData[]> {
   const supabase = createServerSupabase();
 
   const { data: projects, error } = await supabase
@@ -53,13 +50,18 @@ export default async function DashboardPage() {
 
   return (
     <main className="px-6 md:px-10 py-10">
+      <RefreshRouteOnMount />
       <div className="flex items-end justify-between mb-10">
         <h1 className="text-2xl font-light tracking-[0.05em] uppercase">
           Projects
         </h1>
-        <Link href="/dashboard/new" className="btn-primary">
+        <NavigatingLink
+          href="/dashboard/new"
+          className="btn-primary"
+          loadingLabel="Opening…"
+        >
           New project
-        </Link>
+        </NavigatingLink>
       </div>
 
       {projects.length === 0 ? (
@@ -75,42 +77,6 @@ export default async function DashboardPage() {
   );
 }
 
-function ProjectCard({ project }: { project: ProjectWithCover }) {
-  return (
-    <Link
-      href={`/dashboard/${project.id}`}
-      className="group relative block aspect-[3/2] bg-bg-elevated overflow-hidden"
-    >
-      {project.cover ? (
-        <Image
-          loader={cloudinaryLoader}
-          src={project.cover.cloudinary_url}
-          alt={project.name}
-          fill
-          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className="object-cover transition duration-300 group-hover:brightness-110"
-        />
-      ) : (
-        <div className="absolute inset-0 flex items-center justify-center text-text-muted text-[11px] uppercase tracking-label">
-          No photos yet
-        </div>
-      )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/0 to-transparent" />
-      <div className="absolute bottom-0 left-0 right-0 p-5">
-        <div className="text-text-primary text-lg font-light tracking-[0.05em] uppercase leading-tight">
-          {project.name}
-        </div>
-        <div className="mt-1 flex items-center justify-between">
-          <span className="text-[12px] text-text-secondary">
-            {project.client_name ?? "—"}
-          </span>
-          <StatusDot status={(project.status as ProjectStatus) ?? "pending"} />
-        </div>
-      </div>
-    </Link>
-  );
-}
-
 function EmptyState() {
   return (
     <div className="border border-border bg-bg-secondary p-16 text-center">
@@ -120,12 +86,13 @@ function EmptyState() {
       <p className="mt-2 text-[11px] uppercase tracking-label text-text-muted">
         Create your first project to get started.
       </p>
-      <Link
+      <NavigatingLink
         href="/dashboard/new"
         className="btn-primary inline-flex mt-8"
+        loadingLabel="Opening…"
       >
         New project
-      </Link>
+      </NavigatingLink>
     </div>
   );
 }

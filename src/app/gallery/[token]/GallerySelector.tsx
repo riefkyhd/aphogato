@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import {
   GALLERY_ERROR_CODES,
   GALLERY_MESSAGES,
@@ -422,15 +422,12 @@ export function GallerySelector({
           <Button
             type="button"
             variant="secondary"
+            loading={syncing}
             disabled={syncing || !ready}
-            className="inline-flex items-center gap-2 shrink-0"
+            className="shrink-0"
             onClick={syncGallery}
           >
-            {syncing ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-            ) : (
-              <RefreshCw className="h-3.5 w-3.5" aria-hidden />
-            )}
+            {!syncing && <RefreshCw className="h-3.5 w-3.5 shrink-0" aria-hidden />}
             {syncing ? "Refreshing…" : "Refresh gallery"}
           </Button>
         </div>
@@ -478,13 +475,15 @@ export function GallerySelector({
             type="button"
             variant="secondary"
             className="!text-[11px] lg:hidden"
+            loading={syncing}
             disabled={syncing || !ready}
             onClick={syncGallery}
           >
-            Refresh
+            {syncing ? "Refreshing…" : "Refresh"}
           </Button>
           <Button
             type="button"
+            loading={submitting}
             onClick={submitSelection}
             disabled={
               submitting || syncing || !ready || selectedCount === 0 || total === 0
