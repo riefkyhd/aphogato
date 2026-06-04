@@ -21,6 +21,18 @@ export async function Navbar() {
             >
               Projects
             </Link>
+            <Link
+              href="/dashboard/calendar"
+              className="text-[12px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors"
+            >
+              Calendar
+            </Link>
+            <Link
+              href="/dashboard/settings"
+              className="text-[12px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors"
+            >
+              Settings
+            </Link>
             <SignOutButton />
           </>
         ) : (

@@ -18,3 +18,27 @@ export interface Photo {
   is_selected: boolean;
   created_at: string;
 }
+
+export type ShootType =
+  | "wedding"
+  | "portrait"
+  | "event"
+  | "commercial"
+  | "other";
+export type EventStatus = "scheduled" | "shot" | "editing" | "delivered";
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  client_name: string | null;
+  shoot_type: ShootType;
+  location: string | null;
+  shoot_date: string;
+  shoot_time: string | null;
+  status: EventStatus;
+  notes: string | null;
+  project_id: string | null;
+  google_event_id: string | null;
+  synced_at: string | null;
+  created_at: string;
+}
