@@ -91,7 +91,7 @@ export async function POST(
     .from("photos")
     .select("*")
     .eq("project_id", project.id)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: false });
 
   if (photosError) {
     return NextResponse.json({ error: photosError.message }, { status: 500 });

@@ -1,4 +1,8 @@
 import { NextResponse } from "next/server";
+import {
+  GALLERY_ERROR_CODES,
+  staleSelectionMessage,
+} from "@/lib/galleryErrors";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -29,26 +33,43 @@ export async function PATCH(request: Request) {
     .single();
 
   if (projectError || !project) {
-    return NextResponse.json({ error: "Gallery not found" }, { status: 404 });
-  }
-
-  // Verify all selectedIds belong to this project to avoid spoofing.
-  const { data: validRows, error: validError } = await supabase
-    .from("photos")
-    .select("id")
-    .eq("project_id", project.id)
-    .in("id", selectedIds.length > 0 ? selectedIds : ["00000000-0000-0000-0000-000000000000"]);
-
-  if (validError) {
-    return NextResponse.json({ error: validError.message }, { status: 500 });
-  }
-
-  const validIds = new Set((validRows ?? []).map((r) => r.id));
-  if (validIds.size !== selectedIds.length) {
     return NextResponse.json(
-      { error: "One or more selected photos do not belong to this gallery" },
-      { status: 400 }
+      {
+        error: "Gallery not found",
+        code: GALLERY_ERROR_CODES.GALLERY_NOT_FOUND,
+      },
+      { status: 404 }
     );
+  }
+
+  const uniqueSelectedIds = [...new Set(selectedIds)];
+
+  let validIds = new Set<string>();
+  if (uniqueSelectedIds.length > 0) {
+    const { data: validRows, error: validError } = await supabase
+      .from("photos")
+      .select("id")
+      .eq("project_id", project.id)
+      .in("id", uniqueSelectedIds);
+
+    if (validError) {
+      return NextResponse.json({ error: validError.message }, { status: 500 });
+    }
+
+    validIds = new Set((validRows ?? []).map((r) => r.id));
+    const missingIds = uniqueSelectedIds.filter((id) => !validIds.has(id));
+
+    if (missingIds.length > 0) {
+      return NextResponse.json(
+        {
+          error: staleSelectionMessage(missingIds.length),
+          code: GALLERY_ERROR_CODES.STALE_SELECTION,
+          missingIds,
+          missingCount: missingIds.length,
+        },
+        { status: 409 }
+      );
+    }
   }
 
   // Reset all photos to is_selected = false, then mark chosen ones true.
@@ -82,5 +103,22 @@ export async function PATCH(request: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, count: validIds.size });
+  const { data: updatedProject, error: fetchProjectError } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("id", project.id)
+    .single();
+
+  if (fetchProjectError || !updatedProject) {
+    return NextResponse.json(
+      { error: fetchProjectError?.message ?? "Failed to load project" },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({
+    ok: true,
+    count: validIds.size,
+    project: updatedProject,
+  });
 }

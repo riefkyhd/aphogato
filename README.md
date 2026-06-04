@@ -1,36 +1,96 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Aphogato
 
-## Getting Started
+Client photo selection for photographers. Manage projects from a dark dashboard; clients pick favorites on tokenized gallery links. Photos live in Cloudinary; selections and project metadata live in Supabase.
 
-First, run the development server:
+## Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Next.js 14** (App Router, TypeScript)
+- **Supabase** — auth, Postgres, RLS
+- **Cloudinary** — image storage and delivery
+- **Tailwind CSS** — dark UI
+
+## Environment variables
+
+Copy `.env.example` to `.env.local` and fill in:
+
+| Variable | Purpose |
+|----------|---------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable/anon key (or legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY`) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role (gallery API, bypasses RLS) |
+| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name |
+| `CLOUDINARY_API_KEY` | Server-side Cloudinary API |
+| `CLOUDINARY_API_SECRET` | Server-side Cloudinary API |
+
+On Vercel, set the same variables for Production (and Preview if needed), then redeploy.
+
+## Database
+
+Run `supabase/migrations/0001_init.sql` in the Supabase SQL editor (or `supabase db push`).
+
+Create a single photographer user in Supabase Auth (email/password). Middleware protects `/dashboard/*`.
+
+## Cloudinary folder structure
+
+Aphogato manages folders automatically. **Do not enter a folder path in the UI.**
+
+When you create a project, the app assigns a `cloudinary_folder` stored in Supabase:
+
+```
+[year]/[project-name-slug]
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Examples:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Project name | `cloudinary_folder` |
+|--------------|---------------------|
+| Wedding — Derio & Salma | `2026/wedding-derio-salma` |
+| Same name again (duplicate) | `2026/wedding-derio-salma-2` |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Rules:
 
-## Learn More
+- **Year** — current calendar year at creation time
+- **Slug** — project name lowercased; non-alphanumeric characters removed; spaces become hyphens
+- **Duplicates** — if that folder path already exists on another project, a numeric suffix is appended (`-2`, `-3`, …)
 
-To learn more about Next.js, take a look at the following resources:
+Cloudinary does not require a pre-created folder. The folder appears when the **first photo is uploaded**.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Upload paths
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+From `/dashboard/[id]`, use **Upload photos**. Each file is uploaded with:
 
-## Deploy on Vercel
+- **asset_folder:** `{cloudinary_folder}` — places the file in the correct Media Library folder (required in **dynamic folder mode**, where `public_id` slashes alone do not organize the library UI)
+- **public_id:** `{cloudinary_folder}/{filename-without-extension}`  
+  e.g. `2026/wedding-derio-salma/DSC_0042`
+- **URL stored in DB:**  
+  `https://res.cloudinary.com/{CLOUD_NAME}/image/upload/2026/wedding-derio-salma/DSC_0042.jpg`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Uploads run **one file at a time** with a progress bar (file name, per-file %, and overall %).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Sync gallery
+
+**Sync gallery** lists images under the project’s `cloudinary_folder` (prefix search), adds new files to Supabase, and removes DB rows whose files no longer exist in Cloudinary.
+
+## Project workflow
+
+1. **New project** (`/dashboard/new`) — project name + optional client name only.
+2. **Project detail** (`/dashboard/[id]`) — upload photos, copy gallery link, sync from Cloudinary, advance status.
+3. **Gallery** (`/gallery/[token]`) — client selects photos; confirmations update `photos.is_selected`.
+
+## Development
+
+```bash
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000). Sign in at `/login`.
+
+```bash
+npm run build
+npm run lint
+```
+
+## Deploy
+
+Deploy to Vercel with the Next.js preset. Ensure all env vars above are set in the project settings, then redeploy after changes.

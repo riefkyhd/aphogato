@@ -24,7 +24,7 @@ export default async function ProjectDetailPage({
     .from("photos")
     .select("*")
     .eq("project_id", params.id)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: false });
 
   return (
     <ProjectDetailClient

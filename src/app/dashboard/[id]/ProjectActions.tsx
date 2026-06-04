@@ -5,6 +5,8 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
+import { PhotoUploadButton } from "@/components/PhotoUploadButton";
+import type { ProjectPhotoUpload } from "@/hooks/useProjectPhotoUpload";
 import type { Photo } from "@/lib/types";
 import type { ProjectStatus } from "@/components/StatusDot";
 
@@ -41,12 +43,14 @@ export function ProjectActions({
   status,
   selectedFilenames,
   onPhotosSynced,
+  upload,
 }: {
   projectId: string;
   galleryToken: string;
   status: ProjectStatus;
   selectedFilenames: string[];
   onPhotosSynced: (photos: Photo[]) => void;
+  upload: ProjectPhotoUpload;
 }) {
   const router = useRouter();
   const [statusBusy, setStatusBusy] = useState(false);
@@ -122,7 +126,8 @@ export function ProjectActions({
   const nextStatus = NEXT_STATUS[status];
 
   return (
-    <div className="flex flex-wrap gap-3">
+    <div className="flex flex-wrap items-start gap-3">
+      <PhotoUploadButton upload={upload} />
       <Button variant="secondary" onClick={copyLink}>
         Copy link
       </Button>

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { GALLERY_ERROR_CODES } from "@/lib/galleryErrors";
 import { loadGalleryByToken } from "@/lib/gallery";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,13 @@ export async function GET(
   try {
     const data = await loadGalleryByToken(params.token);
     if (!data) {
-      return NextResponse.json({ error: "Gallery not found" }, { status: 404 });
+      return NextResponse.json(
+        {
+          error: "Gallery not found",
+          code: GALLERY_ERROR_CODES.GALLERY_NOT_FOUND,
+        },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json(data, {

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { randomUUID } from "node:crypto";
+import { nanoid } from "nanoid";
+import { resolveUniqueCloudinaryFolder } from "@/lib/resolveCloudinaryFolder";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { listFolder } from "@/lib/cloudinary";
 
 export const runtime = "nodejs";
 
@@ -14,11 +14,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let body: {
-    name?: string;
-    client_name?: string;
-    cloudinary_folder?: string;
-  };
+  let body: { name?: string; client_name?: string };
   try {
     body = await request.json();
   } catch {
@@ -26,37 +22,24 @@ export async function POST(request: Request) {
   }
 
   const name = body.name?.trim();
-  const cloudinary_folder = body.cloudinary_folder?.trim();
-  if (!name || !cloudinary_folder) {
-    return NextResponse.json(
-      { error: "name and cloudinary_folder are required" },
-      { status: 400 }
-    );
+  if (!name) {
+    return NextResponse.json({ error: "name is required" }, { status: 400 });
   }
 
-  let resources;
+  let cloudinary_folder: string;
   try {
-    resources = await listFolder(cloudinary_folder);
+    cloudinary_folder = await resolveUniqueCloudinaryFolder(supabase, name);
   } catch (err) {
     return NextResponse.json(
       {
         error:
-          err instanceof Error
-            ? err.message
-            : "Failed to list Cloudinary folder",
+          err instanceof Error ? err.message : "Failed to generate folder path",
       },
-      { status: 502 }
+      { status: 400 }
     );
   }
 
-  if (resources.length === 0) {
-    return NextResponse.json(
-      { error: `No images found in Cloudinary folder "${cloudinary_folder}"` },
-      { status: 404 }
-    );
-  }
-
-  const gallery_token = randomUUID();
+  const gallery_token = nanoid();
   const { data: project, error: projectError } = await supabase
     .from("projects")
     .insert({
@@ -66,7 +49,7 @@ export async function POST(request: Request) {
       gallery_token,
       status: "pending",
     })
-    .select("id")
+    .select("id, cloudinary_folder")
     .single();
 
   if (projectError || !project) {
@@ -76,23 +59,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const rows = resources.map((r) => ({
-    project_id: project.id,
-    filename: r.filename,
-    cloudinary_url: r.secure_url,
-    is_selected: false,
-  }));
-
-  const { error: photoError } = await supabase.from("photos").insert(rows);
-  if (photoError) {
-    // Best-effort rollback — drop the project so it doesn't dangle.
-    await supabase.from("projects").delete().eq("id", project.id);
-    return NextResponse.json({ error: photoError.message }, { status: 500 });
-  }
-
   return NextResponse.json({
     id: project.id,
     gallery_token,
-    photo_count: rows.length,
+    cloudinary_folder: project.cloudinary_folder,
   });
 }

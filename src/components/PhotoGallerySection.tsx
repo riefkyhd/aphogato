@@ -14,7 +14,10 @@ import {
   writePhotoViewPreference,
   type PhotoViewMode,
 } from "@/lib/photoViewStorage";
+import { Button } from "@/components/ui/Button";
+import type { ManagePhotoActivateMeta } from "@/lib/managePhotoActivate";
 import { partitionPhotosSelectedFirst } from "@/lib/reorderPhotos";
+import { sortPhotosNewestFirst } from "@/lib/sortPhotos";
 import type { Photo } from "@/lib/types";
 
 export function PhotoGallerySection({
@@ -23,6 +26,11 @@ export function PhotoGallerySection({
   viewStorageId,
   selectedIds,
   onToggleSelect,
+  manageSelectedIds,
+  onManagePhotoActivate,
+  managePreviewId,
+  onClearManageSelection,
+  onDeletePhotos,
   ready = true,
 }: {
   photos: Photo[];
@@ -30,6 +38,11 @@ export function PhotoGallerySection({
   viewStorageId: string;
   selectedIds: Set<string>;
   onToggleSelect?: (id: string) => void;
+  manageSelectedIds?: Set<string>;
+  onManagePhotoActivate?: (id: string, meta: ManagePhotoActivateMeta) => void;
+  managePreviewId?: string | null;
+  onClearManageSelection?: () => void;
+  onDeletePhotos?: () => void;
   ready?: boolean;
 }) {
   const [view, setView] = useState<PhotoViewMode>("grid");
@@ -50,24 +63,52 @@ export function PhotoGallerySection({
     writePhotoFilterPreference(viewStorageId, active);
   }
 
+  const sortedPhotos = useMemo(() => sortPhotosNewestFirst(photos), [photos]);
+
+  // Gallery: sort only by confirmed picks (is_selected), not live in-progress
+  // selection — layout stays stable until the client clicks Update selection.
+  const confirmedSelectionKey = useMemo(
+    () =>
+      photos
+        .filter((p) => p.is_selected)
+        .map((p) => p.id)
+        .sort()
+        .join(","),
+    [photos]
+  );
+
   const { displayPhotos, selectedCount, showListDivider } = useMemo(() => {
     if (!selectedFirst) {
       return {
-        displayPhotos: photos,
+        displayPhotos: sortedPhotos,
         selectedCount: 0,
         showListDivider: false,
       };
     }
-    const { ordered, selectedCount: count } = partitionPhotosSelectedFirst(
-      photos,
-      (photo) => selectedIds.has(photo.id)
+
+    const isSelectedForSort =
+      mode === "gallery"
+        ? (photo: Photo) => photo.is_selected
+        : (photo: Photo) => selectedIds.has(photo.id);
+
+    const partitioned = partitionPhotosSelectedFirst(
+      sortedPhotos,
+      isSelectedForSort
     );
     return {
-      displayPhotos: ordered,
-      selectedCount: count,
-      showListDivider: count > 0 && count < photos.length,
+      displayPhotos: partitioned.ordered,
+      selectedCount: partitioned.selectedCount,
+      showListDivider:
+        partitioned.selectedCount > 0 &&
+        partitioned.selectedCount < sortedPhotos.length,
     };
-  }, [photos, selectedFirst, selectedIds]);
+  }, [sortedPhotos, selectedFirst, mode, selectedIds, confirmedSelectionKey]);
+
+  const layoutKey = selectedFirst
+    ? mode === "gallery"
+      ? `sf-confirmed-${confirmedSelectionKey}`
+      : `sf-${Array.from(selectedIds).sort().join(",")}`
+    : "default";
 
   if (!ready) {
     return (
@@ -85,28 +126,67 @@ export function PhotoGallerySection({
     );
   }
 
+  const manageCount = manageSelectedIds?.size ?? 0;
+  const showManageActions =
+    mode === "dashboard" &&
+    Boolean(onManagePhotoActivate && onClearManageSelection && onDeletePhotos) &&
+    manageCount > 0;
+
   return (
     <div>
-      <div className="flex justify-end items-center gap-2 px-4 md:px-8 mb-3">
-        <PhotoFilterToggle
-          active={selectedFirst}
-          onChange={handleFilterChange}
-        />
-        <PhotoViewToggle view={view} onChange={handleViewChange} />
+      <div className="flex items-center justify-between gap-3 px-4 md:px-8 mb-3">
+        <div className="flex flex-wrap items-center gap-2 min-w-0">
+          {showManageActions && (
+            <>
+              <span className="text-[11px] uppercase tracking-label text-text-secondary whitespace-nowrap">
+                {manageCount} selected
+              </span>
+              <Button
+                type="button"
+                variant="secondary"
+                className="!text-[11px] !h-8 !px-3"
+                onClick={onClearManageSelection}
+              >
+                Clear
+              </Button>
+              <Button
+                type="button"
+                className="!text-[11px] !h-8 !px-3 !bg-status-editing !border-status-editing hover:opacity-90"
+                onClick={onDeletePhotos}
+              >
+                Delete
+              </Button>
+            </>
+          )}
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <PhotoFilterToggle
+            active={selectedFirst}
+            onChange={handleFilterChange}
+          />
+          <PhotoViewToggle view={view} onChange={handleViewChange} />
+        </div>
       </div>
       {view === "grid" ? (
         <PhotoGridView
+          key={layoutKey}
           photos={displayPhotos}
           mode={mode}
           selectedIds={selectedIds}
           onToggleSelect={onToggleSelect}
+          manageSelectedIds={manageSelectedIds}
+          onManagePhotoActivate={onManagePhotoActivate}
         />
       ) : (
         <PhotoListView
+          key={layoutKey}
           photos={displayPhotos}
           mode={mode}
           selectedIds={selectedIds}
           onToggleSelect={onToggleSelect}
+          manageSelectedIds={manageSelectedIds}
+          onManagePhotoActivate={onManagePhotoActivate}
+          managePreviewId={managePreviewId}
           showSelectedDivider={showListDivider}
           selectedGroupCount={selectedCount}
         />

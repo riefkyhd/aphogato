@@ -1,4 +1,5 @@
 import "server-only";
+import { v2 as cloudinary } from "cloudinary";
 
 export interface CloudinaryResource {
   public_id: string;
@@ -196,4 +197,92 @@ export function publicIdFromUrl(url: string): string | null {
   if (match) return match[1];
   const alt = url.match(/\/image\/upload\/(?:[^/]+\/)*(.+)\.[a-z0-9]+$/i);
   return alt ? alt[1] : null;
+}
+
+function filenameWithoutExtension(filename: string): string {
+  const lastDot = filename.lastIndexOf(".");
+  if (lastDot <= 0) return filename;
+  return filename.slice(0, lastDot);
+}
+
+function ensureCloudinaryConfigured() {
+  const { cloud } = getCloudinaryAuth();
+  cloudinary.config({
+    cloud_name: cloud,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+}
+
+/**
+ * Upload an image into the project's Cloudinary folder.
+ * public_id: `[folder]/[filename-without-extension]`
+ *
+ * Sets `asset_folder` so assets appear in the Media Library folder tree
+ * (required when the product environment uses dynamic folder mode).
+ */
+export async function uploadImageToFolder(
+  folder: string,
+  fileBuffer: Buffer,
+  originalFilename: string
+): Promise<CloudinaryResource> {
+  const normalizedFolder = normalizeFolderInput(folder);
+  const baseName = filenameWithoutExtension(originalFilename);
+  if (!baseName) {
+    throw new Error("Invalid filename");
+  }
+
+  const publicId = `${normalizedFolder}/${baseName}`;
+  ensureCloudinaryConfigured();
+
+  const result = await new Promise<{
+    public_id: string;
+    secure_url: string;
+    format?: string;
+    width?: number;
+    height?: number;
+    bytes?: number;
+  }>((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        public_id: publicId,
+        asset_folder: normalizedFolder,
+        overwrite: false,
+        resource_type: "image",
+      },
+      (error, uploadResult) => {
+        if (error) reject(error);
+        else if (!uploadResult) reject(new Error("Upload failed"));
+        else resolve(uploadResult);
+      }
+    );
+    stream.end(fileBuffer);
+  });
+
+  const format = result.format ?? "jpg";
+  return {
+    public_id: result.public_id,
+    secure_url: result.secure_url,
+    filename: `${baseName}.${format}`,
+    width: result.width,
+    height: result.height,
+    bytes: result.bytes,
+    format,
+  };
+}
+
+export async function deleteCloudinaryImageByUrl(
+  cloudinaryUrl: string
+): Promise<void> {
+  const publicId = publicIdFromUrl(cloudinaryUrl);
+  if (!publicId) {
+    throw new Error("Could not determine Cloudinary public ID from URL");
+  }
+  ensureCloudinaryConfigured();
+  const result = await cloudinary.uploader.destroy(publicId, {
+    resource_type: "image",
+  });
+  if (result.result !== "ok" && result.result !== "not found") {
+    throw new Error(`Cloudinary delete failed: ${result.result}`);
+  }
 }

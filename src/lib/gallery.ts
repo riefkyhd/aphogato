@@ -26,7 +26,7 @@ export async function loadGalleryByToken(
     .from("photos")
     .select("*")
     .eq("project_id", project.id)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: false });
 
   if (photosError) {
     throw new Error(photosError.message);

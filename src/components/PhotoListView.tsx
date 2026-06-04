@@ -2,8 +2,11 @@
 
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { useLongPress } from "@/hooks/useLongPress";
 import { cn } from "@/lib/utils";
 import { listThumbUrl, previewLargeUrl } from "@/lib/cloudinaryUrls";
+import type { ManagePhotoActivateMeta } from "@/lib/managePhotoActivate";
 import type { Photo } from "@/lib/types";
 
 function formatIndex(index: number, total: number): string {
@@ -55,7 +58,19 @@ function ListCheckmark({
   );
 }
 
-function ListPreview({ photo }: { photo: Photo | null }) {
+function ListPreview({
+  photo,
+  selected,
+  onToggle,
+  selectLabel,
+  deselectLabel,
+}: {
+  photo: Photo | null;
+  selected?: boolean;
+  onToggle?: () => void;
+  selectLabel?: string;
+  deselectLabel?: string;
+}) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -73,6 +88,8 @@ function ListPreview({ photo }: { photo: Photo | null }) {
   }
 
   const src = previewLargeUrl(photo.cloudinary_url);
+  const canToggle = Boolean(onToggle);
+  const isSelected = selected ?? false;
 
   return (
     <div className="flex flex-1 min-h-[280px] lg:min-h-0 flex-col bg-bg-primary">
@@ -89,16 +106,101 @@ function ListPreview({ photo }: { photo: Photo | null }) {
           alt={photo.filename}
           className={cn(
             "max-h-full max-w-full object-contain transition-opacity",
-            loading ? "opacity-0" : "opacity-100"
+            loading ? "opacity-0" : "opacity-100",
+            isSelected && "ring-2 ring-text-primary ring-offset-2 ring-offset-bg-primary"
           )}
           onLoad={() => setLoading(false)}
           onError={() => setLoading(false)}
         />
       </div>
-      <p className="px-4 pb-4 text-[11px] uppercase tracking-label text-text-secondary text-center truncate">
-        {photo.filename}
-      </p>
+      <div className="px-4 pb-4 flex flex-col items-center gap-3">
+        <p className="w-full text-[11px] uppercase tracking-label text-text-secondary text-center truncate">
+          {photo.filename}
+        </p>
+        {canToggle && (
+          <Button
+            type="button"
+            variant={isSelected ? "secondary" : "primary"}
+            className="!text-[11px] !h-9 !px-4 w-full max-w-[280px]"
+            onClick={onToggle}
+          >
+            {isSelected
+              ? (deselectLabel ?? "Deselect")
+              : (selectLabel ?? "Select")}
+          </Button>
+        )}
+      </div>
     </div>
+  );
+}
+
+function ListRowButton({
+  ph,
+  index,
+  isPreviewing,
+  manageInteractive,
+  galleryInteractive,
+  onManagePhotoActivate,
+  setPreviewId,
+  setFocusedIndex,
+  rowRefs,
+  children,
+}: {
+  ph: Photo;
+  index: number;
+  isPreviewing: boolean;
+  manageInteractive: boolean;
+  galleryInteractive: boolean;
+  onManagePhotoActivate?: (id: string, meta: ManagePhotoActivateMeta) => void;
+  setPreviewId?: (id: string | null) => void;
+  setFocusedIndex: (index: number) => void;
+  rowRefs: React.MutableRefObject<Map<number, HTMLButtonElement>>;
+  children: React.ReactNode;
+}) {
+  const { longPressHandlers } = useLongPress(() => {
+    onManagePhotoActivate?.(ph.id, {
+      ctrlKey: false,
+      metaKey: false,
+      longPress: true,
+    });
+  });
+
+  return (
+    <button
+      type="button"
+      ref={(el) => {
+        if (el) rowRefs.current.set(index, el);
+        else rowRefs.current.delete(index);
+      }}
+      onClick={(e) => {
+        setFocusedIndex(index);
+        if (manageInteractive && onManagePhotoActivate) {
+          onManagePhotoActivate(ph.id, {
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+          });
+          return;
+        }
+        if (galleryInteractive) {
+          if (isPreviewing) {
+            setPreviewId?.(null);
+            return;
+          }
+          setPreviewId?.(ph.id);
+        }
+      }}
+      className="flex min-w-0 flex-1 items-center gap-3 text-left"
+      aria-label={
+        isPreviewing
+          ? `Collapse preview of ${ph.filename}`
+          : manageInteractive
+            ? `Preview ${ph.filename}`
+            : `Preview ${ph.filename}`
+      }
+      {...(manageInteractive ? longPressHandlers : {})}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -122,6 +224,9 @@ export function PhotoListView({
   mode,
   selectedIds,
   onToggleSelect,
+  manageSelectedIds,
+  onManagePhotoActivate,
+  managePreviewId = null,
   showSelectedDivider = false,
   selectedGroupCount = 0,
 }: {
@@ -129,18 +234,43 @@ export function PhotoListView({
   mode: "gallery" | "dashboard";
   selectedIds: Set<string>;
   onToggleSelect?: (id: string) => void;
+  manageSelectedIds?: Set<string>;
+  onManagePhotoActivate?: (id: string, meta: ManagePhotoActivateMeta) => void;
+  managePreviewId?: string | null;
   showSelectedDivider?: boolean;
   selectedGroupCount?: number;
 }) {
-  const interactive = mode === "gallery" && Boolean(onToggleSelect);
+  const galleryInteractive = mode === "gallery" && Boolean(onToggleSelect);
+  const manageInteractive =
+    mode === "dashboard" &&
+    Boolean(onManagePhotoActivate && manageSelectedIds);
+  const interactive = galleryInteractive || manageInteractive;
   const [focusedIndex, setFocusedIndex] = useState(0);
-  const [previewId, setPreviewId] = useState<string | null>(null);
+  const [galleryPreviewId, setGalleryPreviewId] = useState<string | null>(null);
+  const previewId = manageInteractive ? managePreviewId : galleryPreviewId;
+  const setPreviewId = manageInteractive ? undefined : setGalleryPreviewId;
   const listRef = useRef<HTMLDivElement>(null);
   const rowRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
 
   const previewPhoto = previewId
     ? photos.find((p) => p.id === previewId) ?? null
     : null;
+
+  const previewSelected = previewPhoto
+    ? manageInteractive
+      ? manageSelectedIds?.has(previewPhoto.id) ?? false
+      : galleryInteractive
+        ? selectedIds.has(previewPhoto.id)
+        : false
+    : false;
+
+  const previewToggle =
+    galleryInteractive && previewPhoto && onToggleSelect
+      ? () => onToggleSelect(previewPhoto.id)
+      : undefined;
+
+  const selectLabel = "Select photo";
+  const deselectLabel = "Deselect photo";
 
   const scrollRowIntoView = useCallback((index: number) => {
     const el = rowRefs.current.get(index);
@@ -149,7 +279,9 @@ export function PhotoListView({
 
   useEffect(() => {
     if (photos.length === 0) {
-      setPreviewId(null);
+      if (!manageInteractive) {
+        setGalleryPreviewId(null);
+      }
       setFocusedIndex(0);
       return;
     }
@@ -163,10 +295,14 @@ export function PhotoListView({
     if (focusedIndex >= photos.length) {
       setFocusedIndex(photos.length - 1);
     }
-    if (previewId && !photos.some((p) => p.id === previewId)) {
+    if (
+      previewId &&
+      !photos.some((p) => p.id === previewId) &&
+      setPreviewId
+    ) {
       setPreviewId(photos[focusedIndex]?.id ?? photos[0].id);
     }
-  }, [photos, focusedIndex, previewId]);
+  }, [photos, focusedIndex, previewId, setPreviewId, manageInteractive]);
 
   useEffect(() => {
     scrollRowIntoView(focusedIndex);
@@ -180,23 +316,58 @@ export function PhotoListView({
         e.preventDefault();
         setFocusedIndex((i) => {
           const next = Math.min(i + 1, photos.length - 1);
-          setPreviewId(photos[next].id);
+          const ph = photos[next];
+          if (manageInteractive && onManagePhotoActivate && ph) {
+            onManagePhotoActivate(ph.id, {
+              ctrlKey: false,
+              metaKey: false,
+              forceNavigate: true,
+            });
+          } else if (setPreviewId && ph) {
+            setPreviewId(ph.id);
+          }
           return next;
         });
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         setFocusedIndex((i) => {
           const next = Math.max(i - 1, 0);
-          setPreviewId(photos[next].id);
+          const ph = photos[next];
+          if (manageInteractive && onManagePhotoActivate && ph) {
+            onManagePhotoActivate(ph.id, {
+              ctrlKey: false,
+              metaKey: false,
+              forceNavigate: true,
+            });
+          } else if (setPreviewId && ph) {
+            setPreviewId(ph.id);
+          }
           return next;
         });
-      } else if (e.key === " " && interactive && onToggleSelect) {
+      } else if (e.key === " " && interactive) {
         e.preventDefault();
         const ph = photos[focusedIndex];
-        if (ph) onToggleSelect(ph.id);
+        if (!ph) return;
+        if (manageInteractive && onManagePhotoActivate) {
+          onManagePhotoActivate(ph.id, {
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+          });
+        } else if (galleryInteractive && onToggleSelect) {
+          onToggleSelect(ph.id);
+        }
       }
     },
-    [photos, focusedIndex, interactive, onToggleSelect]
+    [
+      photos,
+      focusedIndex,
+      interactive,
+      manageInteractive,
+      galleryInteractive,
+      onManagePhotoActivate,
+      onToggleSelect,
+      setPreviewId,
+    ]
   );
 
   if (photos.length === 0) {
@@ -217,30 +388,35 @@ export function PhotoListView({
       >
         {photos.map((ph, index) => {
           const isPreviewing = previewId === ph.id;
-          const isSelected =
-            mode === "gallery"
-              ? selectedIds.has(ph.id)
-              : ph.is_selected;
+          const isManageSelected = manageSelectedIds?.has(ph.id) ?? false;
+          const isGallerySelected =
+            mode === "gallery" && selectedIds.has(ph.id);
+          const isCheckSelected = manageInteractive
+            ? isManageSelected
+            : isGallerySelected;
 
           return (
             <Fragment key={ph.id}>
               <div
                 className={cn(
                   "flex h-[72px] items-center gap-3 px-3 border-b border-border",
-                  isPreviewing && "bg-bg-elevated"
+                  isPreviewing && "bg-bg-elevated",
+                  isManageSelected && "bg-bg-elevated/60",
+                  isGallerySelected &&
+                    !manageInteractive &&
+                    "bg-bg-elevated/40"
                 )}
               >
-                <button
-                  type="button"
-                  ref={(el) => {
-                    if (el) rowRefs.current.set(index, el);
-                    else rowRefs.current.delete(index);
-                  }}
-                  onClick={() => {
-                    setPreviewId(ph.id);
-                    setFocusedIndex(index);
-                  }}
-                  className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                <ListRowButton
+                  ph={ph}
+                  index={index}
+                  isPreviewing={isPreviewing}
+                  manageInteractive={manageInteractive}
+                  galleryInteractive={galleryInteractive}
+                  onManagePhotoActivate={onManagePhotoActivate}
+                  setPreviewId={setPreviewId}
+                  setFocusedIndex={setFocusedIndex}
+                  rowRefs={rowRefs}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -256,20 +432,39 @@ export function PhotoListView({
                     </p>
                     <p className="text-[12px] text-text-muted">
                       {formatIndex(index, photos.length)}
+                      {manageInteractive && ph.is_selected && (
+                        <span className="ml-2 text-status-editing">
+                          · Client pick
+                        </span>
+                      )}
                     </p>
                   </div>
-                </button>
-                <ListCheckmark
-                  selected={isSelected}
-                  interactive={interactive}
-                  onToggle={
-                    onToggleSelect ? () => onToggleSelect(ph.id) : undefined
-                  }
-                />
+                </ListRowButton>
+                {galleryInteractive && (
+                  <ListCheckmark
+                    selected={isCheckSelected}
+                    interactive
+                    onToggle={
+                      onToggleSelect
+                        ? () => onToggleSelect(ph.id)
+                        : undefined
+                    }
+                  />
+                )}
               </div>
               {isPreviewing && (
                 <div className="lg:hidden border-b border-border">
-                  <ListPreview photo={ph} />
+                  <ListPreview
+                    photo={ph}
+                    selected={isCheckSelected}
+                    onToggle={
+                      onToggleSelect
+                        ? () => onToggleSelect(ph.id)
+                        : undefined
+                    }
+                    selectLabel={selectLabel}
+                    deselectLabel={deselectLabel}
+                  />
                 </div>
               )}
               {showSelectedDivider &&
@@ -283,7 +478,13 @@ export function PhotoListView({
       </div>
 
       <div className="hidden lg:flex w-[60%] flex-col lg:max-h-[min(70vh,720px)]">
-        <ListPreview photo={previewPhoto} />
+        <ListPreview
+          photo={previewPhoto}
+          selected={previewSelected}
+          onToggle={previewToggle}
+          selectLabel={selectLabel}
+          deselectLabel={deselectLabel}
+        />
       </div>
     </div>
   );
