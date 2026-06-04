@@ -24,9 +24,12 @@ const STATUS_LABEL: Record<ProjectStatus, string> = {
   delivered: "Delivered",
 };
 
-function syncToastMessage(added: number, removed: number): string {
-  if (added === 0 && removed === 0) return "Already up to date";
-
+function syncToastMessage(
+  added: number,
+  removed: number,
+  newlySelected: number,
+  newlyDeselected: number
+): string {
   const parts: string[] = [];
   if (added > 0) {
     parts.push(`${added} new photo${added === 1 ? "" : "s"} added`);
@@ -34,24 +37,59 @@ function syncToastMessage(added: number, removed: number): string {
   if (removed > 0) {
     parts.push(`${removed} photo${removed === 1 ? "" : "s"} removed`);
   }
-  return parts.join(", ");
+  if (newlySelected > 0) {
+    parts.push(
+      `${newlySelected} new client pick${newlySelected === 1 ? "" : "s"}`
+    );
+  }
+  if (newlyDeselected > 0) {
+    parts.push(
+      `${newlyDeselected} client pick${newlyDeselected === 1 ? "" : "s"} removed`
+    );
+  }
+  if (parts.length === 0) return "Already up to date";
+  return parts.join(" · ");
+}
+
+function countSelectionChanges(
+  before: Photo[],
+  after: Photo[]
+): { newlySelected: number; newlyDeselected: number } {
+  const beforeSelected = new Set(
+    before.filter((p) => p.is_selected).map((p) => p.id)
+  );
+  const afterSelected = new Set(
+    after.filter((p) => p.is_selected).map((p) => p.id)
+  );
+  let newlySelected = 0;
+  let newlyDeselected = 0;
+  for (const id of afterSelected) {
+    if (!beforeSelected.has(id)) newlySelected++;
+  }
+  for (const id of beforeSelected) {
+    if (!afterSelected.has(id)) newlyDeselected++;
+  }
+  return { newlySelected, newlyDeselected };
 }
 
 export function ProjectActions({
   projectId,
   galleryToken,
   status,
-  selectedFilenames,
+  photos,
   onPhotosSynced,
   upload,
 }: {
   projectId: string;
   galleryToken: string;
   status: ProjectStatus;
-  selectedFilenames: string[];
+  photos: Photo[];
   onPhotosSynced: (photos: Photo[]) => void;
   upload: ProjectPhotoUpload;
 }) {
+  const selectedFilenames = photos
+    .filter((ph) => ph.is_selected)
+    .map((ph) => ph.filename);
   const router = useRouter();
   const [statusBusy, setStatusBusy] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -78,6 +116,7 @@ export function ProjectActions({
   }
 
   async function syncGallery() {
+    const photosBeforeSync = photos;
     setSyncing(true);
     try {
       const res = await fetch(`/api/projects/${projectId}/sync`, {
@@ -90,9 +129,19 @@ export function ProjectActions({
       }
       const added = json.added ?? 0;
       const removed = json.removed ?? 0;
-      toast.success(syncToastMessage(added, removed));
+      const syncedPhotos = Array.isArray(json.photos)
+        ? (json.photos as Photo[])
+        : photosBeforeSync;
+      const { newlySelected, newlyDeselected } = countSelectionChanges(
+        photosBeforeSync,
+        syncedPhotos
+      );
+      toast.success(
+        syncToastMessage(added, removed, newlySelected, newlyDeselected)
+      );
       if (Array.isArray(json.photos)) {
-        onPhotosSynced(json.photos as Photo[]);
+        onPhotosSynced(syncedPhotos);
+        router.refresh();
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to sync gallery");

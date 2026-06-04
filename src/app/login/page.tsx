@@ -1,8 +1,9 @@
 import { Suspense } from "react";
+import { Logo } from "@/components/Logo";
 import { LoginForm } from "./LoginForm";
 
 export const metadata = {
-  title: "Sign in — Aphogato",
+  title: "Sign in — Gallery of Muhammad Hadid",
 };
 
 export default function LoginPage() {
@@ -10,11 +11,11 @@ export default function LoginPage() {
     <main className="min-h-screen flex items-center justify-center bg-bg-primary px-6">
       <div className="w-full max-w-[360px]">
         <div className="text-center mb-12">
-          <div className="text-4xl font-light tracking-logoXl text-text-primary">
-            MH
+          <div className="flex justify-center">
+            <Logo size="lg" priority />
           </div>
-          <p className="mt-4 text-[13px] text-text-secondary">
-            a photography journey
+          <p className="mt-6 text-[13px] text-text-secondary">
+            Gallery of Muhammad Hadid
           </p>
         </div>
         <Suspense fallback={null}>

@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
-  title: "Aphogato — a photography journey",
-  description: "Photographer client selection gallery",
+  title: "Gallery of Muhammad Hadid",
+  description: "Gallery of Muhammad Hadid — client photo selection",
 };
 
 export default function RootLayout({
@@ -28,6 +29,7 @@ export default function RootLayout({
             },
           }}
         />
+        <Analytics />
       </body>
     </html>
   );

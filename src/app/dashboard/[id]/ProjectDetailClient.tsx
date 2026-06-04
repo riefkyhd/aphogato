@@ -199,9 +199,7 @@ export function ProjectDetailClient({
             projectId={project.id}
             galleryToken={project.gallery_token}
             status={project.status as ProjectStatus}
-            selectedFilenames={photos
-              .filter((ph) => ph.is_selected)
-              .map((ph) => ph.filename)}
+            photos={photos}
             onPhotosSynced={setPhotosSorted}
             upload={upload}
           />

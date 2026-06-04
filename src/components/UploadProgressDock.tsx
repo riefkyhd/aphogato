@@ -30,62 +30,69 @@ export function UploadProgressDock({
 
       <div
         className={cn(
-          "fixed z-[101] border border-border bg-bg-elevated shadow-lg transition-all duration-200",
+          "fixed z-[101] border border-border bg-bg-elevated shadow-2xl transition-all duration-200",
           expanded
-            ? "bottom-6 right-6 left-6 sm:left-auto sm:w-[400px] rounded-lg p-4"
-            : "bottom-4 right-4 w-[min(320px,calc(100vw-2rem))] rounded-md"
+            ? "bottom-6 right-6 left-6 sm:left-auto sm:w-[min(440px,calc(100vw-3rem))] rounded-lg px-5 py-5"
+            : "bottom-6 right-6 w-[min(380px,calc(100vw-2rem))] rounded-lg px-5 py-4"
         )}
         role="status"
         aria-live="polite"
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button
             type="button"
-            className="flex min-w-0 flex-1 items-center gap-2 text-left p-2 -m-2"
+            className="flex min-w-0 flex-1 items-center gap-3 text-left"
             onClick={() => setExpanded((v) => !v)}
             aria-expanded={expanded}
           >
-            <span className="text-[11px] uppercase tracking-label text-text-primary truncate">
+            <span className="text-[13px] font-medium uppercase tracking-label text-text-primary truncate">
               Uploading {progress.currentIndex} of {progress.total}
             </span>
-            <span className="shrink-0 text-[11px] tabular-nums text-text-secondary">
+            <span className="shrink-0 text-[13px] tabular-nums text-text-secondary">
               {overall}%
             </span>
             {expanded ? (
-              <ChevronDown className="h-4 w-4 shrink-0 text-text-muted" />
+              <ChevronDown className="h-5 w-5 shrink-0 text-text-muted" />
             ) : (
-              <ChevronUp className="h-4 w-4 shrink-0 text-text-muted" />
+              <ChevronUp className="h-5 w-5 shrink-0 text-text-muted" />
             )}
           </button>
           {expanded && (
             <button
               type="button"
-              className="p-1.5 text-text-muted hover:text-text-primary"
+              className="p-2 -mr-1 text-text-muted hover:text-text-primary rounded-sm hover:bg-bg-primary/60 transition-colors"
               aria-label="Close upload details"
               onClick={() => setExpanded(false)}
             >
-              <X className="h-4 w-4" />
+              <X className="h-5 w-5" />
             </button>
           )}
         </div>
 
         {!expanded && (
-          <div className="px-2 pb-2">
-            <div className="h-1 w-full bg-bg-primary overflow-hidden">
+          <div className="mt-4 space-y-3">
+            <div className="h-2 w-full bg-bg-primary overflow-hidden rounded-sm">
               <div
                 className="h-full bg-text-primary transition-[width] duration-150"
                 style={{ width: `${overall}%` }}
               />
             </div>
-            <p className="mt-1.5 text-[11px] text-text-muted truncate">
+            <p className="text-[13px] text-text-secondary truncate leading-snug">
               {progress.fileName}
+              <span className="text-text-muted ml-2 tabular-nums">
+                {progress.filePercent}%
+              </span>
             </p>
           </div>
         )}
 
         {expanded && (
-          <div className="mt-3">
-            <PhotoUploadProgress progress={progress} className="border-0 p-0" />
+          <div className="mt-5">
+            <PhotoUploadProgress
+              progress={progress}
+              className="border-0 bg-transparent p-0"
+              variant="dock"
+            />
           </div>
         )}
       </div>
