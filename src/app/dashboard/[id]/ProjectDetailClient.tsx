@@ -1,5 +1,6 @@
 "use client";
 
+import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { BackNavLink } from "@/components/BackNavLink";
@@ -12,7 +13,6 @@ import { PhotoDropHint } from "@/components/PhotoDropHint";
 import { PhotoGallerySection } from "@/components/PhotoGallerySection";
 import { StatusDot, type ProjectStatus } from "@/components/StatusDot";
 import { UploadProgressDock } from "@/components/UploadProgressDock";
-import { Button } from "@/components/ui/Button";
 import { usePhotoDropZone } from "@/hooks/usePhotoDropZone";
 import { useManagePhotoActivation } from "@/hooks/useManagePhotoActivation";
 import { usePhotoManageSelection } from "@/hooks/usePhotoManageSelection";
@@ -20,22 +20,36 @@ import { useProjectPhotoUpload } from "@/hooks/useProjectPhotoUpload";
 import { useSyncServerPhotos } from "@/hooks/useSyncServerPhotos";
 import { sortPhotosNewestFirst } from "@/lib/sortPhotos";
 import { ProjectActions } from "./ProjectActions";
+import { LinkedExpensesBlock } from "@/components/finance/LinkedExpensesBlock";
+import type {
+  FinanceEventOption,
+  FinanceProjectOption,
+} from "@/lib/finance/financeOptions";
 import { ProjectMaxSelection } from "./ProjectMaxSelection";
+import { normalizeExpense } from "@/lib/finance/normalize";
+import { filterExpensesForProject } from "@/lib/finance/projectExpenses";
 import {
   isOverSelectionLimit,
   normalizeMaxPhotoSelection,
 } from "@/lib/photoSelectionLimit";
-import type { Photo, Project } from "@/lib/types";
+import type { ExpenseEntry, Photo, Project } from "@/lib/types";
 
 export function ProjectDetailClient({
   project,
   initialPhotos,
+  initialProjectExpenses,
+  financeEvents,
+  financeProjects,
 }: {
   project: Project;
   initialPhotos: Photo[];
+  initialProjectExpenses: ExpenseEntry[];
+  financeEvents: FinanceEventOption[];
+  financeProjects: FinanceProjectOption[];
 }) {
   const router = useRouter();
   const [projectState, setProjectState] = useState(project);
+  const [projectExpenses, setProjectExpenses] = useState(initialProjectExpenses);
   const [photos, setPhotos] = useState(() =>
     sortPhotosNewestFirst(initialPhotos)
   );
@@ -72,10 +86,6 @@ export function ProjectDetailClient({
     onDropFiles: handleDropFiles,
   });
 
-  const maxSelection = normalizeMaxPhotoSelection(
-    projectState.max_photo_selection
-  );
-
   const clientSelectedCount = useMemo(
     () => photos.filter((ph) => ph.is_selected).length,
     [photos]
@@ -83,8 +93,31 @@ export function ProjectDetailClient({
 
   const clientOverLimit = isOverSelectionLimit(
     clientSelectedCount,
-    maxSelection
+    normalizeMaxPhotoSelection(projectState.max_photo_selection)
   );
+
+  const eventIdsForProject = useMemo(() => {
+    const ids = new Set<string>();
+    for (const ev of financeEvents) {
+      if (ev.project_id === projectState.id) ids.add(ev.id);
+    }
+    return ids;
+  }, [financeEvents, projectState.id]);
+
+  const refreshProjectExpenses = useCallback(async () => {
+    try {
+      const res = await fetch("/api/finance/expenses");
+      const json = await res.json();
+      if (!res.ok || !Array.isArray(json)) return;
+      const all = json.map((row: ExpenseEntry) => normalizeExpense(row));
+      setProjectExpenses(
+        filterExpensesForProject(all, projectState.id, eventIdsForProject)
+      );
+      router.refresh();
+    } catch {
+      // ignore
+    }
+  }, [projectState.id, eventIdsForProject, router]);
 
   const clientSelectedIds = useMemo(
     () => new Set(photos.filter((ph) => ph.is_selected).map((ph) => ph.id)),
@@ -185,7 +218,7 @@ export function ProjectDetailClient({
 
       <DeleteProjectDialog
         open={deleteProjectOpen}
-        projectName={project.name}
+        projectName={projectState.name}
         photoCount={photos.length}
         deleting={deletingProject}
         onClose={() => setDeleteProjectOpen(false)}
@@ -193,81 +226,70 @@ export function ProjectDetailClient({
       />
 
       <main className="px-4 sm:px-6 md:px-10 py-6 sm:py-10">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-          <BackNavLink
-            href="/dashboard"
-            className="inline-flex items-center gap-2 text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
-            All projects
-          </BackNavLink>
-          <Button
-            type="button"
-            variant="secondary"
-            className="!text-[11px] !text-status-editing !border-status-editing/50 hover:!border-status-editing"
-            onClick={() => setDeleteProjectOpen(true)}
-          >
-            Delete project
-          </Button>
-        </div>
+        <BackNavLink
+          href="/dashboard"
+          className="inline-flex items-center gap-2 text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors mb-6"
+        >
+          <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
+          All projects
+        </BackNavLink>
 
-        <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between mb-10">
-          <div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-light tracking-[0.05em] uppercase break-words">
-              {projectState.name}
-            </h1>
-            <p className="mt-2 text-text-secondary text-[14px]">
-              {projectState.client_name ?? "—"}
-            </p>
-            <div className="mt-3">
-              <StatusDot status={projectState.status as ProjectStatus} />
+        <header className="border-b border-border pb-6 mb-6">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-light tracking-[0.05em] uppercase break-words">
+                {projectState.name}
+              </h1>
+              <p className="mt-2 text-text-secondary text-[14px]">
+                {projectState.client_name ?? "—"}
+              </p>
+              <div className="mt-3">
+                <StatusDot status={projectState.status as ProjectStatus} />
+              </div>
             </div>
+            <ProjectActions
+              projectId={projectState.id}
+              galleryToken={projectState.gallery_token}
+              status={projectState.status as ProjectStatus}
+              photos={photos}
+              onPhotosSynced={setPhotosSorted}
+              onDeleteProject={() => setDeleteProjectOpen(true)}
+              upload={upload}
+            />
           </div>
-          <ProjectActions
-            projectId={projectState.id}
-            galleryToken={projectState.gallery_token}
-            status={projectState.status as ProjectStatus}
-            photos={photos}
-            onPhotosSynced={setPhotosSorted}
-            upload={upload}
-          />
-        </div>
 
-        <div className="mb-6 max-w-md">
-          <ProjectMaxSelection
-            project={projectState}
-            clientSelectedCount={clientSelectedCount}
-            onUpdated={setProjectState}
-          />
-        </div>
+          <div className="mt-6 space-y-4">
+            <ProjectMaxSelection
+              project={projectState}
+              clientSelectedCount={clientSelectedCount}
+              photoCount={photos.length}
+              clientOverLimit={clientOverLimit}
+              onUpdated={setProjectState}
+            />
+            <LinkedExpensesBlock
+              expenses={projectExpenses}
+              events={financeEvents}
+              projects={financeProjects}
+              defaultProjectId={projectState.id}
+              defaultDate={format(new Date(), "yyyy-MM-dd")}
+              onChanged={() => void refreshProjectExpenses()}
+              compact
+            />
+          </div>
+        </header>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
-          <p
-            className={
-              clientOverLimit
-                ? "text-[11px] uppercase tracking-label text-status-editing"
-                : "text-[11px] uppercase tracking-label text-text-secondary"
-            }
-          >
-            {clientSelectedCount} / {maxSelection} client picks
-            {photos.length > 0 ? ` · ${photos.length} in gallery` : ""}
-            {clientOverLimit ? " · over limit" : ""}
+        {photos.length > 0 && (
+          <p className="mb-4 text-[11px] text-text-muted leading-relaxed max-w-3xl">
+            <span className="md:hidden">
+              Tap or long-press photos to multi-select for delete. Esc clears
+              selection.
+            </span>
+            <span className="hidden md:inline">
+              Click to select · drag to box-select · Ctrl+click or long-press for
+              multi-select · Esc to clear.
+            </span>
           </p>
-          {photos.length > 0 && (
-            <>
-              <p className="text-[11px] text-text-muted md:hidden">
-                Tap to select multiple · Hold a photo, then tap others · Clear
-                with the toolbar or Esc
-              </p>
-              <p className="hidden md:block text-[11px] text-text-muted">
-                Grid: click to select · click outside to clear · drag on photos or
-                gaps to box-select (updates live) · Ctrl+drag adds to selection ·
-                Ctrl+click or long-press for multi-select · Ctrl+A select all · Esc
-                clear
-              </p>
-            </>
-          )}
-        </div>
+        )}
 
         <div
           className="select-none"

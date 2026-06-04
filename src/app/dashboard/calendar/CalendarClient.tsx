@@ -14,8 +14,11 @@ import {
 } from "@/components/calendar/EventDetailPanel";
 import { EventFormModal } from "@/components/calendar/EventFormModal";
 import { Button } from "@/components/ui/Button";
+import type { FinanceEventOption } from "@/lib/finance/financeOptions";
 import { parseMoneyInput } from "@/lib/finance/formatMoney";
-import type { CalendarEvent, IncomeEntry } from "@/lib/types";
+import { filterExpensesForEvent } from "@/lib/finance/projectExpenses";
+import { normalizeExpense } from "@/lib/finance/normalize";
+import type { CalendarEvent, ExpenseEntry, IncomeEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type ViewMode = "month" | "list";
@@ -24,17 +27,20 @@ export function CalendarClient({
   initialEvents,
   projects,
   initialIncomeByEventId,
+  initialExpenses,
   isGoogleConnected,
 }: {
   initialEvents: CalendarEvent[];
   projects: CalendarProject[];
   initialIncomeByEventId: Record<string, IncomeEntry>;
+  initialExpenses: ExpenseEntry[];
   isGoogleConnected: boolean;
 }) {
   const [events, setEvents] = useState<CalendarEvent[]>(initialEvents);
   const [incomeByEventId, setIncomeByEventId] = useState(
     initialIncomeByEventId
   );
+  const [expenses, setExpenses] = useState(initialExpenses);
   const [view, setView] = useState<ViewMode>("month");
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
   const [panelEvent, setPanelEvent] = useState<CalendarEvent | null>(null);
@@ -182,9 +188,35 @@ export function CalendarClient({
     [editingEvent, saveEventIncome]
   );
 
+  const financeEvents: FinanceEventOption[] = useMemo(
+    () =>
+      events.map((e) => ({
+        id: e.id,
+        title: e.title,
+        shoot_date: e.shoot_date,
+        client_name: e.client_name,
+        project_id: e.project_id,
+      })),
+    [events]
+  );
+
+  const refreshExpenses = useCallback(async () => {
+    try {
+      const res = await fetch("/api/finance/expenses");
+      const json = await res.json();
+      if (!res.ok || !Array.isArray(json)) return;
+      setExpenses(json.map((row: ExpenseEntry) => normalizeExpense(row)));
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const panelIncome = panelEvent
     ? incomeByEventId[panelEvent.id] ?? null
     : null;
+  const panelExpenses = panelEvent
+    ? filterExpensesForEvent(expenses, panelEvent.id)
+    : [];
   const editIncomeAmount = editingEvent
     ? incomeByEventId[editingEvent.id]?.amount != null
       ? String(incomeByEventId[editingEvent.id]!.amount)
@@ -387,6 +419,10 @@ export function CalendarClient({
           projects={projects}
           isGoogleConnected={isGoogleConnected}
           income={panelIncome}
+          eventExpenses={panelExpenses}
+          financeEvents={financeEvents}
+          financeProjects={projects}
+          onExpensesChanged={() => void refreshExpenses()}
           open={panelOpen}
           onEdit={openEditEvent}
           onDelete={requestDelete}

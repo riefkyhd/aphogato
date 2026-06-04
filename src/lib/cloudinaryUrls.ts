@@ -19,6 +19,11 @@ export function masonryImageUrl(src: string, width = 800, quality = 70) {
   return cloudinaryTransformUrl(src, `w_${width},q_${quality},f_auto`);
 }
 
+/** Client gallery grid — width cap, natural aspect ratio (no crop). */
+export function galleryGridImageUrl(src: string) {
+  return cloudinaryTransformUrl(src, "w_900,c_limit,q_75,f_auto");
+}
+
 export function listThumbUrl(src: string) {
   return cloudinaryTransformUrl(src, "w_120,h_120,c_fill,q_60,f_auto");
 }

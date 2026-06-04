@@ -6,25 +6,28 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { ExpenseFormModal } from "@/components/finance/ExpenseFormModal";
+import type {
+  FinanceEventOption,
+  FinanceProjectOption,
+} from "@/lib/finance/financeOptions";
+import { saveExpenseApi } from "@/lib/finance/saveExpenseApi";
 import {
-  EXPENSE_CATEGORIES,
   EXPENSE_CATEGORY_LABELS,
   type ExpenseCategory,
 } from "@/lib/finance/constants";
 import { formatMoney } from "@/lib/finance/formatMoney";
+import {
+  formatExpenseEntryLinks,
+  formatExpensePrimary,
+} from "@/lib/finance/linkLabels";
 import { filterEntriesByMonth } from "@/lib/finance/summary";
 import type {
-  CalendarEvent,
   ExpenseEntry,
   FinanceSummary,
   IncomeEntry,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
-
-type CalendarEventOption = Pick<
-  CalendarEvent,
-  "id" | "title" | "shoot_date" | "client_name"
->;
 
 const MONTH_LABELS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -37,12 +40,14 @@ export function FinanceClient({
   initialIncome,
   initialExpenses,
   events,
+  projects,
 }: {
   initialYear: number;
   initialSummary: FinanceSummary;
   initialIncome: IncomeEntry[];
   initialExpenses: ExpenseEntry[];
-  events: CalendarEventOption[];
+  events: FinanceEventOption[];
+  projects: FinanceProjectOption[];
 }) {
   const [year, setYear] = useState(initialYear);
   const [month, setMonth] = useState<number | null>(new Date().getMonth() + 1);
@@ -105,6 +110,10 @@ export function FinanceClient({
   const eventById = useMemo(
     () => new Map(events.map((e) => [e.id, e])),
     [events]
+  );
+  const projectById = useMemo(
+    () => new Map(projects.map((p) => [p.id, p])),
+    [projects]
   );
 
   return (
@@ -248,11 +257,9 @@ export function FinanceClient({
               id: row.id,
               date: row.entry_date,
               amount: row.amount,
-              primary:
-                row.description ??
-                EXPENSE_CATEGORY_LABELS[row.category as ExpenseCategory] ??
-                row.category,
+              primary: formatExpensePrimary(row),
               secondary:
+                formatExpenseEntryLinks(row, eventById, projectById) ??
                 EXPENSE_CATEGORY_LABELS[row.category as ExpenseCategory],
               onEdit: () => {
                 setEditingExpense(row);
@@ -318,6 +325,7 @@ export function FinanceClient({
         open={expenseModal}
         entry={editingExpense}
         events={events}
+        projects={projects}
         defaultDate={
           month
             ? `${year}-${String(month).padStart(2, "0")}-01`
@@ -328,29 +336,30 @@ export function FinanceClient({
           setExpenseModal(false);
           setEditingExpense(null);
         }}
-        onSave={async (payload) => {
+        onSave={async (payload, action) => {
           setSaving(true);
-          try {
-            const url = editingExpense
-              ? `/api/finance/expenses/${editingExpense.id}`
-              : "/api/finance/expenses";
-            const res = await fetch(url, {
-              method: editingExpense ? "PATCH" : "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload),
-            });
-            const json = await res.json();
-            if (!res.ok) {
-              toast.error(json.error ?? "Failed to save");
-              return;
-            }
-            toast.success(editingExpense ? "Expense updated" : "Expense added");
+          const result = await saveExpenseApi(
+            payload,
+            editingExpense?.id
+          );
+          setSaving(false);
+
+          if (!result.ok) {
+            toast.error(result.error);
+            return false;
+          }
+
+          toast.success(
+            editingExpense ? "Expense updated" : "Expense added"
+          );
+          void reload(year);
+
+          if (editingExpense || action === "close") {
             setExpenseModal(false);
             setEditingExpense(null);
-            void reload(year);
-          } finally {
-            setSaving(false);
           }
+
+          return true;
         }}
       />
     </main>
@@ -473,7 +482,7 @@ function IncomeFormModal({
 }: {
   open: boolean;
   entry: IncomeEntry | null;
-  events: CalendarEventOption[];
+  events: FinanceEventOption[];
   defaultDate: string;
   saving: boolean;
   onClose: () => void;
@@ -543,121 +552,6 @@ function IncomeFormModal({
                 setEntryDate(ev.shoot_date);
                 if (ev.client_name) setClientName(ev.client_name);
               }
-            }}
-          >
-            <option value="">None</option>
-            {events.map((ev) => (
-              <option key={ev.id} value={ev.id}>
-                {ev.title} ({ev.shoot_date})
-              </option>
-            ))}
-          </select>
-        </div>
-        <Field label="Notes" value={notes} onChange={setNotes} />
-        <div className="flex gap-2 pt-2">
-          <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" className="flex-1" loading={saving}>
-            Save
-          </Button>
-        </div>
-      </form>
-    </ModalOverlay>
-  );
-}
-
-function ExpenseFormModal({
-  open,
-  entry,
-  events,
-  defaultDate,
-  saving,
-  onClose,
-  onSave,
-}: {
-  open: boolean;
-  entry: ExpenseEntry | null;
-  events: CalendarEventOption[];
-  defaultDate: string;
-  saving: boolean;
-  onClose: () => void;
-  onSave: (payload: Record<string, unknown>) => void;
-}) {
-  const [amount, setAmount] = useState("");
-  const [entryDate, setEntryDate] = useState(defaultDate);
-  const [category, setCategory] = useState<ExpenseCategory>("fuel");
-  const [description, setDescription] = useState("");
-  const [eventId, setEventId] = useState("");
-  const [notes, setNotes] = useState("");
-
-  useEffect(() => {
-    if (!open) return;
-    if (entry) {
-      setAmount(String(entry.amount));
-      setEntryDate(entry.entry_date);
-      setCategory(entry.category as ExpenseCategory);
-      setDescription(entry.description ?? "");
-      setEventId(entry.event_id ?? "");
-      setNotes(entry.notes ?? "");
-    } else {
-      setAmount("");
-      setEntryDate(defaultDate);
-      setCategory("fuel");
-      setDescription("");
-      setEventId("");
-      setNotes("");
-    }
-  }, [open, entry, defaultDate]);
-
-  if (!open) return null;
-
-  return (
-    <ModalOverlay onClose={onClose}>
-      <h2 className="text-lg font-light tracking-[0.05em] uppercase mb-4">
-        {entry ? "Edit expense" : "Add expense"}
-      </h2>
-      <form
-        className="space-y-4"
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSave({
-            amount: Number(amount.replace(/[^\d.]/g, "")),
-            entry_date: entryDate,
-            category,
-            description: description || null,
-            event_id: eventId || null,
-            notes: notes || null,
-          });
-        }}
-      >
-        <Field label="Amount (IDR)" value={amount} onChange={setAmount} />
-        <Field label="Date" value={entryDate} onChange={setEntryDate} type="date" />
-        <div>
-          <Label>Category</Label>
-          <select
-            className={selectClass}
-            value={category}
-            onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
-          >
-            {EXPENSE_CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {EXPENSE_CATEGORY_LABELS[c]}
-              </option>
-            ))}
-          </select>
-        </div>
-        <Field label="Description" value={description} onChange={setDescription} />
-        <div>
-          <Label>Calendar event (optional)</Label>
-          <select
-            className={selectClass}
-            value={eventId}
-            onChange={(e) => {
-              const id = e.target.value;
-              setEventId(id);
-              const ev = events.find((x) => x.id === id);
-              if (ev) setEntryDate(ev.shoot_date);
             }}
           >
             <option value="">None</option>

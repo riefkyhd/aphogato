@@ -60,6 +60,7 @@ export interface IncomeEntry {
 export interface ExpenseEntry {
   id: string;
   event_id: string | null;
+  project_id: string | null;
   entry_date: string;
   amount: number;
   currency: string;

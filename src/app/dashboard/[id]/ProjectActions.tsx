@@ -23,6 +23,8 @@ const STATUS_LABEL: Record<ProjectStatus, string> = {
   delivered: "Delivered",
 };
 
+const actionBtnClass = "!text-[11px] !px-3 !py-2 shrink-0";
+
 function syncToastMessage(
   added: number,
   removed: number,
@@ -77,6 +79,7 @@ export function ProjectActions({
   status,
   photos,
   onPhotosSynced,
+  onDeleteProject,
   upload,
 }: {
   projectId: string;
@@ -84,6 +87,7 @@ export function ProjectActions({
   status: ProjectStatus;
   photos: Photo[];
   onPhotosSynced: (photos: Photo[]) => void;
+  onDeleteProject: () => void;
   upload: ProjectPhotoUpload;
 }) {
   const selectedFilenames = photos
@@ -174,40 +178,54 @@ export function ProjectActions({
   const nextStatus = NEXT_STATUS[status];
 
   return (
-    <div className="grid grid-cols-2 gap-2 w-full sm:flex sm:flex-wrap sm:w-auto sm:items-start sm:gap-3">
-      <div className="col-span-2 w-full">
-        <PhotoUploadButton upload={upload} />
+    <div className="flex flex-col gap-2 w-full lg:w-auto lg:max-w-xl">
+      <div className="flex flex-wrap items-center gap-2 justify-start lg:justify-end">
+        <PhotoUploadButton upload={upload} className={actionBtnClass} />
+        {nextStatus && (
+          <Button
+            onClick={advanceStatus}
+            loading={statusBusy}
+            disabled={statusBusy}
+            className={actionBtnClass}
+          >
+            {statusBusy ? "Updating…" : STATUS_LABEL[status]}
+          </Button>
+        )}
       </div>
-      <Button variant="secondary" onClick={copyLink} className="w-full sm:w-auto">
-        Copy link
-      </Button>
-      <Button
-        variant="secondary"
-        onClick={downloadList}
-        disabled={selectedFilenames.length === 0}
-        className="w-full sm:w-auto"
-      >
-        Download list
-      </Button>
-      <Button
-        variant="secondary"
-        onClick={syncGallery}
-        loading={syncing}
-        disabled={syncing}
-        className="w-full sm:w-auto"
-      >
-        {syncing ? "Syncing…" : "Sync gallery"}
-      </Button>
-      {nextStatus && (
+      <div className="flex flex-wrap items-center gap-2 justify-start lg:justify-end">
         <Button
-          onClick={advanceStatus}
-          loading={statusBusy}
-          disabled={statusBusy}
-          className="col-span-2 w-full sm:col-span-1 sm:w-auto"
+          variant="secondary"
+          onClick={copyLink}
+          className={actionBtnClass}
         >
-          {statusBusy ? "Updating…" : STATUS_LABEL[status]}
+          Copy link
         </Button>
-      )}
+        <Button
+          variant="secondary"
+          onClick={downloadList}
+          disabled={selectedFilenames.length === 0}
+          className={actionBtnClass}
+        >
+          Download list
+        </Button>
+        <Button
+          variant="secondary"
+          onClick={syncGallery}
+          loading={syncing}
+          disabled={syncing}
+          className={actionBtnClass}
+        >
+          {syncing ? "Syncing…" : "Sync gallery"}
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={onDeleteProject}
+          className={`${actionBtnClass} !text-status-editing !border-status-editing/40 hover:!border-status-editing`}
+        >
+          Delete project
+        </Button>
+      </div>
     </div>
   );
 }

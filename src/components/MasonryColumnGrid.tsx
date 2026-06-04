@@ -10,13 +10,15 @@ export function MasonryColumnGrid<T>({
   renderItem,
   getKey,
   className,
+  layoutMode = "dashboard",
 }: {
   items: T[];
   renderItem: (item: T) => React.ReactNode;
   getKey: (item: T) => string;
   className?: string;
+  layoutMode?: "gallery" | "dashboard";
 }) {
-  const columnCount = useColumnCount();
+  const columnCount = useColumnCount(layoutMode);
   const columns = useMemo(
     () => distributeRoundRobin(items, columnCount),
     [items, columnCount]

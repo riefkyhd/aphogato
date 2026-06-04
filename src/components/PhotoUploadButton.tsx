@@ -4,14 +4,21 @@ import { useRef } from "react";
 import { Upload } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { IMAGE_UPLOAD_ACCEPT } from "@/lib/imageUploadFiles";
+import { cn } from "@/lib/utils";
 import type { ProjectPhotoUpload } from "@/hooks/useProjectPhotoUpload";
 
-export function PhotoUploadButton({ upload }: { upload: ProjectPhotoUpload }) {
+export function PhotoUploadButton({
+  upload,
+  className,
+}: {
+  upload: ProjectPhotoUpload;
+  className?: string;
+}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const { uploading, uploadFiles } = upload;
 
   return (
-    <div className="flex flex-col items-stretch sm:items-end gap-2 w-full">
+    <>
       <input
         ref={inputRef}
         type="file"
@@ -25,15 +32,14 @@ export function PhotoUploadButton({ upload }: { upload: ProjectPhotoUpload }) {
       />
       <Button
         type="button"
-        variant="secondary"
         loading={uploading}
         disabled={uploading}
-        className="w-full sm:w-auto"
+        className={cn(className)}
         onClick={() => inputRef.current?.click()}
       >
         {!uploading && <Upload className="h-3.5 w-3.5 shrink-0" aria-hidden />}
         {uploading ? "Uploading…" : "Upload photos"}
       </Button>
-    </div>
+    </>
   );
 }

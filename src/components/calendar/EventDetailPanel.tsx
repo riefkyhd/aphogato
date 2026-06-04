@@ -10,8 +10,13 @@ import { EventStatusDot } from "@/components/calendar/EventStatusDot";
 import { ShootTypeBadge } from "@/components/calendar/ShootTypeBadge";
 import { Button } from "@/components/ui/Button";
 import { formatEventTimeRange } from "@/lib/calendar/calendarHelpers";
+import { LinkedExpensesBlock } from "@/components/finance/LinkedExpensesBlock";
+import type {
+  FinanceEventOption,
+  FinanceProjectOption,
+} from "@/lib/finance/financeOptions";
 import { formatMoney } from "@/lib/finance/formatMoney";
-import type { CalendarEvent, IncomeEntry } from "@/lib/types";
+import type { CalendarEvent, ExpenseEntry, IncomeEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const DISMISS_DRAG_PX = 72;
@@ -26,6 +31,10 @@ export function EventDetailPanel({
   projects,
   isGoogleConnected,
   income,
+  eventExpenses,
+  financeEvents,
+  financeProjects,
+  onExpensesChanged,
   open,
   onEdit,
   onDelete,
@@ -35,6 +44,10 @@ export function EventDetailPanel({
   projects: CalendarProject[];
   isGoogleConnected: boolean;
   income: IncomeEntry | null;
+  eventExpenses: ExpenseEntry[];
+  financeEvents: FinanceEventOption[];
+  financeProjects: FinanceProjectOption[];
+  onExpensesChanged: () => void;
   open: boolean;
   onEdit: () => void;
   onDelete: () => void;
@@ -302,6 +315,18 @@ export function EventDetailPanel({
                 </p>
               )}
             </div>
+
+            {event && (
+              <LinkedExpensesBlock
+                expenses={eventExpenses}
+                events={financeEvents}
+                projects={financeProjects}
+                defaultEventId={event.id}
+                defaultProjectId={event.project_id ?? ""}
+                defaultDate={event.shoot_date}
+                onChanged={onExpensesChanged}
+              />
+            )}
 
             <div className="border-t border-border pt-4 mt-4">
               <p className="text-[11px] uppercase tracking-label text-text-muted mb-2">

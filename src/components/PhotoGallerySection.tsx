@@ -136,6 +136,26 @@ export function PhotoGallerySection({
     Boolean(onManagePhotoActivate && onClearManageSelection && onDeletePhotos) &&
     manageCount > 0;
 
+  const isGallery = mode === "gallery";
+  /** Client gallery scrolls with the page; dashboard keeps a bounded panel. */
+  const viewportClass = isGallery
+    ? "relative"
+    : "relative h-[min(65dvh,720px)] min-h-[280px] sm:min-h-[320px]";
+  const gridLayerClass = isGallery
+    ? view === "grid"
+      ? "block"
+      : "hidden"
+    : view === "grid"
+      ? "absolute inset-0 overflow-y-auto"
+      : "absolute inset-0 overflow-hidden invisible pointer-events-none";
+  const listLayerClass = isGallery
+    ? view === "list"
+      ? "flex flex-col min-h-[calc(100dvh-11.5rem)] max-h-[calc(100dvh-11.5rem)]"
+      : "hidden"
+    : view === "list"
+      ? "absolute inset-0 flex flex-col overflow-hidden"
+      : "absolute inset-0 flex flex-col overflow-hidden invisible pointer-events-none";
+
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 px-3 sm:px-4 md:px-8 mb-3">
@@ -171,19 +191,8 @@ export function PhotoGallerySection({
           <PhotoViewToggle view={view} onChange={handleViewChange} />
         </div>
       </div>
-      <div
-        key={layoutKey}
-        className="relative h-[min(65dvh,720px)] min-h-[280px] sm:min-h-[320px]"
-      >
-        <div
-          data-photo-grid-scroll
-          className={
-            view === "grid"
-              ? "absolute inset-0 overflow-y-auto"
-              : "absolute inset-0 overflow-hidden invisible pointer-events-none"
-          }
-          aria-hidden={view !== "grid"}
-        >
+      <div key={layoutKey} className={viewportClass}>
+        <div data-photo-grid-scroll className={gridLayerClass} aria-hidden={view !== "grid"}>
           <PhotoGridView
             photos={displayPhotos}
             mode={mode}
@@ -196,14 +205,7 @@ export function PhotoGallerySection({
             onClearManageSelection={onClearManageSelection}
           />
         </div>
-        <div
-          className={
-            view === "list"
-              ? "absolute inset-0 flex flex-col overflow-hidden"
-              : "absolute inset-0 flex flex-col overflow-hidden invisible pointer-events-none"
-          }
-          aria-hidden={view !== "list"}
-        >
+        <div className={listLayerClass} aria-hidden={view !== "list"}>
           <PhotoListView
             photos={displayPhotos}
             mode={mode}

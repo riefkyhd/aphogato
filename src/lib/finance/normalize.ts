@@ -20,6 +20,7 @@ export function normalizeIncome(row: {
 export function normalizeExpense(row: {
   id: string;
   event_id: string | null;
+  project_id?: string | null;
   entry_date: string;
   amount: string | number;
   currency: string;
@@ -30,6 +31,7 @@ export function normalizeExpense(row: {
 }): ExpenseEntry {
   return {
     ...row,
+    project_id: row.project_id ?? null,
     amount: Number(row.amount),
   };
 }

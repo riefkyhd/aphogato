@@ -39,6 +39,8 @@ export function PhotoGridView({
   if (mode === "gallery" && onToggleSelect) {
     return (
       <MasonryColumnGrid
+        layoutMode="gallery"
+        className="gap-[3px] sm:gap-1"
         items={photos}
         getKey={(ph) => ph.id}
         renderItem={(ph) => {
@@ -54,6 +56,7 @@ export function PhotoGridView({
               <MasonryPhoto
                 src={ph.cloudinary_url}
                 alt=""
+                variant="gallery"
                 className="pointer-events-none select-none transition duration-200 group-hover:brightness-105"
               />
               {isSelected && <SelectionOverlay />}

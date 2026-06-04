@@ -152,6 +152,7 @@ export function parseExpenseBody(body: Record<string, unknown>): {
   return {
     data: {
       event_id: parseOptionalUuid(body.event_id),
+      project_id: parseOptionalUuid(body.project_id),
       entry_date: dateResult.date,
       amount: amountResult.amount,
       currency:
@@ -203,6 +204,10 @@ export function parseExpensePatchBody(body: Record<string, unknown>): {
 
   if (body.event_id !== undefined) {
     data.event_id = parseOptionalUuid(body.event_id);
+  }
+
+  if (body.project_id !== undefined) {
+    data.project_id = parseOptionalUuid(body.project_id);
   }
 
   if (body.description !== undefined) {

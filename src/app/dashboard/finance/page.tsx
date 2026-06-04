@@ -8,7 +8,7 @@ export default async function FinancePage() {
   const supabase = createServerSupabase();
   const year = new Date().getFullYear();
 
-  const [incomeRes, expenseRes, eventsRes] = await Promise.all([
+  const [incomeRes, expenseRes, eventsRes, projectsRes] = await Promise.all([
     supabase
       .from("income_entries")
       .select("*")
@@ -23,8 +23,9 @@ export default async function FinancePage() {
       .order("entry_date", { ascending: false }),
     supabase
       .from("events")
-      .select("id, title, shoot_date, client_name")
+      .select("id, title, shoot_date, client_name, project_id")
       .order("shoot_date", { ascending: false }),
+    supabase.from("projects").select("id, name").order("name", { ascending: true }),
   ]);
 
   // Server-side load via supabase directly (avoid self-fetch without URL)
@@ -38,8 +39,9 @@ export default async function FinancePage() {
   const summary = buildFinanceSummary(year, income, expenses);
   const events = (eventsRes.data ?? []) as Pick<
     CalendarEvent,
-    "id" | "title" | "shoot_date" | "client_name"
+    "id" | "title" | "shoot_date" | "client_name" | "project_id"
   >[];
+  const projects = projectsRes.data ?? [];
 
   return (
     <FinanceClient
@@ -48,6 +50,7 @@ export default async function FinancePage() {
       initialIncome={income}
       initialExpenses={expenses}
       events={events}
+      projects={projects}
     />
   );
 }

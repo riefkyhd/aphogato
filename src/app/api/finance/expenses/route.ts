@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/api/requireAuth";
 import { normalizeExpense } from "@/lib/finance/normalize";
+import { resolveExpenseLinks } from "@/lib/finance/resolveExpenseLinks";
 import { parseExpenseBody } from "@/lib/finance/validation";
 
 export const runtime = "nodejs";
@@ -13,6 +14,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const year = url.searchParams.get("year");
   const eventId = url.searchParams.get("event_id");
+  const projectId = url.searchParams.get("project_id");
 
   let query = supabase
     .from("expense_entries")
@@ -21,6 +23,8 @@ export async function GET(request: Request) {
 
   if (eventId) {
     query = query.eq("event_id", eventId);
+  } else if (projectId) {
+    query = query.eq("project_id", projectId);
   } else if (year) {
     const y = Number(year);
     if (!Number.isFinite(y)) {
@@ -58,9 +62,11 @@ export async function POST(request: Request) {
     });
   }
 
+  const linked = await resolveExpenseLinks(supabase, parsed.data);
+
   const { data, error } = await supabase
     .from("expense_entries")
-    .insert(parsed.data)
+    .insert(linked)
     .select("*")
     .single();
 
