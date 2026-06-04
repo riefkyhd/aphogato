@@ -460,7 +460,7 @@ export function GallerySelector({
       )}
 
       <div
-        className="fixed bottom-0 left-0 right-0 z-50 min-h-16 border-t border-border flex flex-wrap items-center justify-between gap-3 px-4 md:px-8 py-3"
+        className="fixed bottom-0 left-0 right-0 z-50 min-h-16 border-t border-border flex flex-wrap items-center justify-between gap-3 px-4 md:px-8 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
         style={{
           background: "rgba(10,10,10,0.95)",
           backdropFilter: "blur(8px)",

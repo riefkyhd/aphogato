@@ -6,7 +6,7 @@ export const metadata = {
 
 export default function NewProjectPage() {
   return (
-    <main className="px-6 md:px-10 py-10 max-w-[560px] mx-auto">
+    <main className="px-4 sm:px-6 md:px-10 py-6 sm:py-10 max-w-[560px] mx-auto">
       <h1 className="text-2xl font-light tracking-[0.05em] uppercase mb-2">
         New project
       </h1>

@@ -64,7 +64,7 @@ export function ManagePhotoGrid({
   return (
     <div
       ref={containerRef}
-      className="relative min-h-full select-none px-4 md:px-8"
+      className="relative min-h-full select-none px-3 sm:px-4 md:px-8"
     >
       <MasonryColumnGrid
         items={photos}

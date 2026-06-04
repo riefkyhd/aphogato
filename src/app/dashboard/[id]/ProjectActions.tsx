@@ -174,15 +174,18 @@ export function ProjectActions({
   const nextStatus = NEXT_STATUS[status];
 
   return (
-    <div className="flex flex-wrap items-start gap-3">
-      <PhotoUploadButton upload={upload} />
-      <Button variant="secondary" onClick={copyLink}>
+    <div className="grid grid-cols-2 gap-2 w-full sm:flex sm:flex-wrap sm:w-auto sm:items-start sm:gap-3">
+      <div className="col-span-2 w-full">
+        <PhotoUploadButton upload={upload} />
+      </div>
+      <Button variant="secondary" onClick={copyLink} className="w-full sm:w-auto">
         Copy link
       </Button>
       <Button
         variant="secondary"
         onClick={downloadList}
         disabled={selectedFilenames.length === 0}
+        className="w-full sm:w-auto"
       >
         Download list
       </Button>
@@ -191,11 +194,17 @@ export function ProjectActions({
         onClick={syncGallery}
         loading={syncing}
         disabled={syncing}
+        className="w-full sm:w-auto"
       >
         {syncing ? "Syncing…" : "Sync gallery"}
       </Button>
       {nextStatus && (
-        <Button onClick={advanceStatus} loading={statusBusy} disabled={statusBusy}>
+        <Button
+          onClick={advanceStatus}
+          loading={statusBusy}
+          disabled={statusBusy}
+          className="col-span-2 w-full sm:col-span-1 sm:w-auto"
+        >
           {statusBusy ? "Updating…" : STATUS_LABEL[status]}
         </Button>
       )}

@@ -177,7 +177,7 @@ export function ProjectDetailClient({
         onConfirm={confirmDeleteProject}
       />
 
-      <main className="px-6 md:px-10 py-10">
+      <main className="px-4 sm:px-6 md:px-10 py-6 sm:py-10">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
           <BackNavLink
             href="/dashboard"
@@ -198,7 +198,7 @@ export function ProjectDetailClient({
 
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between mb-10">
           <div>
-            <h1 className="text-3xl md:text-4xl font-light tracking-[0.05em] uppercase">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-light tracking-[0.05em] uppercase break-words">
               {project.name}
             </h1>
             <p className="mt-2 text-text-secondary text-[14px]">
@@ -223,12 +223,18 @@ export function ProjectDetailClient({
             {clientSelectedCount} of {photos.length} chosen by client
           </p>
           {photos.length > 0 && (
-            <p className="text-[11px] text-text-muted">
-              Grid: click to select · click outside to clear · drag on photos or
-              gaps to box-select (updates live) · Ctrl+drag adds to selection ·
-              Ctrl+click or long-press for multi-select · Ctrl+A select all · Esc
-              clear
-            </p>
+            <>
+              <p className="text-[11px] text-text-muted md:hidden">
+                Tap to select multiple · Hold a photo, then tap others · Clear
+                with the toolbar or Esc
+              </p>
+              <p className="hidden md:block text-[11px] text-text-muted">
+                Grid: click to select · click outside to clear · drag on photos or
+                gaps to box-select (updates live) · Ctrl+drag adds to selection ·
+                Ctrl+click or long-press for multi-select · Ctrl+A select all · Esc
+                clear
+              </p>
+            </>
           )}
         </div>
 

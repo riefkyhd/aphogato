@@ -3,6 +3,7 @@ import { Bell, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { Logo } from "./Logo";
+import { NavbarMenu } from "./NavbarMenu";
 import { SignOutButton } from "./SignOutButton";
 
 const PORTFOLIO_URL = "https://muhammad-hadid.com";
@@ -24,9 +25,9 @@ export async function Navbar() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-[60px] bg-bg-primary border-b border-border flex items-center px-6">
+    <header className="fixed top-0 left-0 right-0 z-50 h-14 md:h-[60px] bg-bg-primary border-b border-border flex items-center px-4 md:px-6">
       <Logo href={user ? "/dashboard" : "/"} size="sm" />
-      <nav className="ml-auto flex items-center gap-4 sm:gap-6">
+      <nav className="ml-auto hidden md:flex items-center gap-6">
         {user ? (
           <>
             <Link
@@ -81,6 +82,7 @@ export async function Navbar() {
           </Link>
         )}
       </nav>
+      {user ? <NavbarMenu shootsToday={shootsToday} /> : null}
     </header>
   );
 }

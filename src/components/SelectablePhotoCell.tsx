@@ -1,5 +1,6 @@
 "use client";
 
+import { useLongPress } from "@/hooks/useLongPress";
 import { cn } from "@/lib/utils";
 
 type SelectablePhotoCellProps = {
@@ -17,6 +18,8 @@ export function SelectablePhotoCell({
   "aria-label": ariaLabel,
   className,
 }: SelectablePhotoCellProps) {
+  const { longPressHandlers } = useLongPress(onToggle);
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
@@ -34,6 +37,7 @@ export function SelectablePhotoCell({
         aria-pressed={selected}
         onClick={onToggle}
         onKeyDown={handleKeyDown}
+        {...longPressHandlers}
       >
         {children}
       </div>

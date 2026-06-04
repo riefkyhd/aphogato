@@ -136,7 +136,7 @@ export function PhotoGallerySection({
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-3 px-4 md:px-8 mb-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 px-3 sm:px-4 md:px-8 mb-3">
         <div className="flex flex-wrap items-center gap-2 min-w-0">
           {showManageActions && (
             <>
@@ -171,7 +171,7 @@ export function PhotoGallerySection({
       </div>
       <div
         key={layoutKey}
-        className="relative h-[min(70vh,720px)] min-h-[320px]"
+        className="relative h-[min(65dvh,720px)] min-h-[280px] sm:min-h-[320px]"
       >
         <div
           data-photo-grid-scroll

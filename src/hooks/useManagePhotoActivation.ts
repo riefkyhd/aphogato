@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTouchLike } from "@/hooks/useTouchLike";
 import {
   isMultiSelectActivate,
   type ManagePhotoActivateMeta,
@@ -14,10 +15,13 @@ export function useManagePhotoActivation(manage: {
 }) {
   const { toggle, selectOnly, clear } = manage;
   const [previewId, setPreviewId] = useState<string | null>(null);
+  const touchLike = useTouchLike();
 
   const activate = useCallback(
     (photoId: string, meta: ManagePhotoActivateMeta) => {
-      const multi = isMultiSelectActivate(meta);
+      const multi =
+        isMultiSelectActivate(meta) ||
+        (touchLike && !meta.forceNavigate);
 
       if (!multi) {
         if (!meta.forceNavigate && previewId === photoId) {
@@ -33,7 +37,7 @@ export function useManagePhotoActivation(manage: {
       toggle(photoId);
       setPreviewId(photoId);
     },
-    [previewId, toggle, selectOnly, clear]
+    [previewId, toggle, selectOnly, clear, touchLike]
   );
 
   const clearAll = useCallback(() => {

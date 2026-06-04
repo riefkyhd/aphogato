@@ -25,7 +25,7 @@ export function ProjectCard({ project }: { project: ProjectCardData }) {
       aria-busy={isNavigating}
       aria-label={`Open project ${project.name}`}
       className={cn(
-        "group relative block aspect-[3/2] bg-bg-elevated overflow-hidden",
+        "group relative block aspect-[5/3] min-[480px]:aspect-[3/2] bg-bg-elevated overflow-hidden",
         isNavigating && "pointer-events-none ring-2 ring-text-primary"
       )}
     >
@@ -56,8 +56,8 @@ export function ProjectCard({ project }: { project: ProjectCardData }) {
           isNavigating ? "opacity-90" : "group-hover:from-black/85"
         )}
       />
-      <div className="absolute bottom-0 left-0 right-0 p-5 pointer-events-none">
-        <div className="text-text-primary text-lg font-light tracking-[0.05em] uppercase leading-tight">
+      <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5 pointer-events-none">
+        <div className="text-text-primary text-base sm:text-lg font-light tracking-[0.05em] uppercase leading-tight line-clamp-2">
           {project.name}
         </div>
         <div className="mt-1 flex items-center justify-between">

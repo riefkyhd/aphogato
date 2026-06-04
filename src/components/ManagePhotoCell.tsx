@@ -25,8 +25,9 @@ export function ManagePhotoCell({
   "aria-label": ariaLabel,
   className,
 }: ManagePhotoCellProps) {
-  const { longPressHandlers } = useLongPress(() =>
-    onActivate({ ctrlKey: false, metaKey: false, longPress: true })
+  const { longPressHandlers } = useLongPress(
+    () => onActivate({ ctrlKey: false, metaKey: false, longPress: true }),
+    { suppressClickRef }
   );
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {

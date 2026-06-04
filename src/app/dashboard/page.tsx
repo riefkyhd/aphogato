@@ -49,15 +49,15 @@ export default async function DashboardPage() {
   const projects = await loadProjects();
 
   return (
-    <main className="px-6 md:px-10 py-10">
+    <main className="px-4 sm:px-6 md:px-10 py-6 sm:py-10">
       <RefreshRouteOnMount />
-      <div className="flex items-end justify-between mb-10">
-        <h1 className="text-2xl font-light tracking-[0.05em] uppercase">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-6 sm:mb-10">
+        <h1 className="text-xl sm:text-2xl font-light tracking-[0.05em] uppercase">
           Projects
         </h1>
         <NavigatingLink
           href="/dashboard/new"
-          className="btn-primary"
+          className="btn-primary w-full sm:w-auto justify-center"
           loadingLabel="Opening…"
         >
           New project
@@ -67,7 +67,7 @@ export default async function DashboardPage() {
       {projects.length === 0 ? (
         <EmptyState />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[2px]">
+        <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 gap-[2px]">
           {projects.map((p) => (
             <ProjectCard key={p.id} project={p} />
           ))}

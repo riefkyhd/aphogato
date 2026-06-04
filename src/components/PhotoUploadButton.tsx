@@ -11,7 +11,7 @@ export function PhotoUploadButton({ upload }: { upload: ProjectPhotoUpload }) {
   const { uploading, uploadFiles } = upload;
 
   return (
-    <div className="flex flex-col items-end gap-2">
+    <div className="flex flex-col items-stretch sm:items-end gap-2 w-full">
       <input
         ref={inputRef}
         type="file"
@@ -28,6 +28,7 @@ export function PhotoUploadButton({ upload }: { upload: ProjectPhotoUpload }) {
         variant="secondary"
         loading={uploading}
         disabled={uploading}
+        className="w-full sm:w-auto"
         onClick={() => inputRef.current?.click()}
       >
         {!uploading && <Upload className="h-3.5 w-3.5 shrink-0" aria-hidden />}

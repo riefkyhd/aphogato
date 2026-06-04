@@ -193,7 +193,7 @@ export function CalendarClient({
   }, [isGoogleConnected]);
 
   return (
-    <main className="px-3 sm:px-4 md:px-8 py-6 sm:py-8 min-h-[calc(100vh-60px)] flex flex-col">
+    <main className="px-4 sm:px-6 md:px-8 py-6 sm:py-8 min-h-[calc(100dvh-3.5rem)] md:min-h-[calc(100vh-60px)] flex flex-col">
       <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
         <h1 className="text-xl sm:text-2xl font-light tracking-[0.05em] uppercase">
           Calendar
