@@ -5,12 +5,14 @@ import {
   isMultiSelectActivate,
   type ManagePhotoActivateMeta,
 } from "@/lib/managePhotoActivate";
+
 export function useManagePhotoActivation(manage: {
   manageSelected: Set<string>;
   toggle: (id: string) => void;
   selectOnly: (id: string) => void;
   clear: () => void;
 }) {
+  const { toggle, selectOnly, clear } = manage;
   const [previewId, setPreviewId] = useState<string | null>(null);
 
   const activate = useCallback(
@@ -20,24 +22,24 @@ export function useManagePhotoActivation(manage: {
       if (!multi) {
         if (!meta.forceNavigate && previewId === photoId) {
           setPreviewId(null);
-          manage.clear();
+          clear();
           return;
         }
         setPreviewId(photoId);
-        manage.selectOnly(photoId);
+        selectOnly(photoId);
         return;
       }
 
-      manage.toggle(photoId);
+      toggle(photoId);
       setPreviewId(photoId);
     },
-    [previewId, manage]
+    [previewId, toggle, selectOnly, clear]
   );
 
   const clearAll = useCallback(() => {
-    manage.clear();
+    clear();
     setPreviewId(null);
-  }, [manage]);
+  }, [clear]);
 
   useEffect(() => {
     if (manage.manageSelected.size === 0) {

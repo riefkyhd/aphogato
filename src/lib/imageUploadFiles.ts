@@ -20,5 +20,17 @@ export function filterImageUploadFiles(files: FileList | File[] | null): File[] 
 }
 
 export function dragEventHasFiles(event: DragEvent): boolean {
-  return Array.from(event.dataTransfer?.types ?? []).includes("Files");
+  const types = Array.from(event.dataTransfer?.types ?? []);
+  return (
+    types.includes("Files") ||
+    types.includes("application/x-moz-file") ||
+    types.some((t) => t.startsWith("image/"))
+  );
+}
+
+export function countDraggedFiles(event: DragEvent): number | null {
+  const items = event.dataTransfer?.items;
+  if (!items?.length) return null;
+  const fileItems = Array.from(items).filter((item) => item.kind === "file");
+  return fileItems.length > 0 ? fileItems.length : null;
 }

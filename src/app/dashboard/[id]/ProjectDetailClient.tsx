@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { BackNavLink } from "@/components/BackNavLink";
+import { RefreshRouteOnMount } from "@/components/RefreshRouteOnMount";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { DeletePhotosDialog } from "@/components/DeletePhotosDialog";
@@ -47,10 +48,6 @@ export function ProjectDetailClient({
 
   useSyncServerPhotos(initialPhotos, setPhotos);
 
-  useEffect(() => {
-    router.refresh();
-  }, [project.id, router]);
-
   const upload = useProjectPhotoUpload(project.id, setPhotosSorted);
 
   const photoIds = useMemo(() => photos.map((p) => p.id), [photos]);
@@ -64,7 +61,7 @@ export function ProjectDetailClient({
     [upload]
   );
 
-  const { isDragging } = usePhotoDropZone({
+  const { isDragging, draggedFileCount } = usePhotoDropZone({
     enabled: !upload.uploading,
     onDropFiles: handleDropFiles,
   });
@@ -151,7 +148,13 @@ export function ProjectDetailClient({
 
   return (
     <>
-      {isDragging && <PhotoDropHint />}
+      <RefreshRouteOnMount />
+      {isDragging && (
+        <PhotoDropHint
+          projectName={project.name}
+          fileCount={draggedFileCount}
+        />
+      )}
       {upload.uploading && upload.progress && (
         <UploadProgressDock progress={upload.progress} />
       )}

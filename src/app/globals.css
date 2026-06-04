@@ -142,3 +142,63 @@ body {
     text-wrap: balance;
   }
 }
+
+@keyframes photo-drop-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes photo-drop-panel-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes photo-drop-border-pulse {
+  0%,
+  100% {
+    border-color: rgba(240, 240, 240, 0.45);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+  }
+  50% {
+    border-color: rgba(240, 240, 240, 0.95);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55),
+      0 0 0 1px rgba(240, 240, 240, 0.15);
+  }
+}
+
+@keyframes photo-drop-icon-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.photo-drop-overlay {
+  animation: photo-drop-overlay-in 0.18s ease-out forwards;
+}
+
+.photo-drop-panel {
+  animation: photo-drop-panel-in 0.22s ease-out forwards,
+    photo-drop-border-pulse 1.6s ease-in-out 0.22s infinite;
+}
+
+.photo-drop-icon-wrap {
+  animation: photo-drop-icon-bounce 1.4s ease-in-out infinite;
+}
+
+body.photo-drop-active {
+  cursor: copy;
+}

@@ -1,15 +1,19 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
-/** Refetch the current route's server data (bypasses stale client router cache). */
+/** Refetch server data when entering a route (bypasses stale client router cache). */
 export function RefreshRouteOnMount() {
   const router = useRouter();
+  const pathname = usePathname();
+  const lastRefreshedPath = useRef<string | null>(null);
 
   useEffect(() => {
+    if (lastRefreshedPath.current === pathname) return;
+    lastRefreshedPath.current = pathname;
     router.refresh();
-  }, [router]);
+  }, [pathname, router]);
 
   return null;
 }

@@ -285,21 +285,20 @@ export function PhotoListView({
       setFocusedIndex(0);
       return;
     }
-    if (previewId && photos.some((p) => p.id === previewId)) {
-      const idx = photos.findIndex((p) => p.id === previewId);
-      if (idx >= 0 && idx !== focusedIndex) {
+    if (focusedIndex >= photos.length) {
+      setFocusedIndex(photos.length - 1);
+      return;
+    }
+    if (!previewId) return;
+
+    const idx = photos.findIndex((p) => p.id === previewId);
+    if (idx >= 0) {
+      if (idx !== focusedIndex) {
         setFocusedIndex(idx);
       }
       return;
     }
-    if (focusedIndex >= photos.length) {
-      setFocusedIndex(photos.length - 1);
-    }
-    if (
-      previewId &&
-      !photos.some((p) => p.id === previewId) &&
-      setPreviewId
-    ) {
+    if (setPreviewId) {
       setPreviewId(photos[focusedIndex]?.id ?? photos[0].id);
     }
   }, [photos, focusedIndex, previewId, setPreviewId, manageInteractive]);

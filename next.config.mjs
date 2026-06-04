@@ -4,7 +4,6 @@ const nextConfig = {
     // Avoid stale project list / detail after uploads when navigating back.
     staleTimes: {
       dynamic: 0,
-      static: 0,
     },
   },
   images: {

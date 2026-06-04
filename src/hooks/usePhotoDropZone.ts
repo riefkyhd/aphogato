@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { dragEventHasFiles } from "@/lib/imageUploadFiles";
+import { useCallback, useEffect, useState } from "react";
+import { dragEventHasFiles, countDraggedFiles } from "@/lib/imageUploadFiles";
 
 export function usePhotoDropZone({
   enabled,
@@ -11,59 +11,75 @@ export function usePhotoDropZone({
   onDropFiles: (files: FileList) => void;
 }) {
   const [isDragging, setIsDragging] = useState(false);
+  const [draggedFileCount, setDraggedFileCount] = useState<number | null>(null);
+
+  const resetDragState = useCallback(() => {
+    setIsDragging(false);
+    setDraggedFileCount(null);
+    document.body.classList.remove("photo-drop-active");
+  }, []);
 
   useEffect(() => {
     if (!enabled) {
-      setIsDragging(false);
+      resetDragState();
       return;
     }
-
-    let depth = 0;
 
     function onDragEnter(e: DragEvent) {
       if (!dragEventHasFiles(e)) return;
       e.preventDefault();
-      depth += 1;
-      if (depth === 1) setIsDragging(true);
-    }
-
-    function onDragLeave(e: DragEvent) {
-      if (!dragEventHasFiles(e)) return;
-      e.preventDefault();
-      depth = Math.max(0, depth - 1);
-      if (depth === 0) setIsDragging(false);
+      setIsDragging(true);
+      document.body.classList.add("photo-drop-active");
+      setDraggedFileCount(countDraggedFiles(e));
     }
 
     function onDragOver(e: DragEvent) {
       if (!dragEventHasFiles(e)) return;
       e.preventDefault();
-      if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
+      if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = "copy";
+      }
+      setIsDragging(true);
+      setDraggedFileCount(countDraggedFiles(e));
+    }
+
+    function onDragLeave(e: DragEvent) {
+      if (!dragEventHasFiles(e)) return;
+      const related = e.relatedTarget as Node | null;
+      if (related && document.documentElement.contains(related)) {
+        return;
+      }
+      resetDragState();
     }
 
     function onDrop(e: DragEvent) {
       if (!dragEventHasFiles(e)) return;
       e.preventDefault();
-      depth = 0;
-      setIsDragging(false);
+      resetDragState();
       if (e.dataTransfer?.files?.length) {
         onDropFiles(e.dataTransfer.files);
       }
     }
 
+    function onDragEnd() {
+      resetDragState();
+    }
+
     window.addEventListener("dragenter", onDragEnter);
-    window.addEventListener("dragleave", onDragLeave);
     window.addEventListener("dragover", onDragOver);
+    window.addEventListener("dragleave", onDragLeave);
     window.addEventListener("drop", onDrop);
+    window.addEventListener("dragend", onDragEnd);
 
     return () => {
       window.removeEventListener("dragenter", onDragEnter);
-      window.removeEventListener("dragleave", onDragLeave);
       window.removeEventListener("dragover", onDragOver);
+      window.removeEventListener("dragleave", onDragLeave);
       window.removeEventListener("drop", onDrop);
-      depth = 0;
-      setIsDragging(false);
+      window.removeEventListener("dragend", onDragEnd);
+      resetDragState();
     };
-  }, [enabled, onDropFiles]);
+  }, [enabled, onDropFiles, resetDragState]);
 
-  return { isDragging };
+  return { isDragging, draggedFileCount };
 }

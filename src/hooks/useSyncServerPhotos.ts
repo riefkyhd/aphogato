@@ -33,5 +33,5 @@ export function useSyncServerPhotos(
       }
       return next;
     });
-  }, [serverSignature, initialPhotos, setPhotos]);
+  }, [serverSignature, setPhotos, initialPhotos]);
 }

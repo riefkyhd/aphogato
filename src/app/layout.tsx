@@ -6,6 +6,11 @@ import { Toaster } from "sonner";
 export const metadata: Metadata = {
   title: "Gallery of Muhammad Hadid",
   description: "Gallery of Muhammad Hadid — client photo selection",
+  icons: {
+    icon: [{ url: "/images/logo/MH_logo.png", type: "image/png" }],
+    apple: "/images/logo/MH_logo.png",
+    shortcut: "/images/logo/MH_logo.png",
+  },
 };
 
 export default function RootLayout({
