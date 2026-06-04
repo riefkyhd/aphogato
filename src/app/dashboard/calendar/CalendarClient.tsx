@@ -1,15 +1,13 @@
 "use client";
 
-import {
-  addMonths,
-  format,
-  subMonths,
-} from "date-fns";
+import { addMonths, format, isSameMonth, startOfMonth, subMonths } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useCallback, useState } from "react";
+import Link from "next/link";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { CalendarListView } from "@/components/calendar/CalendarListView";
 import { CalendarMonthGrid } from "@/components/calendar/CalendarMonthGrid";
+import { DeleteEventDialog } from "@/components/calendar/DeleteEventDialog";
 import {
   EventDetailPanel,
   type CalendarProject,
@@ -39,6 +37,15 @@ export function CalendarClient({
   const [formInitialDate, setFormInitialDate] = useState<Date | null>(null);
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  const panelOpen = Boolean(panelEvent);
+  const viewingTodayMonth = isSameMonth(currentMonth, new Date());
+  const unsyncedCount = useMemo(
+    () => events.filter((e) => !e.google_event_id).length,
+    [events]
+  );
 
   const openEvent = useCallback((ev: CalendarEvent) => {
     setPanelEvent(ev);
@@ -114,9 +121,14 @@ export function CalendarClient({
     [editingEvent]
   );
 
-  const handleDelete = useCallback(async () => {
+  const requestDelete = useCallback(() => {
     if (!panelEvent) return;
-    if (!window.confirm(`Delete "${panelEvent.title}"?`)) return;
+    setDeleteDialogOpen(true);
+  }, [panelEvent]);
+
+  const confirmDelete = useCallback(async () => {
+    if (!panelEvent) return;
+    setDeleting(true);
     try {
       const res = await fetch(`/api/calendar/events/${panelEvent.id}`, {
         method: "DELETE",
@@ -127,55 +139,97 @@ export function CalendarClient({
         return;
       }
       setEvents((prev) => prev.filter((e) => e.id !== panelEvent.id));
+      setDeleteDialogOpen(false);
       closePanel();
       toast.success("Event deleted");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to delete");
+    } finally {
+      setDeleting(false);
     }
   }, [panelEvent, closePanel]);
 
-  const handleSync = useCallback(async () => {
-    if (!panelEvent) return;
+  const handleGlobalSync = useCallback(async () => {
+    if (!isGoogleConnected) {
+      toast.error("Connect Google Calendar in Settings first");
+      return;
+    }
     setSyncing(true);
     try {
-      const res = await fetch(`/api/calendar/sync/${panelEvent.id}`, {
-        method: "POST",
-      });
+      const res = await fetch("/api/calendar/sync-all", { method: "POST" });
       const json = await res.json();
-      if (!json.ok) {
-        toast.error(json.error ?? "Sync failed");
+      if (json.error) {
+        toast.error(json.error);
         return;
       }
-      const updated: CalendarEvent = {
-        ...panelEvent,
-        google_event_id: json.google_event_id,
-        synced_at: new Date().toISOString(),
-      };
-      setEvents((prev) =>
-        prev.map((e) => (e.id === updated.id ? updated : e))
-      );
-      setPanelEvent(updated);
-      toast.success("Synced to Google Calendar");
+      if (Array.isArray(json.events)) {
+        setEvents(json.events as CalendarEvent[]);
+        setPanelEvent((p) => {
+          if (!p) return p;
+          const next = (json.events as CalendarEvent[]).find(
+            (e) => e.id === p.id
+          );
+          return next ?? p;
+        });
+      }
+      const synced = json.synced ?? 0;
+      const errors = (json.errors ?? []) as string[];
+      if (errors.length > 0) {
+        toast.warning(
+          `Synced ${synced} event${synced === 1 ? "" : "s"}. ${errors.length} failed.`
+        );
+      } else if (synced > 0) {
+        toast.success(
+          `Synced ${synced} event${synced === 1 ? "" : "s"} to Google Calendar`
+        );
+      } else {
+        toast.message("All events are already up to date on Google");
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Sync failed");
     } finally {
       setSyncing(false);
     }
-  }, [panelEvent]);
+  }, [isGoogleConnected]);
 
   return (
-    <main className="px-4 md:px-8 py-8 min-h-[calc(100vh-60px)] flex flex-col">
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <h1 className="text-2xl font-light tracking-[0.05em] uppercase">
+    <main className="px-3 sm:px-4 md:px-8 py-6 sm:py-8 min-h-[calc(100vh-60px)] flex flex-col">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-light tracking-[0.05em] uppercase">
           Calendar
         </h1>
-        <Button type="button" onClick={() => openNewEvent()}>
-          New event
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {isGoogleConnected ? (
+            <Button
+              type="button"
+              variant="secondary"
+              loading={syncing}
+              className="!text-[11px] flex-1 sm:flex-none min-w-0"
+              onClick={handleGlobalSync}
+            >
+              Sync all
+              {unsyncedCount > 0 ? ` (${unsyncedCount})` : ""}
+            </Button>
+          ) : (
+            <Link
+              href="/dashboard/settings"
+              className="btn-secondary !text-[11px] inline-flex items-center justify-center px-4 h-10 flex-1 sm:flex-none"
+            >
+              Connect Google
+            </Link>
+          )}
+          <Button
+            type="button"
+            onClick={() => openNewEvent()}
+            className="flex-1 sm:flex-none"
+          >
+            New event
+          </Button>
+        </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4 border-b border-border pb-4">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-3 mb-4 border-b border-border pb-4">
+        <div className="flex items-center justify-center sm:justify-start gap-2">
           <button
             type="button"
             onClick={() => setCurrentMonth((m) => subMonths(m, 1))}
@@ -195,13 +249,29 @@ export function CalendarClient({
           >
             <ChevronRight className="h-5 w-5" />
           </button>
+          {view === "month" && (
+            <button
+              type="button"
+              onClick={() => setCurrentMonth(startOfMonth(new Date()))}
+              disabled={viewingTodayMonth}
+              className={cn(
+                "ml-1 px-2.5 py-1 text-[11px] uppercase tracking-label border border-border transition-colors",
+                viewingTodayMonth
+                  ? "text-text-muted opacity-50 cursor-default"
+                  : "text-text-secondary hover:text-text-primary hover:bg-bg-elevated"
+              )}
+              aria-label="Go to today"
+            >
+              Today
+            </button>
+          )}
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-1 justify-center sm:justify-end">
           <button
             type="button"
             onClick={() => setView("month")}
             className={cn(
-              "px-3 py-1.5 text-[11px] uppercase tracking-label border border-border transition-colors",
+              "flex-1 sm:flex-none px-3 py-1.5 text-[11px] uppercase tracking-label border border-border transition-colors",
               view === "month"
                 ? "bg-bg-elevated text-text-primary"
                 : "text-text-muted hover:text-text-secondary"
@@ -213,7 +283,7 @@ export function CalendarClient({
             type="button"
             onClick={() => setView("list")}
             className={cn(
-              "px-3 py-1.5 text-[11px] uppercase tracking-label border border-border transition-colors",
+              "flex-1 sm:flex-none px-3 py-1.5 text-[11px] uppercase tracking-label border border-border transition-colors",
               view === "list"
                 ? "bg-bg-elevated text-text-primary"
                 : "text-text-muted hover:text-text-secondary"
@@ -225,7 +295,12 @@ export function CalendarClient({
       </div>
 
       <div className="flex flex-1 min-h-0 relative">
-        <div className="flex-1 min-w-0 overflow-auto pr-0 lg:pr-[380px]">
+        <div
+          className={cn(
+            "flex-1 min-w-0 overflow-auto transition-[padding] duration-300",
+            panelOpen ? "lg:pr-[380px]" : "pr-0"
+          )}
+        >
           {view === "month" ? (
             <CalendarMonthGrid
               events={events}
@@ -241,12 +316,10 @@ export function CalendarClient({
           event={panelEvent}
           projects={projects}
           isGoogleConnected={isGoogleConnected}
-          open={Boolean(panelEvent)}
-          syncing={syncing}
+          open={panelOpen}
           onEdit={openEditEvent}
-          onDelete={handleDelete}
+          onDelete={requestDelete}
           onClose={closePanel}
-          onSync={handleSync}
         />
       </div>
 
@@ -263,6 +336,16 @@ export function CalendarClient({
             setEditingEvent(null);
           }
         }}
+      />
+
+      <DeleteEventDialog
+        open={deleteDialogOpen}
+        title={panelEvent?.title ?? ""}
+        wasSynced={Boolean(panelEvent?.google_event_id)}
+        isGoogleConnected={isGoogleConnected}
+        deleting={deleting}
+        onClose={() => !deleting && setDeleteDialogOpen(false)}
+        onConfirm={confirmDelete}
       />
     </main>
   );

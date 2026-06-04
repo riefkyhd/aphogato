@@ -17,7 +17,7 @@ export async function POST() {
   const { data: events, error } = await supabase
     .from("events")
     .select("*")
-    .is("google_event_id", null);
+    .order("shoot_date", { ascending: true });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -37,12 +37,20 @@ export async function POST() {
         .eq("id", event.id);
       synced += 1;
     } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : "Sync failed";
+      const msg = err instanceof Error ? err.message : "Sync failed";
       errors.push(`${event.title}: ${msg}`);
       if (msg.includes("not connected")) break;
     }
   }
 
-  return NextResponse.json({ synced, errors });
+  const { data: updated } = await supabase
+    .from("events")
+    .select("*")
+    .order("shoot_date", { ascending: true });
+
+  return NextResponse.json({
+    synced,
+    errors,
+    events: (updated ?? []) as CalendarEvent[],
+  });
 }

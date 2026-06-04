@@ -1,9 +1,13 @@
 import "server-only";
+import {
+  addMinutesToTime,
+  parseTimeToMinutes,
+} from "@/lib/calendar/calendarHelpers";
 import { createServerSupabase } from "@/lib/supabase/server";
 import type { CalendarEvent } from "@/lib/types";
 
 const CALENDAR_TIMEZONE = "Asia/Jakarta";
-const DEFAULT_DURATION_HOURS = 2;
+const DEFAULT_DURATION_MINUTES = 120;
 
 const REFRESH_TOKEN_KEY = "google_refresh_token";
 
@@ -66,9 +70,20 @@ export function buildEventPayload(event: CalendarEvent) {
     .split(":")
     .map(Number);
 
+  const startTime = event.shoot_time ?? "09:00";
   const startLocal = new Date(year, month - 1, day, hours, minutes, 0, 0);
-  const endLocal = new Date(startLocal);
-  endLocal.setHours(endLocal.getHours() + DEFAULT_DURATION_HOURS);
+  let endTimeStr = event.shoot_end_time;
+  if (endTimeStr) {
+    const startMins = parseTimeToMinutes(startTime) ?? 0;
+    const endMins = parseTimeToMinutes(endTimeStr) ?? 0;
+    if (endMins <= startMins) {
+      endTimeStr = addMinutesToTime(startTime, DEFAULT_DURATION_MINUTES);
+    }
+  } else {
+    endTimeStr = addMinutesToTime(startTime, DEFAULT_DURATION_MINUTES);
+  }
+  const [endH, endM] = endTimeStr.split(":").map(Number);
+  const endLocal = new Date(year, month - 1, day, endH, endM, 0, 0);
 
   const pad = (n: number) => String(n).padStart(2, "0");
   const fmt = (d: Date) =>
@@ -141,6 +156,43 @@ export async function updateCalendarEvent(
     throw new Error(json.error?.message ?? "Failed to update Google event");
   }
   return json.id;
+}
+
+export async function deleteCalendarEvent(
+  accessToken: string,
+  googleEventId: string
+): Promise<void> {
+  const res = await fetch(
+    `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(googleEventId)}`,
+    {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }
+  );
+
+  if (res.status === 404 || res.status === 410) return;
+
+  if (!res.ok) {
+    const json = (await res.json().catch(() => ({}))) as {
+      error?: { message?: string };
+    };
+    throw new Error(
+      json.error?.message ?? "Failed to delete event from Google Calendar"
+    );
+  }
+}
+
+/** Removes the linked Google event when connected. No-op if never synced or not connected. */
+export async function deleteEventFromGoogle(
+  googleEventId: string | null
+): Promise<void> {
+  if (!googleEventId) return;
+
+  const refreshToken = await getStoredRefreshToken();
+  if (!refreshToken) return;
+
+  const accessToken = await getAccessToken();
+  await deleteCalendarEvent(accessToken, googleEventId);
 }
 
 export async function syncEventToGoogle(

@@ -1,6 +1,7 @@
 "use client";
 
-import { format, parseISO } from "date-fns";
+import { format, isToday, parseISO } from "date-fns";
+import { cn } from "@/lib/utils";
 import { EventStatusDot } from "@/components/calendar/EventStatusDot";
 import { ShootTypeBadge } from "@/components/calendar/ShootTypeBadge";
 import type { CalendarEvent } from "@/lib/types";
@@ -40,15 +41,26 @@ export function CalendarListView({
           <h3 className="uppercase tracking-label text-text-secondary border-b border-border py-3 px-4 text-[11px]">
             {monthLabel}
           </h3>
-          {monthEvents.map((ev) => (
+          {monthEvents.map((ev) => {
+            const eventDate = parseISO(ev.shoot_date);
+            const today = isToday(eventDate);
+            return (
             <button
               key={ev.id}
               type="button"
               onClick={() => onEventClick(ev)}
-              className="flex w-full items-center gap-3 h-16 border-b border-border px-4 hover:bg-bg-elevated cursor-pointer text-left transition-colors"
+              className={cn(
+                "flex w-full items-center gap-2 sm:gap-3 min-h-[56px] sm:h-16 border-b border-border px-3 sm:px-4 py-2 sm:py-0 hover:bg-bg-elevated cursor-pointer text-left transition-colors",
+                today && "bg-bg-elevated/60 border-l-2 border-l-text-primary"
+              )}
             >
-              <span className="w-14 shrink-0 text-[12px] text-text-muted">
-                {format(parseISO(ev.shoot_date), "MMM d")}
+              <span
+                className={cn(
+                  "w-14 shrink-0 text-[12px]",
+                  today ? "text-text-primary font-medium" : "text-text-muted"
+                )}
+              >
+                {today ? "Today" : format(eventDate, "MMM d")}
               </span>
               <ShootTypeBadge shootType={ev.shoot_type} className="shrink-0" />
               <span className="flex-1 min-w-0 text-[14px] text-text-primary truncate">
@@ -62,7 +74,8 @@ export function CalendarListView({
                 {ev.location ?? ""}
               </span>
             </button>
-          ))}
+          );
+          })}
         </section>
       ))}
     </div>

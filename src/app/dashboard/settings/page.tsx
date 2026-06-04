@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { GoogleCalendarSettings } from "@/app/dashboard/settings/GoogleCalendarSettings";
+import { TodayReminderSettings } from "@/app/dashboard/settings/TodayReminderSettings";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,7 @@ export default async function SettingsPage() {
       <Suspense fallback={null}>
         <GoogleCalendarSettings isConnected={isConnected} />
       </Suspense>
+      <TodayReminderSettings />
     </main>
   );
 }

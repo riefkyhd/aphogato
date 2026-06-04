@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { deleteEventFromGoogle } from "@/lib/calendar/googleCalendar";
 import { parseEventPatchBody } from "@/lib/calendar/eventValidation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import type { CalendarEvent } from "@/lib/types";
@@ -59,6 +60,30 @@ export async function DELETE(
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data: event, error: fetchError } = await supabase
+    .from("events")
+    .select("id, google_event_id")
+    .eq("id", params.id)
+    .single();
+
+  if (fetchError || !event) {
+    return NextResponse.json({ error: "Event not found" }, { status: 404 });
+  }
+
+  if (event.google_event_id) {
+    try {
+      await deleteEventFromGoogle(event.google_event_id);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Google Calendar delete failed";
+      if (message.includes("not connected")) {
+        // Allow local delete if Google was disconnected
+      } else {
+        return NextResponse.json({ error: message }, { status: 502 });
+      }
+    }
   }
 
   const { error } = await supabase.from("events").delete().eq("id", params.id);

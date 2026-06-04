@@ -35,6 +35,7 @@ export interface CalendarEvent {
   location: string | null;
   shoot_date: string;
   shoot_time: string | null;
+  shoot_end_time: string | null;
   status: EventStatus;
   notes: string | null;
   project_id: string | null;

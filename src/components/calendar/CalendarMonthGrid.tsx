@@ -52,7 +52,7 @@ export function CalendarMonthGrid({
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-7 flex-1 auto-rows-fr min-h-[480px]">
+      <div className="grid grid-cols-7 flex-1 auto-rows-fr min-h-[280px] sm:min-h-[400px] lg:min-h-[480px]">
         {days.map((day) => {
           const dayEvents = eventsOnDay(events, day);
           const inMonth = isSameMonth(day, currentMonth);
@@ -65,21 +65,30 @@ export function CalendarMonthGrid({
               type="button"
               onClick={() => onDayClick(day)}
               className={cn(
-                "flex flex-col items-stretch text-left min-h-[80px] sm:min-h-[100px] p-1 border border-border bg-bg-secondary transition-colors hover:bg-bg-elevated",
+                "flex flex-col items-stretch text-left min-h-[56px] sm:min-h-[80px] lg:min-h-[100px] p-0.5 sm:p-1 border border-border bg-bg-secondary transition-colors hover:bg-bg-elevated",
                 !inMonth && "opacity-40",
-                isToday(day) && "ring-1 ring-inset ring-text-primary"
+                isToday(day) &&
+                  "bg-bg-elevated border-text-primary ring-1 ring-inset ring-text-primary/40"
               )}
             >
-              <span
-                className={cn(
-                  "text-[11px] mb-1 px-0.5",
-                  isToday(day)
-                    ? "text-text-primary font-medium"
-                    : "text-text-muted"
+              <div className="flex items-center gap-1 mb-1 px-0.5 min-h-[18px]">
+                <span
+                  className={cn(
+                    "inline-flex items-center justify-center text-[11px] leading-none",
+                    isToday(day)
+                      ? "h-[22px] min-w-[22px] rounded-full bg-text-primary text-bg-primary font-medium"
+                      : "text-text-muted"
+                  )}
+                  aria-current={isToday(day) ? "date" : undefined}
+                >
+                  {format(day, "d")}
+                </span>
+                {isToday(day) && (
+                  <span className="hidden sm:inline text-[9px] uppercase tracking-label text-text-primary">
+                    Today
+                  </span>
                 )}
-              >
-                {format(day, "d")}
-              </span>
+              </div>
               <div className="flex flex-col gap-0.5 flex-1 min-h-0 overflow-hidden">
                 {visible.map((ev) => (
                   <button
