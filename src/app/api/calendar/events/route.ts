@@ -2,19 +2,15 @@ import { NextResponse } from "next/server";
 import {
   parseEventInsertBody,
 } from "@/lib/calendar/eventValidation";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { requireAuth } from "@/lib/api/requireAuth";
 import type { CalendarEvent } from "@/lib/types";
 
 export const runtime = "nodejs";
 
 export async function GET() {
-  const supabase = createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (!auth.ok) return auth.response;
+  const { supabase } = auth;
 
   const { data, error } = await supabase
     .from("events")
@@ -29,13 +25,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const supabase = createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (!auth.ok) return auth.response;
+  const { supabase } = auth;
 
   let body: Record<string, unknown>;
   try {

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { rateLimitOrResponse } from "@/lib/api/withRateLimit";
 import {
   GALLERY_ERROR_CODES,
   staleSelectionMessage,
@@ -8,6 +9,8 @@ import { createAdminSupabase } from "@/lib/supabase/admin";
 export const runtime = "nodejs";
 
 export async function PATCH(request: Request) {
+  const limited = rateLimitOrResponse(request, "gallery-confirm", 30, 60_000);
+  if (limited) return limited;
   let body: { token?: string; selectedIds?: string[] };
   try {
     body = await request.json();

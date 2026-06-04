@@ -30,6 +30,8 @@ Run `supabase/migrations/0001_init.sql` in the Supabase SQL editor (or `supabase
 
 Create a single photographer user in Supabase Auth (email/password). Middleware protects `/dashboard/*`.
 
+**Security:** In Supabase Dashboard, disable public sign-ups and enable leaked-password protection. See [docs/SECURITY.md](docs/SECURITY.md).
+
 ## Cloudinary folder structure
 
 Aphogato manages folders automatically. **Do not enter a folder path in the UI.**

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { requireAuth } from "@/lib/api/requireAuth";
 import { listFolder } from "@/lib/cloudinary";
 import type { Photo } from "@/lib/types";
 
@@ -9,13 +9,9 @@ export async function POST(
   _request: Request,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (!auth.ok) return auth.response;
+  const { supabase } = auth;
 
   const { data: project, error: projectError } = await supabase
     .from("projects")

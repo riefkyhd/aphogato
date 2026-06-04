@@ -1,25 +1,19 @@
 import { NextResponse } from "next/server";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { requireAuth } from "@/lib/api/requireAuth";
+import { deleteGoogleRefreshToken } from "@/lib/calendar/googleSettings";
 
 export const runtime = "nodejs";
 
 export async function DELETE() {
-  const supabase = createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (!auth.ok) return auth.response;
+
+  try {
+    await deleteGoogleRefreshToken();
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Failed to disconnect Google";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  const { error } = await supabase
-    .from("settings")
-    .delete()
-    .eq("key", "google_refresh_token");
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ ok: true });
 }

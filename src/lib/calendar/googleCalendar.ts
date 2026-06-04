@@ -3,13 +3,14 @@ import {
   addMinutesToTime,
   parseTimeToMinutes,
 } from "@/lib/calendar/calendarHelpers";
-import { createServerSupabase } from "@/lib/supabase/server";
+import {
+  getGoogleRefreshToken,
+  storeGoogleRefreshToken,
+} from "@/lib/calendar/googleSettings";
 import type { CalendarEvent } from "@/lib/types";
 
 const CALENDAR_TIMEZONE = "Asia/Jakarta";
 const DEFAULT_DURATION_MINUTES = 120;
-
-const REFRESH_TOKEN_KEY = "google_refresh_token";
 
 function getGoogleEnv() {
   const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -21,18 +22,8 @@ function getGoogleEnv() {
   return { clientId, clientSecret, redirectUri };
 }
 
-export async function getStoredRefreshToken(): Promise<string | null> {
-  const supabase = createServerSupabase();
-  const { data } = await supabase
-    .from("settings")
-    .select("value")
-    .eq("key", REFRESH_TOKEN_KEY)
-    .maybeSingle();
-  return data?.value ?? null;
-}
-
 export async function getAccessToken(): Promise<string> {
-  const refreshToken = await getStoredRefreshToken();
+  const refreshToken = await getGoogleRefreshToken();
   if (!refreshToken) {
     throw new Error("Google Calendar not connected");
   }
@@ -188,7 +179,7 @@ export async function deleteEventFromGoogle(
 ): Promise<void> {
   if (!googleEventId) return;
 
-  const refreshToken = await getStoredRefreshToken();
+  const refreshToken = await getGoogleRefreshToken();
   if (!refreshToken) return;
 
   const accessToken = await getAccessToken();
@@ -262,10 +253,5 @@ export async function exchangeCodeForRefreshToken(
 }
 
 export async function storeRefreshToken(refreshToken: string): Promise<void> {
-  const supabase = createServerSupabase();
-  const { error } = await supabase.from("settings").upsert({
-    key: REFRESH_TOKEN_KEY,
-    value: refreshToken,
-  });
-  if (error) throw new Error(error.message);
+  await storeGoogleRefreshToken(refreshToken);
 }

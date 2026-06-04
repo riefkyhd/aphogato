@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { deleteCloudinaryImageByUrl } from "@/lib/cloudinary";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { requireAuth } from "@/lib/api/requireAuth";
 import type { Photo } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -9,13 +9,9 @@ export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (!auth.ok) return auth.response;
+  const { supabase } = auth;
 
   let body: { photoIds?: string[] };
   try {

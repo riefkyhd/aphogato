@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/api/requireAuth";
 import { uploadImageToFolder } from "@/lib/cloudinary";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { isAllowedImageBuffer } from "@/lib/security/imageBytes";
 import type { Photo } from "@/lib/types";
 
 export const runtime = "nodejs";
 
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
+const MAX_FILES_PER_REQUEST = 40;
 const ALLOWED_TYPES = new Set([
   "image/jpeg",
   "image/png",
@@ -19,13 +21,9 @@ export async function POST(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (!auth.ok) return auth.response;
+  const { supabase } = auth;
 
   const { data: project, error: projectError } = await supabase
     .from("projects")
@@ -41,6 +39,12 @@ export async function POST(
   const entries = formData.getAll("files").filter((f) => f instanceof File);
   if (entries.length === 0) {
     return NextResponse.json({ error: "No files provided" }, { status: 400 });
+  }
+  if (entries.length > MAX_FILES_PER_REQUEST) {
+    return NextResponse.json(
+      { error: `Maximum ${MAX_FILES_PER_REQUEST} files per upload` },
+      { status: 400 }
+    );
   }
 
   const { data: existingPhotos } = await supabase
@@ -71,6 +75,11 @@ export async function POST(
 
     try {
       const buffer = Buffer.from(await file.arrayBuffer());
+      if (!isAllowedImageBuffer(buffer, file.type)) {
+        errors.push(`${file.name}: file content does not match image type`);
+        continue;
+      }
+
       const resource = await uploadImageToFolder(
         project.cloudinary_folder,
         buffer,

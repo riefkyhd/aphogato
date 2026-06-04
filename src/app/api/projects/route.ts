@@ -1,18 +1,14 @@
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
+import { requireAuth } from "@/lib/api/requireAuth";
 import { resolveUniqueCloudinaryFolder } from "@/lib/resolveCloudinaryFolder";
-import { createServerSupabase } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const supabase = createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (!auth.ok) return auth.response;
+  const { supabase } = auth;
 
   let body: { name?: string; client_name?: string };
   try {
