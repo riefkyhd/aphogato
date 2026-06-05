@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/PageToolbarActions";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Tooltip } from "@/components/ui/Tooltip";
-import { downloadCalendarList } from "@/lib/calendar/exportCalendarList";
+import { exportCalendarListPdf } from "@/lib/calendar/exportCalendarListPdf";
 import type { FinanceEventOption } from "@/lib/finance/financeOptions";
 import { parseMoneyInput } from "@/lib/finance/formatMoney";
 import { filterExpensesForEvent } from "@/lib/finance/projectExpenses";
@@ -75,6 +75,7 @@ export function CalendarClient({
   const [formInitialDate, setFormInitialDate] = useState<Date | null>(null);
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
@@ -299,9 +300,14 @@ export function CalendarClient({
     setSyncing(true);
     try {
       const res = await fetch("/api/calendar/sync-all", { method: "POST" });
-      const json = await res.json();
-      if (json.error) {
-        toast.error(json.error);
+      const json = (await res.json()) as {
+        error?: string;
+        synced?: number;
+        errors?: string[];
+        events?: CalendarEvent[];
+      };
+      if (!res.ok) {
+        toast.error(json.error ?? "Sync failed");
         return;
       }
       if (Array.isArray(json.events)) {
@@ -318,7 +324,7 @@ export function CalendarClient({
       const errors = (json.errors ?? []) as string[];
       if (errors.length > 0) {
         toast.warning(
-          `Synced ${synced} event${synced === 1 ? "" : "s"}. ${errors.length} failed.`
+          `Synced ${synced} event${synced === 1 ? "" : "s"}. ${errors.length} failed: ${errors[0]}`
         );
       } else if (synced > 0) {
         toast.success(
@@ -346,22 +352,35 @@ export function CalendarClient({
             variant="secondary"
             size="sm"
             className={toolbarButtonClass}
+            loading={exporting}
+            disabled={exporting}
             onClick={() => {
               if (exportEvents.length === 0) {
                 toast.error("No events to export for this view");
                 return;
               }
-              downloadCalendarList(
-                exportEvents,
-                view === "month"
-                  ? `calendar-${format(currentMonth, "yyyy-MM")}.txt`
-                  : undefined
-              );
-              toast.success("Calendar list downloaded");
+              setExporting(true);
+              void exportCalendarListPdf(exportEvents, {
+                title:
+                  view === "month"
+                    ? `Shoot schedule — ${format(currentMonth, "MMMM yyyy")}`
+                    : "Shoot schedule — all events",
+                filename:
+                  view === "month"
+                    ? `shoot-schedule-${format(currentMonth, "yyyy-MM")}.pdf`
+                    : undefined,
+              })
+                .then(() => toast.success("Schedule PDF downloaded"))
+                .catch((err) =>
+                  toast.error(
+                    err instanceof Error ? err.message : "Export failed"
+                  )
+                )
+                .finally(() => setExporting(false));
             }}
           >
             <Download className="h-3.5 w-3.5 mr-1.5 inline" aria-hidden />
-            Download list
+            Export PDF
           </Button>
           {isGoogleConnected ? (
             <Button
@@ -398,8 +417,8 @@ export function CalendarClient({
         <div className="flex gap-2 text-[12px] text-text-secondary leading-relaxed">
           <Info className="h-4 w-4 shrink-0 text-text-muted mt-0.5" aria-hidden />
           <p>
-            <span className="text-text-primary font-medium">Download list</span>{" "}
-            saves a plain-text schedule you can share or print (
+            <span className="text-text-primary font-medium">Export PDF</span>{" "}
+            saves the list view as a printable schedule (
             {view === "month" ? "current month" : "all events"}).{" "}
             {isGoogleConnected ? (
               <>

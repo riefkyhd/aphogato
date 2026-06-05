@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function DomainSecurityInfo() {
   return (
-    <section className="border border-border bg-bg-secondary p-6 max-w-2xl mt-6">
+    <section className="border border-border bg-bg-secondary p-6 mt-6">
       <h2 className="text-[11px] uppercase tracking-label text-text-muted mb-4">
         Custom domain security
       </h2>

@@ -2,6 +2,7 @@
 
 import { format, isToday, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
+import { formatEventTimeRange } from "@/lib/calendar/calendarHelpers";
 import { EventStatusDot } from "@/components/calendar/EventStatusDot";
 import { ShootTypeBadge } from "@/components/calendar/ShootTypeBadge";
 import type { CalendarEvent } from "@/lib/types";
@@ -35,7 +36,7 @@ export function CalendarListView({
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="mx-auto w-full max-w-3xl flex flex-col">
       {[...groups.entries()].map(([monthLabel, monthEvents]) => (
         <section key={monthLabel}>
           <h3 className="uppercase tracking-label text-text-secondary border-b border-border py-3 px-4 text-[11px]">
@@ -44,51 +45,72 @@ export function CalendarListView({
           {monthEvents.map((ev) => {
             const eventDate = parseISO(ev.shoot_date);
             const today = isToday(eventDate);
+            const timeLabel = formatEventTimeRange(
+              ev.shoot_time,
+              ev.shoot_end_time
+            );
+            const metaLine = [
+              ev.client_name?.trim(),
+              ev.location?.trim(),
+              timeLabel || null,
+            ]
+              .filter(Boolean)
+              .join(" · ");
+
             return (
-            <button
-              key={ev.id}
-              type="button"
-              onClick={() => onEventClick(ev)}
-              className={cn(
-                "flex w-full items-center gap-2 sm:gap-3 min-h-[56px] sm:h-16 border-b border-border px-3 sm:px-4 py-2 sm:py-0 hover:bg-bg-elevated cursor-pointer text-left transition-colors",
-                today && "bg-bg-elevated/60 border-l-2 border-l-text-primary"
-              )}
-            >
-              <span
+              <button
+                key={ev.id}
+                type="button"
+                onClick={() => onEventClick(ev)}
                 className={cn(
-                  "w-[4.5rem] sm:w-16 shrink-0 text-[11px] sm:text-[12px] leading-tight",
-                  today ? "text-text-primary font-medium" : "text-text-muted"
+                  "flex w-full items-center gap-3 min-h-[56px] border-b border-border px-4 py-3 hover:bg-bg-elevated cursor-pointer text-left transition-colors",
+                  today && "bg-bg-elevated/60 border-l-2 border-l-text-primary"
                 )}
               >
-                {today ? (
-                  <>
-                    <span className="block">Today</span>
-                    <span className="block text-[10px] text-text-secondary font-normal">
-                      {format(eventDate, "EEE")}
+                <span
+                  className={cn(
+                    "w-16 shrink-0 text-[11px] sm:text-[12px] leading-tight",
+                    today ? "text-text-primary font-medium" : "text-text-muted"
+                  )}
+                >
+                  {today ? (
+                    <>
+                      <span className="block">Today</span>
+                      <span className="block text-[10px] text-text-secondary font-normal">
+                        {format(eventDate, "EEE")}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="block">{format(eventDate, "MMM d")}</span>
+                      <span className="block text-[10px] text-text-secondary">
+                        {format(eventDate, "EEE")}
+                      </span>
+                    </>
+                  )}
+                </span>
+
+                <div className="flex-1 min-w-0 flex flex-col gap-1">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <ShootTypeBadge shootType={ev.shoot_type} className="shrink-0" />
+                    <span className="min-w-0 text-[14px] text-text-primary truncate">
+                      {ev.title}
                     </span>
-                  </>
-                ) : (
-                  <>
-                    <span className="block">{format(eventDate, "MMM d")}</span>
-                    <span className="block text-[10px] text-text-secondary">
-                      {format(eventDate, "EEE")}
-                    </span>
-                  </>
-                )}
-              </span>
-              <ShootTypeBadge shootType={ev.shoot_type} className="shrink-0" />
-              <span className="flex-1 min-w-0 text-[14px] text-text-primary truncate">
-                {ev.title}
-              </span>
-              <span className="hidden sm:block text-[12px] text-text-secondary truncate max-w-[120px]">
-                {ev.client_name ?? "—"}
-              </span>
-              <EventStatusDot status={ev.status} showLabel={false} />
-              <span className="hidden md:block text-[12px] text-text-muted truncate max-w-[140px]">
-                {ev.location ?? ""}
-              </span>
-            </button>
-          );
+                  </div>
+                  {metaLine ? (
+                    <p className="text-[12px] text-text-secondary truncate">
+                      {metaLine}
+                    </p>
+                  ) : null}
+                </div>
+
+                <EventStatusDot
+                  status={ev.status}
+                  showLabel={false}
+                  className="shrink-0"
+                />
+              </button>
+            );
           })}
         </section>
       ))}

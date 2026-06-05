@@ -62,7 +62,7 @@ export function PreferencesSettings() {
 
   return (
     <>
-      <section className="border border-border bg-bg-secondary p-6 max-w-lg mt-6">
+      <section className="border border-border bg-bg-secondary p-6 mt-6">
         <h2 className="text-[11px] uppercase tracking-label text-text-muted mb-4">
           Workflow defaults
         </h2>
@@ -135,7 +135,7 @@ export function PreferencesSettings() {
         </div>
       </section>
 
-      <section className="border border-border bg-bg-secondary p-6 max-w-lg mt-6">
+      <section className="border border-border bg-bg-secondary p-6 mt-6">
         <h2 className="text-[11px] uppercase tracking-label text-text-muted mb-4">
           Finance &amp; privacy defaults
         </h2>

@@ -69,7 +69,7 @@ export function PrivacySettings() {
   }
 
   return (
-    <section className="border border-border bg-bg-secondary p-6 max-w-lg mt-6">
+    <section className="border border-border bg-bg-secondary p-6 mt-6">
       <h2 className="text-[11px] uppercase tracking-label text-text-muted mb-4">
         Privacy PIN
       </h2>

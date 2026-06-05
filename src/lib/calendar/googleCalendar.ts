@@ -47,6 +47,11 @@ export async function getAccessToken(): Promise<string> {
   };
 
   if (!res.ok || !json.access_token) {
+    if (json.error === "invalid_grant") {
+      throw new Error(
+        "Google Calendar access expired. Disconnect and reconnect in Settings."
+      );
+    }
     throw new Error(
       json.error_description ?? json.error ?? "Failed to refresh Google token"
     );
@@ -144,9 +149,21 @@ export async function updateCalendarEvent(
 
   const json = (await res.json()) as { id?: string; error?: { message?: string } };
   if (!res.ok || !json.id) {
-    throw new Error(json.error?.message ?? "Failed to update Google event");
+    const err = new Error(json.error?.message ?? "Failed to update Google event");
+    if (res.status === 404 || res.status === 410) {
+      (err as Error & { code?: string }).code = "GOOGLE_EVENT_NOT_FOUND";
+    }
+    throw err;
   }
   return json.id;
+}
+
+function isStaleGoogleEventError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const coded = err as Error & { code?: string };
+  if (coded.code === "GOOGLE_EVENT_NOT_FOUND") return true;
+  const msg = err.message.toLowerCase();
+  return msg.includes("not found") || msg.includes("deleted");
 }
 
 export async function deleteCalendarEvent(
@@ -190,18 +207,23 @@ export async function syncEventToGoogle(
   event: CalendarEvent
 ): Promise<{ google_event_id: string }> {
   const accessToken = await getAccessToken();
-  let googleEventId: string;
 
   if (event.google_event_id) {
-    googleEventId = await updateCalendarEvent(
-      accessToken,
-      event.google_event_id,
-      event
-    );
-  } else {
-    googleEventId = await createCalendarEvent(accessToken, event);
+    try {
+      const googleEventId = await updateCalendarEvent(
+        accessToken,
+        event.google_event_id,
+        event
+      );
+      return { google_event_id: googleEventId };
+    } catch (err) {
+      if (!isStaleGoogleEventError(err)) throw err;
+      const googleEventId = await createCalendarEvent(accessToken, event);
+      return { google_event_id: googleEventId };
+    }
   }
 
+  const googleEventId = await createCalendarEvent(accessToken, event);
   return { google_event_id: googleEventId };
 }
 

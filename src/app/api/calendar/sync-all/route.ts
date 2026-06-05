@@ -27,10 +27,13 @@ export async function POST() {
     try {
       const { google_event_id } = await syncEventToGoogle(event);
       const synced_at = new Date().toISOString();
-      await supabase
+      const { error: updateError } = await supabase
         .from("events")
         .update({ google_event_id, synced_at })
         .eq("id", event.id);
+      if (updateError) {
+        throw new Error(updateError.message);
+      }
       synced += 1;
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Sync failed";

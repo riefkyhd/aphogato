@@ -44,7 +44,7 @@ export function GoogleCalendarSettings({
   }
 
   return (
-    <section className="border border-border bg-bg-secondary p-6 max-w-lg">
+    <section className="border border-border bg-bg-secondary p-6">
       <h2 className="text-[11px] uppercase tracking-label text-text-muted mb-4">
         Google Calendar
       </h2>

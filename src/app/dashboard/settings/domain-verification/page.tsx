@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function DomainVerificationPage() {
   return (
-    <main className="px-4 sm:px-6 md:px-10 py-6 sm:py-10 max-w-2xl">
+    <main className="px-4 sm:px-6 md:px-10 py-6 sm:py-10 max-w-2xl mx-auto w-full">
       <Link
         href="/dashboard/settings"
         className="text-[11px] uppercase tracking-label text-text-muted hover:text-text-primary mb-6 inline-block"

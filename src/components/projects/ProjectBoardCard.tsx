@@ -3,7 +3,7 @@
 import { format, parseISO } from "date-fns";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cloudinaryLoader } from "@/lib/cloudinaryLoader";
 import {
   BOARD_COLUMNS,
@@ -11,6 +11,24 @@ import {
 } from "@/lib/projects/board";
 import type { ProjectStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
+
+function createDragGhost(source: HTMLElement): HTMLElement {
+  const rect = source.getBoundingClientRect();
+  const ghost = source.cloneNode(true) as HTMLElement;
+  ghost.style.position = "fixed";
+  ghost.style.top = "-10000px";
+  ghost.style.left = "-10000px";
+  ghost.style.width = `${rect.width}px`;
+  ghost.style.margin = "0";
+  ghost.style.pointerEvents = "none";
+  ghost.style.opacity = "1";
+  ghost.style.transform = "rotate(-1.5deg) scale(1.02)";
+  ghost.style.boxShadow = "0 16px 48px rgba(0, 0, 0, 0.5)";
+  ghost.style.zIndex = "9999";
+  ghost.setAttribute("aria-hidden", "true");
+  document.body.appendChild(ghost);
+  return ghost;
+}
 
 export function ProjectBoardCard({
   project,
@@ -23,6 +41,8 @@ export function ProjectBoardCard({
 }) {
   const [dragging, setDragging] = useState(false);
   const [canDrag, setCanDrag] = useState(false);
+  const cardRef = useRef<HTMLElement>(null);
+  const dragGhostRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const mq = window.matchMedia("(pointer: fine)");
@@ -32,29 +52,63 @@ export function ProjectBoardCard({
     return () => mq.removeEventListener("change", update);
   }, []);
 
+  useEffect(() => {
+    return () => {
+      dragGhostRef.current?.remove();
+      dragGhostRef.current = null;
+    };
+  }, []);
+
+  const clearDragGhost = () => {
+    dragGhostRef.current?.remove();
+    dragGhostRef.current = null;
+  };
+
   return (
     <article
+      ref={cardRef}
       draggable={canDrag && !moving}
       onDragStart={(e) => {
         setDragging(true);
         e.dataTransfer.setData("text/project-id", project.id);
         e.dataTransfer.effectAllowed = "move";
+
+        const card = cardRef.current;
+        if (!card) return;
+
+        clearDragGhost();
+        const ghost = createDragGhost(card);
+        dragGhostRef.current = ghost;
+
+        const rect = card.getBoundingClientRect();
+        e.dataTransfer.setDragImage(
+          ghost,
+          e.clientX - rect.left,
+          e.clientY - rect.top
+        );
       }}
-      onDragEnd={() => setDragging(false)}
+      onDragEnd={() => {
+        setDragging(false);
+        clearDragGhost();
+      }}
       className={cn(
-        "border border-border bg-bg-secondary transition-opacity",
-        dragging && "opacity-40",
+        "border border-border bg-bg-secondary transition-[opacity,transform,box-shadow,border-color] duration-150",
+        canDrag && !moving && "cursor-grab active:cursor-grabbing",
+        dragging &&
+          "opacity-25 scale-[0.98] border-dashed border-text-muted/50 bg-bg-primary/40 shadow-none",
         moving && "opacity-60 pointer-events-none"
       )}
     >
       <Link
         href={`/dashboard/${project.id}`}
-        className="block p-3 hover:bg-bg-elevated/60 transition-colors"
+        draggable={false}
+        onDragStart={(e) => e.preventDefault()}
+        className="block p-3 hover:bg-bg-elevated/60 transition-colors select-none"
         onClick={(e) => {
           if (dragging) e.preventDefault();
         }}
       >
-        <div className="flex gap-3">
+        <div className="flex gap-3 pointer-events-none">
           <div className="relative h-14 w-20 shrink-0 bg-bg-elevated overflow-hidden">
             {project.cover_url ? (
               <Image
@@ -63,6 +117,7 @@ export function ProjectBoardCard({
                 alt=""
                 fill
                 sizes="80px"
+                draggable={false}
                 className="object-cover"
               />
             ) : (
@@ -106,7 +161,7 @@ export function ProjectBoardCard({
           id={`board-move-${project.id}`}
           aria-label={`Move ${project.name} to another stage`}
           value={project.status}
-          disabled={moving}
+          disabled={moving || dragging}
           className="input-dark select-compact flex-1 min-w-0 text-[11px] uppercase tracking-label"
           onChange={(e) => {
             const next = e.target.value as ProjectStatus;
@@ -115,6 +170,7 @@ export function ProjectBoardCard({
             }
           }}
           onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
         >
           {BOARD_COLUMNS.map((col) => (
             <option key={col.status} value={col.status}>
