@@ -28,3 +28,20 @@ export function formatExpensePrimary(row: ExpenseEntry): string {
     row.category
   );
 }
+
+export function isGeneralExpense(row: ExpenseEntry): boolean {
+  return !row.event_id && !row.project_id;
+}
+
+export function formatExpenseSecondary(
+  row: ExpenseEntry,
+  eventById: Map<string, EventRef>,
+  projectById: Map<string, ProjectRef>
+): string {
+  const links = formatExpenseEntryLinks(row, eventById, projectById);
+  if (links) return links;
+  const category =
+    EXPENSE_CATEGORY_LABELS[row.category as ExpenseCategory] ?? row.category;
+  if (isGeneralExpense(row)) return `General · ${category}`;
+  return category;
+}

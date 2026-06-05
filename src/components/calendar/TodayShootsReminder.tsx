@@ -9,6 +9,7 @@ import {
   isBrowserReminderEnabled,
 } from "@/lib/calendar/todayEvents";
 import type { CalendarEvent } from "@/lib/types";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { cn } from "@/lib/utils";
 import { Bell, Calendar, X } from "lucide-react";
 import Link from "next/link";
@@ -126,14 +127,16 @@ export function TodayShootsReminder({ className }: { className?: string }) {
             Open calendar
           </Link>
         </div>
-        <button
-          type="button"
-          onClick={handleDismiss}
-          className="shrink-0 p-1 text-text-muted hover:text-text-primary"
-          aria-label="Dismiss today reminder"
-        >
-          <X className="h-4 w-4" />
-        </button>
+        <Tooltip label="Dismiss reminder">
+          <button
+            type="button"
+            onClick={handleDismiss}
+            className="shrink-0 p-1 text-text-muted hover:text-text-primary"
+            aria-label="Dismiss today reminder"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </Tooltip>
       </div>
     </div>
   );

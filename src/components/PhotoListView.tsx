@@ -449,7 +449,7 @@ export function PhotoListView({
                       {formatIndex(index, photos.length)}
                       {manageInteractive && ph.is_selected && (
                         <span className="ml-2 text-status-editing">
-                          · Client pick
+                          · Client selection
                         </span>
                       )}
                     </p>

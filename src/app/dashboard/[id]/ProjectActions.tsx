@@ -40,12 +40,12 @@ function syncToastMessage(
   }
   if (newlySelected > 0) {
     parts.push(
-      `${newlySelected} new client pick${newlySelected === 1 ? "" : "s"}`
+      `${newlySelected} new client selection${newlySelected === 1 ? "" : "s"}`
     );
   }
   if (newlyDeselected > 0) {
     parts.push(
-      `${newlyDeselected} client pick${newlyDeselected === 1 ? "" : "s"} removed`
+      `${newlyDeselected} client selection${newlyDeselected === 1 ? "" : "s"} removed`
     );
   }
   if (parts.length === 0) return "Already up to date";

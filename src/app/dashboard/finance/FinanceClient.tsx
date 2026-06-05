@@ -7,19 +7,17 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { ExpenseFormModal } from "@/components/finance/ExpenseFormModal";
+import { ExpenseQuickAdd } from "@/components/finance/ExpenseQuickAdd";
 import type {
   FinanceEventOption,
   FinanceProjectOption,
 } from "@/lib/finance/financeOptions";
 import { saveExpenseApi } from "@/lib/finance/saveExpenseApi";
-import {
-  EXPENSE_CATEGORY_LABELS,
-  type ExpenseCategory,
-} from "@/lib/finance/constants";
 import { formatMoney } from "@/lib/finance/formatMoney";
 import {
-  formatExpenseEntryLinks,
   formatExpensePrimary,
+  formatExpenseSecondary,
+  isGeneralExpense,
 } from "@/lib/finance/linkLabels";
 import { filterEntriesByMonth } from "@/lib/finance/summary";
 import type {
@@ -61,6 +59,9 @@ export function FinanceClient({
   const [editingIncome, setEditingIncome] = useState<IncomeEntry | null>(null);
   const [editingExpense, setEditingExpense] = useState<ExpenseEntry | null>(null);
   const [saving, setSaving] = useState(false);
+  const [expenseScope, setExpenseScope] = useState<"all" | "linked" | "general">(
+    "all"
+  );
 
   const reload = useCallback(async (y: number) => {
     setLoading(true);
@@ -95,9 +96,18 @@ export function FinanceClient({
   }, [income, year, month]);
 
   const filteredExpenses = useMemo(() => {
-    if (!month) return expenses;
-    return filterEntriesByMonth(expenses, year, month);
-  }, [expenses, year, month]);
+    let rows = month ? filterEntriesByMonth(expenses, year, month) : expenses;
+    if (expenseScope === "linked") {
+      rows = rows.filter((row) => !isGeneralExpense(row));
+    } else if (expenseScope === "general") {
+      rows = rows.filter((row) => isGeneralExpense(row));
+    }
+    return rows;
+  }, [expenses, year, month, expenseScope]);
+
+  const generalExpenseDefaultDate = month
+    ? `${year}-${String(month).padStart(2, "0")}-01`
+    : format(new Date(), "yyyy-MM-dd");
 
   const periodIncome = month
     ? (summary.months[month - 1]?.income ?? 0)
@@ -124,7 +134,8 @@ export function FinanceClient({
             Finance
           </h1>
           <p className="mt-1 text-[13px] text-text-secondary">
-            Client income vs operational costs
+            Client income, shoot costs, and general overhead (GDrive, Lightroom,
+            subscriptions, etc.)
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -250,34 +261,83 @@ export function FinanceClient({
               },
             }))}
           />
-          <EntryList
-            title="Expenses"
-            empty="No expenses recorded for this period."
-            entries={filteredExpenses.map((row) => ({
-              id: row.id,
-              date: row.entry_date,
-              amount: row.amount,
-              primary: formatExpensePrimary(row),
-              secondary:
-                formatExpenseEntryLinks(row, eventById, projectById) ??
-                EXPENSE_CATEGORY_LABELS[row.category as ExpenseCategory],
-              onEdit: () => {
-                setEditingExpense(row);
-                setExpenseModal(true);
-              },
-              onDelete: async () => {
-                const res = await fetch(`/api/finance/expenses/${row.id}`, {
-                  method: "DELETE",
-                });
-                if (!res.ok) {
-                  toast.error("Failed to delete");
-                  return;
-                }
-                toast.success("Expense removed");
-                void reload(year);
-              },
-            }))}
-          />
+          <section className="border border-border bg-bg-secondary">
+            <div className="flex flex-col gap-3 px-4 py-3 border-b border-border sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-[11px] uppercase tracking-label">Expenses</h2>
+                <p className="mt-1 text-[11px] text-text-muted">
+                  General expenses do not need a project or calendar event.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {(
+                  [
+                    ["all", "All"],
+                    ["linked", "Shoot-linked"],
+                    ["general", "General"],
+                  ] as const
+                ).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setExpenseScope(value)}
+                    className={cn(
+                      "px-2.5 py-1 text-[10px] uppercase tracking-label border border-border transition-colors",
+                      expenseScope === value
+                        ? "bg-bg-elevated text-text-primary"
+                        : "text-text-muted hover:text-text-secondary"
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="px-4 py-3 border-b border-border bg-bg-primary/40">
+              <p className="text-[11px] uppercase tracking-label text-text-muted mb-2">
+                Quick add overhead
+              </p>
+              <ExpenseQuickAdd
+                entryDate={generalExpenseDefaultDate}
+                saving={saving}
+                onSavingChange={setSaving}
+                onSaved={() => void reload(year)}
+                onOpenFullForm={() => {
+                  setEditingExpense(null);
+                  setExpenseModal(true);
+                }}
+              />
+            </div>
+            <EntryListBody
+              empty={
+                expenseScope === "general"
+                  ? "No general overhead for this period. Use quick add above for tools and subscriptions."
+                  : "No expenses recorded for this period."
+              }
+              entries={filteredExpenses.map((row) => ({
+                id: row.id,
+                date: row.entry_date,
+                amount: row.amount,
+                primary: formatExpensePrimary(row),
+                secondary: formatExpenseSecondary(row, eventById, projectById),
+                onEdit: () => {
+                  setEditingExpense(row);
+                  setExpenseModal(true);
+                },
+                onDelete: async () => {
+                  const res = await fetch(`/api/finance/expenses/${row.id}`, {
+                    method: "DELETE",
+                  });
+                  if (!res.ok) {
+                    toast.error("Failed to delete");
+                    return;
+                  }
+                  toast.success("Expense removed");
+                  void reload(year);
+                },
+              }))}
+            />
+          </section>
         </div>
       )}
 
@@ -422,50 +482,68 @@ function EntryList({
       <h2 className="px-4 py-3 text-[11px] uppercase tracking-label border-b border-border">
         {title}
       </h2>
-      {entries.length === 0 ? (
-        <p className="px-4 py-8 text-[13px] text-text-muted">{empty}</p>
-      ) : (
-        <ul>
-          {entries.map((e) => (
-            <li
-              key={e.id}
-              className="flex items-start justify-between gap-3 px-4 py-3 border-b border-border last:border-0"
-            >
-              <div className="min-w-0">
-                <p className="text-[13px] text-text-primary truncate">
-                  {e.primary}
-                </p>
-                <p className="text-[11px] text-text-muted mt-0.5">
-                  {format(parseISO(e.date), "MMM d, yyyy")}
-                  {e.secondary ? ` · ${e.secondary}` : ""}
-                </p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-[13px] tabular-nums text-text-primary">
-                  {formatMoney(e.amount)}
-                </p>
-                <div className="flex gap-2 mt-1 justify-end">
-                  <button
-                    type="button"
-                    className="text-[10px] uppercase tracking-label text-text-muted hover:text-text-primary"
-                    onClick={e.onEdit}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="text-[10px] uppercase tracking-label text-status-editing hover:opacity-80"
-                    onClick={e.onDelete}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+      <EntryListBody empty={empty} entries={entries} />
     </section>
+  );
+}
+
+function EntryListBody({
+  empty,
+  entries,
+}: {
+  empty: string;
+  entries: Array<{
+    id: string;
+    date: string;
+    amount: number;
+    primary: string;
+    secondary: string | null;
+    onEdit: () => void;
+    onDelete: () => void;
+  }>;
+}) {
+  if (entries.length === 0) {
+    return <p className="px-4 py-8 text-[13px] text-text-muted">{empty}</p>;
+  }
+
+  return (
+    <ul>
+      {entries.map((e) => (
+        <li
+          key={e.id}
+          className="flex items-start justify-between gap-3 px-4 py-3 border-b border-border last:border-0"
+        >
+          <div className="min-w-0">
+            <p className="text-[13px] text-text-primary truncate">{e.primary}</p>
+            <p className="text-[11px] text-text-muted mt-0.5">
+              {format(parseISO(e.date), "EEE, MMM d, yyyy")}
+              {e.secondary ? ` · ${e.secondary}` : ""}
+            </p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-[13px] tabular-nums text-text-primary">
+              {formatMoney(e.amount)}
+            </p>
+            <div className="flex gap-2 mt-1 justify-end">
+              <button
+                type="button"
+                className="text-[10px] uppercase tracking-label text-text-muted hover:text-text-primary"
+                onClick={e.onEdit}
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                className="text-[10px] uppercase tracking-label text-status-editing hover:opacity-80"
+                onClick={e.onDelete}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }
 

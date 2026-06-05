@@ -1,7 +1,14 @@
 "use client";
 
-import { addMonths, format, isSameMonth, startOfMonth, subMonths } from "date-fns";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  addMonths,
+  format,
+  isSameMonth,
+  parseISO,
+  startOfMonth,
+  subMonths,
+} from "date-fns";
+import { ChevronLeft, ChevronRight, Download, Info } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -14,6 +21,8 @@ import {
 } from "@/components/calendar/EventDetailPanel";
 import { EventFormModal } from "@/components/calendar/EventFormModal";
 import { Button } from "@/components/ui/Button";
+import { Tooltip } from "@/components/ui/Tooltip";
+import { downloadCalendarList } from "@/lib/calendar/exportCalendarList";
 import type { FinanceEventOption } from "@/lib/finance/financeOptions";
 import { parseMoneyInput } from "@/lib/finance/formatMoney";
 import { filterExpensesForEvent } from "@/lib/finance/projectExpenses";
@@ -58,6 +67,13 @@ export function CalendarClient({
     () => events.filter((e) => !e.google_event_id).length,
     [events]
   );
+
+  const exportEvents = useMemo(() => {
+    if (view === "list") return events;
+    return events.filter((e) =>
+      isSameMonth(parseISO(e.shoot_date), currentMonth)
+    );
+  }, [events, view, currentMonth]);
 
   const openEvent = useCallback((ev: CalendarEvent) => {
     setPanelEvent(ev);
@@ -301,6 +317,27 @@ export function CalendarClient({
           Calendar
         </h1>
         <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            className="!text-[11px] flex-1 sm:flex-none min-w-0"
+            onClick={() => {
+              if (exportEvents.length === 0) {
+                toast.error("No events to export for this view");
+                return;
+              }
+              downloadCalendarList(
+                exportEvents,
+                view === "month"
+                  ? `calendar-${format(currentMonth, "yyyy-MM")}.txt`
+                  : undefined
+              );
+              toast.success("Calendar list downloaded");
+            }}
+          >
+            <Download className="h-3.5 w-3.5 mr-1.5 inline" aria-hidden />
+            Download list
+          </Button>
           {isGoogleConnected ? (
             <Button
               type="button"
@@ -330,42 +367,69 @@ export function CalendarClient({
         </div>
       </div>
 
+      <div className="mb-4 rounded-sm border border-border bg-bg-secondary px-3 py-2.5 sm:px-4">
+        <div className="flex gap-2 text-[12px] text-text-secondary leading-relaxed">
+          <Info className="h-4 w-4 shrink-0 text-text-muted mt-0.5" aria-hidden />
+          <p>
+            <span className="text-text-primary font-medium">Download list</span>{" "}
+            saves a plain-text schedule you can share or print (
+            {view === "month" ? "current month" : "all events"}).{" "}
+            {isGoogleConnected ? (
+              <>
+                <span className="text-text-primary font-medium">Sync all</span>{" "}
+                pushes shoots to Google Calendar for phone reminders.
+              </>
+            ) : (
+              <>
+                Connect Google in Settings to sync shoots to your phone calendar.
+              </>
+            )}
+          </p>
+        </div>
+      </div>
+
       <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-3 mb-4 border-b border-border pb-4">
         <div className="flex items-center justify-center sm:justify-start gap-2">
-          <button
-            type="button"
-            onClick={() => setCurrentMonth((m) => subMonths(m, 1))}
-            className="p-2 text-text-muted hover:text-text-primary"
-            aria-label="Previous month"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
+          <Tooltip label="Previous month">
+            <button
+              type="button"
+              onClick={() => setCurrentMonth((m) => subMonths(m, 1))}
+              className="p-2 text-text-muted hover:text-text-primary"
+              aria-label="Previous month"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+          </Tooltip>
           <span className="text-[13px] uppercase tracking-label text-text-primary min-w-[140px] text-center">
             {format(currentMonth, "MMMM yyyy")}
           </span>
-          <button
-            type="button"
-            onClick={() => setCurrentMonth((m) => addMonths(m, 1))}
-            className="p-2 text-text-muted hover:text-text-primary"
-            aria-label="Next month"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
-          {view === "month" && (
+          <Tooltip label="Next month">
             <button
               type="button"
-              onClick={() => setCurrentMonth(startOfMonth(new Date()))}
-              disabled={viewingTodayMonth}
-              className={cn(
-                "ml-1 px-2.5 py-1 text-[11px] uppercase tracking-label border border-border transition-colors",
-                viewingTodayMonth
-                  ? "text-text-muted opacity-50 cursor-default"
-                  : "text-text-secondary hover:text-text-primary hover:bg-bg-elevated"
-              )}
-              aria-label="Go to today"
+              onClick={() => setCurrentMonth((m) => addMonths(m, 1))}
+              className="p-2 text-text-muted hover:text-text-primary"
+              aria-label="Next month"
             >
-              Today
+              <ChevronRight className="h-5 w-5" />
             </button>
+          </Tooltip>
+          {view === "month" && (
+            <Tooltip label="Jump to current month">
+              <button
+                type="button"
+                onClick={() => setCurrentMonth(startOfMonth(new Date()))}
+                disabled={viewingTodayMonth}
+                className={cn(
+                  "ml-1 px-2.5 py-1 text-[11px] uppercase tracking-label border border-border transition-colors",
+                  viewingTodayMonth
+                    ? "text-text-muted opacity-50 cursor-default"
+                    : "text-text-secondary hover:text-text-primary hover:bg-bg-elevated"
+                )}
+                aria-label="Go to today"
+              >
+                Today
+              </button>
+            </Tooltip>
           )}
         </div>
         <div className="flex gap-1 justify-center sm:justify-end">

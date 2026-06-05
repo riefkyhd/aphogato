@@ -5,12 +5,43 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SignOutButton } from "@/components/SignOutButton";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { cn } from "@/lib/utils";
 
 const PORTFOLIO_URL = "https://muhammad-hadid.com";
 
 const linkClass =
   "block py-3 text-[13px] uppercase tracking-label text-text-secondary hover:text-text-primary border-b border-border last:border-0";
+
+function navIsActive(pathname: string, href: string) {
+  if (href === "/dashboard") return pathname === "/dashboard";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function NavLink({
+  href,
+  className,
+  children,
+  onActiveTap,
+}: {
+  href: string;
+  className?: string;
+  children: React.ReactNode;
+  onActiveTap: () => void;
+}) {
+  const pathname = usePathname();
+  return (
+    <Link
+      href={href}
+      className={className}
+      onClick={() => {
+        if (navIsActive(pathname, href)) onActiveTap();
+      }}
+    >
+      {children}
+    </Link>
+  );
+}
 
 export function NavbarMenu({ shootsToday }: { shootsToday: number }) {
   const [open, setOpen] = useState(false);
@@ -31,20 +62,22 @@ export function NavbarMenu({ shootsToday }: { shootsToday: number }) {
 
   return (
     <div className="ml-auto md:hidden">
-      <button
-        type="button"
-        className="inline-flex h-10 w-10 items-center justify-center text-text-primary"
-        aria-expanded={open}
-        aria-controls="mobile-nav"
-        onClick={() => setOpen((v) => !v)}
-      >
-        {open ? (
-          <X className="h-5 w-5" aria-hidden />
-        ) : (
-          <Menu className="h-5 w-5" aria-hidden />
-        )}
-        <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
-      </button>
+      <Tooltip label={open ? "Close menu" : "Open menu"}>
+        <button
+          type="button"
+          className="inline-flex h-10 w-10 items-center justify-center text-text-primary"
+          aria-expanded={open}
+          aria-controls="mobile-nav"
+          onClick={() => setOpen((v) => !v)}
+        >
+          {open ? (
+            <X className="h-5 w-5" aria-hidden />
+          ) : (
+            <Menu className="h-5 w-5" aria-hidden />
+          )}
+          <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
+        </button>
+      </Tooltip>
 
       {open && (
         <>
@@ -58,15 +91,20 @@ export function NavbarMenu({ shootsToday }: { shootsToday: number }) {
             id="mobile-nav"
             className="fixed left-0 right-0 top-14 z-50 max-h-[calc(100dvh-3.5rem)] overflow-y-auto border-b border-border bg-bg-primary px-4 py-2 shadow-lg"
           >
-            <Link href="/dashboard" className={linkClass}>
+            <NavLink href="/dashboard" className={linkClass} onActiveTap={() => setOpen(false)}>
               Projects
-            </Link>
-            <Link href="/dashboard/finance" className={linkClass}>
+            </NavLink>
+            <NavLink
+              href="/dashboard/finance"
+              className={linkClass}
+              onActiveTap={() => setOpen(false)}
+            >
               Finance
-            </Link>
-            <Link
+            </NavLink>
+            <NavLink
               href="/dashboard/calendar"
               className={cn(linkClass, "flex items-center gap-2")}
+              onActiveTap={() => setOpen(false)}
             >
               Calendar
               {shootsToday > 0 && (
@@ -77,7 +115,7 @@ export function NavbarMenu({ shootsToday }: { shootsToday: number }) {
                   </span>
                 </span>
               )}
-            </Link>
+            </NavLink>
             <a
               href={PORTFOLIO_URL}
               target="_blank"
@@ -87,9 +125,13 @@ export function NavbarMenu({ shootsToday }: { shootsToday: number }) {
               Portfolio
               <ExternalLink className="h-3.5 w-3.5 opacity-70" aria-hidden />
             </a>
-            <Link href="/dashboard/settings" className={linkClass}>
+            <NavLink
+              href="/dashboard/settings"
+              className={linkClass}
+              onActiveTap={() => setOpen(false)}
+            >
               Settings
-            </Link>
+            </NavLink>
             <div className="py-4">
               <SignOutButton />
             </div>

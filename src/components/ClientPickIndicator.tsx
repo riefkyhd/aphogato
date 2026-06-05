@@ -10,7 +10,7 @@ export function ClientPickIndicator({ className }: { className?: string }) {
       )}
       aria-hidden
     >
-      Client
+      Client Selection
     </div>
   );
 }

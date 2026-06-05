@@ -72,6 +72,9 @@ export function CalendarMonthGrid({
               )}
             >
               <div className="flex items-center gap-1 mb-1 px-0.5 min-h-[18px]">
+                <span className="sm:hidden text-[8px] uppercase tracking-label text-text-muted leading-none">
+                  {format(day, "EEE")}
+                </span>
                 <span
                   className={cn(
                     "inline-flex items-center justify-center text-[11px] leading-none",
@@ -83,9 +86,13 @@ export function CalendarMonthGrid({
                 >
                   {format(day, "d")}
                 </span>
-                {isToday(day) && (
-                  <span className="hidden sm:inline text-[9px] uppercase tracking-label text-text-primary">
+                {isToday(day) ? (
+                  <span className="text-[8px] sm:text-[9px] uppercase tracking-label text-text-primary leading-none">
                     Today
+                  </span>
+                ) : (
+                  <span className="hidden sm:inline text-[9px] uppercase tracking-label text-text-muted leading-none">
+                    {format(day, "EEE")}
                   </span>
                 )}
               </div>

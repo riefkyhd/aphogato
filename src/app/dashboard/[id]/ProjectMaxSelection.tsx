@@ -92,7 +92,7 @@ export function ProjectMaxSelection({
 
         <dl className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] uppercase tracking-label">
           <div className="flex items-center gap-2">
-            <dt className="text-text-muted">Client picks</dt>
+            <dt className="text-text-muted">Client selections</dt>
             <dd
               className={cn(
                 "tabular-nums",

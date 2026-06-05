@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { cn } from "@/lib/utils";
 import {
   PhotoUploadProgress,
@@ -58,14 +59,16 @@ export function UploadProgressDock({
             )}
           </button>
           {expanded && (
-            <button
-              type="button"
-              className="p-2 -mr-1 text-text-muted hover:text-text-primary rounded-sm hover:bg-bg-primary/60 transition-colors"
-              aria-label="Close upload details"
-              onClick={() => setExpanded(false)}
-            >
-              <X className="h-5 w-5" />
-            </button>
+            <Tooltip label="Close upload details">
+              <button
+                type="button"
+                className="p-2 -mr-1 text-text-muted hover:text-text-primary rounded-sm hover:bg-bg-primary/60 transition-colors"
+                aria-label="Close upload details"
+                onClick={() => setExpanded(false)}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </Tooltip>
           )}
         </div>
 

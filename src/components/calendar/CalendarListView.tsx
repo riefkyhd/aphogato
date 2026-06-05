@@ -56,11 +56,25 @@ export function CalendarListView({
             >
               <span
                 className={cn(
-                  "w-14 shrink-0 text-[12px]",
+                  "w-[4.5rem] sm:w-16 shrink-0 text-[11px] sm:text-[12px] leading-tight",
                   today ? "text-text-primary font-medium" : "text-text-muted"
                 )}
               >
-                {today ? "Today" : format(eventDate, "MMM d")}
+                {today ? (
+                  <>
+                    <span className="block">Today</span>
+                    <span className="block text-[10px] text-text-secondary font-normal">
+                      {format(eventDate, "EEE")}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="block">{format(eventDate, "MMM d")}</span>
+                    <span className="block text-[10px] text-text-secondary">
+                      {format(eventDate, "EEE")}
+                    </span>
+                  </>
+                )}
               </span>
               <ShootTypeBadge shootType={ev.shoot_type} className="shrink-0" />
               <span className="flex-1 min-w-0 text-[14px] text-text-primary truncate">
