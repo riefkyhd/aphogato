@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useUserPreferencesContext } from "@/components/preferences/UserPreferencesProvider";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { PageLoadingOverlay } from "@/components/PageLoadingOverlay";
@@ -14,12 +15,25 @@ type CreatePhase = "idle" | "creating" | "opening";
 
 export function NewProjectForm() {
   const router = useRouter();
+  const { preferences, loaded: prefsLoaded } = useUserPreferencesContext();
   const [name, setName] = useState("");
   const [clientName, setClientName] = useState("");
   const [maxSelection, setMaxSelection] = useState(
     String(DEFAULT_MAX_PHOTO_SELECTION)
   );
+  const [maxSelectionInitialized, setMaxSelectionInitialized] = useState(false);
   const [phase, setPhase] = useState<CreatePhase>("idle");
+
+  useEffect(() => {
+    if (prefsLoaded && !maxSelectionInitialized) {
+      setMaxSelection(String(preferences.defaultMaxPhotoSelection));
+      setMaxSelectionInitialized(true);
+    }
+  }, [
+    prefsLoaded,
+    preferences.defaultMaxPhotoSelection,
+    maxSelectionInitialized,
+  ]);
 
   const busy = phase !== "idle";
 

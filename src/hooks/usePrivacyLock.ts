@@ -1,17 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useUserPreferencesContext } from "@/components/preferences/UserPreferencesProvider";
 import {
   clearSessionUnlock,
-  readMoneyVisible,
   readSessionUnlock,
-  writeMoneyVisible,
   writeSessionUnlock,
 } from "@/lib/privacy/session";
 
 type PrivacySettings = { pinEnabled: boolean };
 
 export function usePrivacyLock() {
+  const { preferences, loaded: prefsLoaded, updatePreferences } =
+    useUserPreferencesContext();
   const [pinEnabled, setPinEnabled] = useState(false);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [sessionUnlocked, setSessionUnlocked] = useState(false);
@@ -40,9 +41,14 @@ export function usePrivacyLock() {
 
   useEffect(() => {
     setSessionUnlocked(readSessionUnlock());
-    setMoneyVisible(readMoneyVisible());
     void refreshSettings();
   }, [refreshSettings]);
+
+  useEffect(() => {
+    if (prefsLoaded) {
+      setMoneyVisible(preferences.moneyVisibleByDefault);
+    }
+  }, [prefsLoaded, preferences.moneyVisibleByDefault]);
 
   useEffect(() => {
     if (!pinEnabled) return;
@@ -138,10 +144,10 @@ export function usePrivacyLock() {
   const toggleMoneyVisible = useCallback(() => {
     setMoneyVisible((prev) => {
       const next = !prev;
-      writeMoneyVisible(next);
+      void updatePreferences({ moneyVisibleByDefault: next });
       return next;
     });
-  }, []);
+  }, [updatePreferences]);
 
   const lockSession = useCallback(() => {
     clearSessionUnlock();

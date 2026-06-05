@@ -1,4 +1,5 @@
 import { formatEventTimeRange } from "@/lib/calendar/calendarHelpers";
+import { getPreferencesCache } from "@/lib/preferences/cache";
 import type { CalendarEvent } from "@/lib/types";
 
 export const CALENDAR_TIMEZONE = "Asia/Jakarta";
@@ -32,16 +33,7 @@ export const BROWSER_REMINDER_KEY = "aphogato_today_browser_reminder";
 export const BANNER_DISMISS_DATE_KEY = "aphogato_today_banner_dismiss";
 
 export function isBrowserReminderEnabled(): boolean {
-  if (typeof window === "undefined") return false;
-  return localStorage.getItem(BROWSER_REMINDER_KEY) === "true";
-}
-
-export function setBrowserReminderEnabled(enabled: boolean): void {
-  if (enabled) {
-    localStorage.setItem(BROWSER_REMINDER_KEY, "true");
-  } else {
-    localStorage.removeItem(BROWSER_REMINDER_KEY);
-  }
+  return getPreferencesCache().browserReminderEnabled;
 }
 
 export function isBannerDismissedForToday(today: string): boolean {

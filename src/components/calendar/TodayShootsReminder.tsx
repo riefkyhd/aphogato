@@ -13,6 +13,7 @@ import { Tooltip } from "@/components/ui/Tooltip";
 import { cn } from "@/lib/utils";
 import { Bell, Calendar, X } from "lucide-react";
 import Link from "next/link";
+import { useUserPreferencesContext } from "@/components/preferences/UserPreferencesProvider";
 import { useCallback, useEffect, useState } from "react";
 
 function maybeShowBrowserNotification(events: CalendarEvent[]) {
@@ -37,8 +38,10 @@ function maybeShowBrowserNotification(events: CalendarEvent[]) {
 }
 
 export function TodayShootsReminder({ className }: { className?: string }) {
+  const { loaded: prefsLoaded } = useUserPreferencesContext();
   const [events, setEvents] = useState<CalendarEvent[] | null>(null);
   const [dismissed, setDismissed] = useState(false);
+  const [notified, setNotified] = useState(false);
   const today = getTodayDateString();
 
   const load = useCallback(async () => {
@@ -51,16 +54,23 @@ export function TodayShootsReminder({ className }: { className?: string }) {
       const json = await res.json();
       const list = (json.events ?? []) as CalendarEvent[];
       setEvents(list);
-      maybeShowBrowserNotification(list);
     } catch {
       setEvents([]);
     }
-  }, [today]);
+  }, []);
 
   useEffect(() => {
     setDismissed(isBannerDismissedForToday(today));
-    load();
+    void load();
   }, [load, today]);
+
+  useEffect(() => {
+    if (!prefsLoaded || notified || events === null || events.length === 0) {
+      return;
+    }
+    maybeShowBrowserNotification(events);
+    setNotified(true);
+  }, [prefsLoaded, notified, events]);
 
   if (events === null || events.length === 0 || dismissed) {
     return null;

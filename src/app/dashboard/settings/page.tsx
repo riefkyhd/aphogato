@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { DomainSecurityInfo } from "@/app/dashboard/settings/DomainSecurityInfo";
 import { GoogleCalendarSettings } from "@/app/dashboard/settings/GoogleCalendarSettings";
+import { PreferencesSettings } from "@/app/dashboard/settings/PreferencesSettings";
 import { PrivacySettings } from "@/app/dashboard/settings/PrivacySettings";
 import { TodayReminderSettings } from "@/app/dashboard/settings/TodayReminderSettings";
 import { isGoogleCalendarConnected } from "@/lib/calendar/googleSettings";
@@ -18,6 +19,7 @@ export default async function SettingsPage() {
       <Suspense fallback={null}>
         <GoogleCalendarSettings isConnected={isConnected} />
       </Suspense>
+      <PreferencesSettings />
       <TodayReminderSettings />
       <PrivacySettings />
       <DomainSecurityInfo />

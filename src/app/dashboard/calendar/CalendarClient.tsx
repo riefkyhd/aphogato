@@ -10,7 +10,8 @@ import {
 } from "date-fns";
 import { ChevronLeft, ChevronRight, Download, Info } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useUserPreferencesContext } from "@/components/preferences/UserPreferencesProvider";
 import { toast } from "sonner";
 import { CalendarListView } from "@/components/calendar/CalendarListView";
 import { CalendarMonthGrid } from "@/components/calendar/CalendarMonthGrid";
@@ -47,13 +48,22 @@ export function CalendarClient({
   isGoogleConnected: boolean;
 }) {
   const { guardSensitiveAction } = usePrivacyLockContext();
+  const { preferences, loaded: prefsLoaded } = useUserPreferencesContext();
   const [events, setEvents] = useState<CalendarEvent[]>(initialEvents);
   const [incomeByEventId, setIncomeByEventId] = useState(
     initialIncomeByEventId
   );
   const [expenses, setExpenses] = useState(initialExpenses);
   const [view, setView] = useState<ViewMode>("month");
+  const [viewInitialized, setViewInitialized] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
+
+  useEffect(() => {
+    if (prefsLoaded && !viewInitialized) {
+      setView(preferences.defaultCalendarView);
+      setViewInitialized(true);
+    }
+  }, [prefsLoaded, preferences.defaultCalendarView, viewInitialized]);
   const [panelEvent, setPanelEvent] = useState<CalendarEvent | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);

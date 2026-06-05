@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useOptionalUserPreferencesContext } from "@/components/preferences/UserPreferencesProvider";
 import { PhotoFilterToggle } from "@/components/PhotoFilterToggle";
 import { PhotoViewToggle } from "@/components/PhotoViewToggle";
 import { PhotoGridView } from "@/components/PhotoGridView";
@@ -49,13 +50,21 @@ export function PhotoGallerySection({
   onDeletePhotos?: () => void;
   ready?: boolean;
 }) {
+  const prefsCtx = useOptionalUserPreferencesContext();
   const [view, setView] = useState<PhotoViewMode>("grid");
   const [selectedFirst, setSelectedFirst] = useState(false);
 
   useEffect(() => {
+    if (prefsCtx && !prefsCtx.loaded) return;
     setView(readPhotoViewPreference(viewStorageId));
     setSelectedFirst(readPhotoFilterPreference(viewStorageId));
-  }, [viewStorageId]);
+  }, [
+    viewStorageId,
+    prefsCtx,
+    prefsCtx?.loaded,
+    prefsCtx?.preferences.defaultPhotoView,
+    prefsCtx?.preferences.defaultPhotoSelectedFirst,
+  ]);
 
   function handleViewChange(next: PhotoViewMode) {
     setView(next);

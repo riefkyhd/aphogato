@@ -2,20 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useUserPreferencesContext } from "@/components/preferences/UserPreferencesProvider";
 import { Button } from "@/components/ui/Button";
-import {
-  isBrowserReminderEnabled,
-  setBrowserReminderEnabled,
-} from "@/lib/calendar/todayEvents";
 
 export function TodayReminderSettings() {
-  const [enabled, setEnabled] = useState(false);
+  const { preferences, saving, updatePreferences } = useUserPreferencesContext();
   const [permission, setPermission] = useState<NotificationPermission | "unsupported">(
     "default"
   );
 
   useEffect(() => {
-    setEnabled(isBrowserReminderEnabled());
     if (typeof window !== "undefined" && "Notification" in window) {
       setPermission(Notification.permission);
     } else {
@@ -29,34 +25,45 @@ export function TodayReminderSettings() {
       return;
     }
 
-    if (!enabled) {
+    if (!preferences.browserReminderEnabled) {
       const result = await Notification.requestPermission();
       setPermission(result);
       if (result !== "granted") {
         toast.error("Allow notifications in your browser to enable daily reminders");
         return;
       }
-      setBrowserReminderEnabled(true);
-      setEnabled(true);
-      toast.success(
-        "You’ll get a browser alert when you open the dashboard on days with shoots scheduled"
-      );
+      try {
+        await updatePreferences({ browserReminderEnabled: true });
+        toast.success(
+          "You’ll get a browser alert when you open the dashboard on days with shoots scheduled"
+        );
+      } catch (err) {
+        toast.error(
+          err instanceof Error ? err.message : "Failed to save preference"
+        );
+      }
     } else {
-      setBrowserReminderEnabled(false);
-      setEnabled(false);
-      toast.success("Browser reminders turned off");
+      try {
+        await updatePreferences({ browserReminderEnabled: false });
+        toast.success("Browser reminders turned off");
+      } catch (err) {
+        toast.error(
+          err instanceof Error ? err.message : "Failed to save preference"
+        );
+      }
     }
   }
 
   return (
     <section className="border border-border bg-bg-secondary p-6 max-w-lg mt-6">
       <h2 className="text-[11px] uppercase tracking-label text-text-muted mb-4">
-        Today&apos;s shoots
+        Notifications
       </h2>
       <p className="text-[13px] text-text-secondary leading-relaxed mb-4">
         A banner appears on the dashboard when you have shoots scheduled for
         today. Optionally enable a browser notification each time you open the
-        dashboard on a day with scheduled shoots.
+        dashboard on a day with scheduled shoots. This preference syncs across
+        your devices.
       </p>
       {permission === "unsupported" ? (
         <p className="text-[12px] text-text-muted">
@@ -67,18 +74,21 @@ export function TodayReminderSettings() {
           <p className="text-[11px] uppercase tracking-label text-text-muted">
             Status:{" "}
             <span className="text-text-secondary">
-              {enabled && permission === "granted"
+              {preferences.browserReminderEnabled && permission === "granted"
                 ? "Browser alerts on"
                 : "Banner only"}
             </span>
           </p>
           <Button
             type="button"
-            variant={enabled ? "secondary" : "primary"}
+            variant={preferences.browserReminderEnabled ? "secondary" : "primary"}
             className="!text-[11px]"
-            onClick={handleToggle}
+            disabled={saving}
+            onClick={() => void handleToggle()}
           >
-            {enabled ? "Turn off browser alerts" : "Enable browser alerts"}
+            {preferences.browserReminderEnabled
+              ? "Turn off browser alerts"
+              : "Enable browser alerts"}
           </Button>
         </div>
       )}

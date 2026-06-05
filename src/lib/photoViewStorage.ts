@@ -1,3 +1,5 @@
+import { getPreferencesCache } from "@/lib/preferences/cache";
+
 export type PhotoViewMode = "grid" | "list";
 
 const KEY_PREFIX = "photo-view-";
@@ -7,14 +9,16 @@ export function photoViewStorageKey(id: string) {
 }
 
 export function readPhotoViewPreference(id: string): PhotoViewMode {
-  if (typeof window === "undefined") return "grid";
+  if (typeof window === "undefined") {
+    return getPreferencesCache().defaultPhotoView;
+  }
   try {
     const raw = window.localStorage.getItem(photoViewStorageKey(id));
     if (raw === "list" || raw === "grid") return raw;
   } catch {
     // ignore
   }
-  return "grid";
+  return getPreferencesCache().defaultPhotoView;
 }
 
 export function writePhotoViewPreference(id: string, mode: PhotoViewMode) {
