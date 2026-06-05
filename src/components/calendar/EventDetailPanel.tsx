@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/Button";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { formatEventTimeRange } from "@/lib/calendar/calendarHelpers";
 import { LinkedExpensesBlock } from "@/components/finance/LinkedExpensesBlock";
+import { DeliverablesChecklist } from "@/components/DeliverablesChecklist";
 import type {
   FinanceEventOption,
   FinanceProjectOption,
@@ -329,6 +330,12 @@ export function EventDetailPanel({
                 defaultDate={event.shoot_date}
                 onChanged={onExpensesChanged}
               />
+            )}
+
+            {event && (
+              <div className="border-t border-border pt-4 mt-4">
+                <DeliverablesChecklist eventId={event.id} compact />
+              </div>
             )}
 
             <div className="border-t border-border pt-4 mt-4">

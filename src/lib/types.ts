@@ -84,3 +84,22 @@ export interface FinanceSummary {
   net: number;
   months: FinanceMonthSummary[];
 }
+
+export interface DeliverableItem {
+  id: string;
+  project_id: string | null;
+  event_id: string | null;
+  title: string;
+  done: boolean;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface Client {
+  id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  notes: string | null;
+  created_at: string;
+}

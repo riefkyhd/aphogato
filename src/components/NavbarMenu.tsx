@@ -126,6 +126,13 @@ export function NavbarMenu({ shootsToday }: { shootsToday: number }) {
               <ExternalLink className="h-3.5 w-3.5 opacity-70" aria-hidden />
             </a>
             <NavLink
+              href="/dashboard/clients"
+              className={linkClass}
+              onActiveTap={() => setOpen(false)}
+            >
+              Clients
+            </NavLink>
+            <NavLink
               href="/dashboard/settings"
               className={linkClass}
               onActiveTap={() => setOpen(false)}

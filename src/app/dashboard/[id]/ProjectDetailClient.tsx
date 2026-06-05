@@ -20,6 +20,7 @@ import { useProjectPhotoUpload } from "@/hooks/useProjectPhotoUpload";
 import { useSyncServerPhotos } from "@/hooks/useSyncServerPhotos";
 import { sortPhotosNewestFirst } from "@/lib/sortPhotos";
 import { ProjectActions } from "./ProjectActions";
+import { DeliverablesChecklist } from "@/components/DeliverablesChecklist";
 import { LinkedExpensesBlock } from "@/components/finance/LinkedExpensesBlock";
 import type {
   FinanceEventOption,
@@ -275,6 +276,9 @@ export function ProjectDetailClient({
               onChanged={() => void refreshProjectExpenses()}
               compact
             />
+            <div className="border border-border p-4">
+              <DeliverablesChecklist projectId={projectState.id} compact />
+            </div>
           </div>
         </header>
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { requireAuth } from "@/lib/api/requireAuth";
+import { ensureClientByName } from "@/lib/clients/ensureClientByName";
 import { parseMaxPhotoSelectionInput } from "@/lib/photoSelectionLimit";
 import { resolveUniqueCloudinaryFolder } from "@/lib/resolveCloudinaryFolder";
 
@@ -42,11 +43,25 @@ export async function POST(request: Request) {
   }
 
   const gallery_token = nanoid();
+  const clientName = body.client_name?.trim() || null;
+
+  try {
+    await ensureClientByName(supabase, clientName);
+  } catch (err) {
+    return NextResponse.json(
+      {
+        error:
+          err instanceof Error ? err.message : "Failed to save client to book",
+      },
+      { status: 500 }
+    );
+  }
+
   const { data: project, error: projectError } = await supabase
     .from("projects")
     .insert({
       name,
-      client_name: body.client_name?.trim() || null,
+      client_name: clientName,
       cloudinary_folder,
       gallery_token,
       status: "pending",

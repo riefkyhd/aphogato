@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { deleteEventFromGoogle } from "@/lib/calendar/googleCalendar";
 import { parseEventPatchBody } from "@/lib/calendar/eventValidation";
 import { requireAuth } from "@/lib/api/requireAuth";
+import { ensureClientByName } from "@/lib/clients/ensureClientByName";
 import type { CalendarEvent } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -26,6 +27,20 @@ export async function PATCH(
     return NextResponse.json({ error: parsed.error ?? "Invalid body" }, {
       status: 400,
     });
+  }
+
+  if (parsed.data.client_name !== undefined) {
+    try {
+      await ensureClientByName(supabase, parsed.data.client_name);
+    } catch (err) {
+      return NextResponse.json(
+        {
+          error:
+            err instanceof Error ? err.message : "Failed to save client to book",
+        },
+        { status: 500 }
+      );
+    }
   }
 
   const { data, error } = await supabase

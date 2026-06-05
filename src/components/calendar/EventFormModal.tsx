@@ -12,6 +12,7 @@ import {
   validateTimeRange,
 } from "@/lib/calendar/calendarHelpers";
 import type { CalendarProject } from "@/components/calendar/EventDetailPanel";
+import { ClientNameInput } from "@/components/clients/ClientNameInput";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -180,14 +181,11 @@ export function EventFormModal({
               required
             />
           </div>
-          <div>
-            <Label htmlFor="ev-client">Client name</Label>
-            <Input
-              id="ev-client"
-              value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
-            />
-          </div>
+          <ClientNameInput
+            id="ev-client"
+            value={clientName}
+            onChange={setClientName}
+          />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="ev-type">Shoot type</Label>

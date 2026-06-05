@@ -20,6 +20,11 @@ import {
   isGeneralExpense,
 } from "@/lib/finance/linkLabels";
 import { filterEntriesByMonth } from "@/lib/finance/summary";
+import {
+  downloadFinanceReport,
+  formatFinanceReportCsv,
+  formatReportPeriodLabel,
+} from "@/lib/finance/exportReport";
 import type {
   ExpenseEntry,
   FinanceSummary,
@@ -154,6 +159,28 @@ export function FinanceClient({
               </option>
             ))}
           </select>
+          <Button
+            type="button"
+            variant="secondary"
+            className="!text-[11px]"
+            onClick={() => {
+              const csv = formatFinanceReportCsv({
+                year,
+                month,
+                summary,
+                income,
+                expenses,
+                events,
+                projects,
+              });
+              downloadFinanceReport(csv, year, month);
+              toast.success(
+                `Exported ${formatReportPeriodLabel(year, month)} report`
+              );
+            }}
+          >
+            Export CSV
+          </Button>
           <Button
             type="button"
             variant="secondary"

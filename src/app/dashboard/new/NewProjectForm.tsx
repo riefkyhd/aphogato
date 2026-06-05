@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { PageLoadingOverlay } from "@/components/PageLoadingOverlay";
+import { ClientNameInput } from "@/components/clients/ClientNameInput";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -67,15 +68,11 @@ export function NewProjectForm() {
           placeholder="Wedding — Derio &amp; Salma"
         />
       </div>
-      <div>
-        <Label htmlFor="client">Client name</Label>
-        <Input
-          id="client"
-          value={clientName}
-          onChange={(e) => setClientName(e.target.value)}
-          placeholder="Salma"
-        />
-      </div>
+      <ClientNameInput
+        id="client"
+        value={clientName}
+        onChange={setClientName}
+      />
       <div>
         <Label htmlFor="max-selection">Max photos client can select</Label>
         <Input

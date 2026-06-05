@@ -72,6 +72,12 @@ export async function Navbar() {
               <span className="sr-only">(opens in new tab)</span>
             </a>
             <Link
+              href="/dashboard/clients"
+              className="text-[12px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors"
+            >
+              Clients
+            </Link>
+            <Link
               href="/dashboard/settings"
               className="text-[12px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors"
             >
