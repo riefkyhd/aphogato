@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/api/requireAuth";
-import { ensureClientByName } from "@/lib/clients/ensureClientByName";
+import { findClientByName } from "@/lib/clients/findClientByName";
+import { parseSocialAccountsInput } from "@/lib/clients/socialAccounts";
 import type { Client } from "@/lib/types";
+
+function normalizeClientRow(row: Client): Client {
+  return {
+    ...row,
+    social_accounts: Array.isArray(row.social_accounts) ? row.social_accounts : [],
+  };
+}
 
 export const runtime = "nodejs";
 
@@ -19,7 +27,9 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json((data ?? []) as Client[]);
+  return NextResponse.json(
+    ((data ?? []) as Client[]).map(normalizeClientRow)
+  );
 }
 
 export async function POST(request: Request) {
@@ -32,6 +42,7 @@ export async function POST(request: Request) {
     phone?: string;
     email?: string;
     notes?: string;
+    social_accounts?: unknown;
   };
   try {
     body = await request.json();
@@ -44,48 +55,72 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "name is required" }, { status: 400 });
   }
 
-  try {
-    await ensureClientByName(supabase, name);
-  } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Failed to save client" },
-      { status: 500 }
-    );
+  const socialParsed = parseSocialAccountsInput(body.social_accounts);
+  if (!Array.isArray(socialParsed)) {
+    return NextResponse.json({ error: socialParsed.error }, { status: 400 });
   }
 
-  const { data: existing } = await supabase
+  const payload = {
+    name,
+    phone: body.phone?.trim() || null,
+    email: body.email?.trim() || null,
+    notes: body.notes?.trim() || null,
+    social_accounts: socialParsed,
+  };
+
+  const { data: created, error: insertError } = await supabase
     .from("clients")
-    .select("*")
-    .ilike("name", name)
-    .limit(1)
-    .maybeSingle();
-
-  if (!existing) {
-    return NextResponse.json({ error: "Failed to save client" }, { status: 500 });
-  }
-
-  const patch: Record<string, string | null> = {};
-  if (body.phone !== undefined) patch.phone = body.phone.trim() || null;
-  if (body.email !== undefined) patch.email = body.email.trim() || null;
-  if (body.notes !== undefined) patch.notes = body.notes.trim() || null;
-
-  if (Object.keys(patch).length === 0) {
-    return NextResponse.json(existing as Client);
-  }
-
-  const { data, error } = await supabase
-    .from("clients")
-    .update(patch)
-    .eq("id", existing.id)
+    .insert(payload)
     .select("*")
     .single();
 
-  if (error || !data) {
+  if (!insertError && created) {
+    return NextResponse.json(normalizeClientRow(created as Client));
+  }
+
+  if (insertError?.code !== "23505") {
     return NextResponse.json(
-      { error: error?.message ?? "Failed to update client" },
+      { error: insertError?.message ?? "Failed to create client" },
       { status: 500 }
     );
   }
 
-  return NextResponse.json(data as Client);
+  try {
+    const existing = await findClientByName(supabase, name);
+    if (!existing) {
+      return NextResponse.json(
+        { error: "Client already exists but could not be loaded" },
+        { status: 500 }
+      );
+    }
+
+    const { data: updated, error: updateError } = await supabase
+      .from("clients")
+      .update({
+        phone: payload.phone,
+        email: payload.email,
+        notes: payload.notes,
+        social_accounts: payload.social_accounts,
+      })
+      .eq("id", existing.id)
+      .select("*")
+      .single();
+
+    if (updateError || !updated) {
+      return NextResponse.json(
+        { error: updateError?.message ?? "Failed to update existing client" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(normalizeClientRow(updated as Client));
+  } catch (err) {
+    return NextResponse.json(
+      {
+        error:
+          err instanceof Error ? err.message : "Failed to save client",
+      },
+      { status: 500 }
+    );
+  }
 }

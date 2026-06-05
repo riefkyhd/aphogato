@@ -95,11 +95,40 @@ export interface DeliverableItem {
   created_at: string;
 }
 
+export type ClientSocialPlatform = "instagram" | "threads";
+
+export interface ClientSocialAccount {
+  platform: ClientSocialPlatform;
+  username: string;
+}
+
 export interface Client {
   id: string;
   name: string;
   phone: string | null;
   email: string | null;
   notes: string | null;
+  social_accounts: ClientSocialAccount[];
+  created_at: string;
+}
+
+export interface ProjectReference {
+  id: string;
+  project_id: string;
+  filename: string;
+  cloudinary_url: string;
+  caption: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface PriceListItem {
+  id: string;
+  name: string;
+  amount: number;
+  category: string | null;
+  notes: string | null;
+  sort_order: number;
+  active: boolean;
   created_at: string;
 }

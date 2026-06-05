@@ -1,4 +1,5 @@
 import { createServerSupabase } from "@/lib/supabase/server";
+import { normalizeClientSocialAccounts } from "@/lib/clients/socialAccounts";
 import type { Client } from "@/lib/types";
 import { ClientsClient } from "./ClientsClient";
 
@@ -11,5 +12,10 @@ export default async function ClientsPage() {
     .select("*")
     .order("name", { ascending: true });
 
-  return <ClientsClient initialClients={(data ?? []) as Client[]} />;
+  const clients = ((data ?? []) as Client[]).map((row) => ({
+    ...row,
+    social_accounts: normalizeClientSocialAccounts(row.social_accounts),
+  }));
+
+  return <ClientsClient initialClients={clients} />;
 }

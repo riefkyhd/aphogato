@@ -9,7 +9,11 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Tooltip } from "@/components/ui/Tooltip";
-import type { Client } from "@/lib/types";
+import { ClientSocialAccountsEditor } from "@/components/clients/ClientSocialAccountsEditor";
+import { ClientSocialLinks } from "@/components/clients/ClientSocialLinks";
+import { parseJsonResponse } from "@/lib/clients/parseJsonResponse";
+import { normalizeClientSocialAccounts } from "@/lib/clients/socialAccounts";
+import type { Client, ClientSocialAccount } from "@/lib/types";
 
 export function ClientsClient({ initialClients }: { initialClients: Client[] }) {
   const [clients, setClients] = useState(initialClients);
@@ -17,6 +21,9 @@ export function ClientsClient({ initialClients }: { initialClients: Client[] }) 
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
+  const [socialAccounts, setSocialAccounts] = useState<ClientSocialAccount[]>(
+    []
+  );
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
 
@@ -25,14 +32,15 @@ export function ClientsClient({ initialClients }: { initialClients: Client[] }) 
     setPhone("");
     setEmail("");
     setNotes("");
+    setSocialAccounts([]);
     setEditing(null);
   };
 
   const reload = useCallback(async () => {
     const res = await fetch("/api/clients");
-    const json = await res.json();
+    const json = await parseJsonResponse<Client[] | { error?: string }>(res);
     if (res.ok && Array.isArray(json)) {
-      setClients(json as Client[]);
+      setClients(json);
     }
   }, []);
 
@@ -52,9 +60,10 @@ export function ClientsClient({ initialClients }: { initialClients: Client[] }) 
           phone: phone.trim() || null,
           email: email.trim() || null,
           notes: notes.trim() || null,
+          social_accounts: socialAccounts,
         }),
       });
-      const json = await res.json();
+      const json = await parseJsonResponse<{ error?: string }>(res);
       if (!res.ok) throw new Error(json.error ?? "Failed to save client");
       toast.success(editing ? "Client updated" : "Client added");
       resetForm();
@@ -72,13 +81,14 @@ export function ClientsClient({ initialClients }: { initialClients: Client[] }) 
     setPhone(client.phone ?? "");
     setEmail(client.email ?? "");
     setNotes(client.notes ?? "");
+    setSocialAccounts(normalizeClientSocialAccounts(client.social_accounts));
   }
 
   async function removeClient(client: Client) {
     if (!window.confirm(`Remove ${client.name} from the client book?`)) return;
     try {
       const res = await fetch(`/api/clients/${client.id}`, { method: "DELETE" });
-      const json = await res.json();
+      const json = await parseJsonResponse<{ error?: string }>(res);
       if (!res.ok) throw new Error(json.error ?? "Failed to delete");
       toast.success("Client removed");
       if (editing?.id === client.id) resetForm();
@@ -150,6 +160,10 @@ export function ClientsClient({ initialClients }: { initialClients: Client[] }) 
               placeholder="Referral, preferences…"
             />
           </div>
+          <ClientSocialAccountsEditor
+            accounts={socialAccounts}
+            onChange={setSocialAccounts}
+          />
           <div className="flex gap-2 pt-2">
             <Button type="submit" loading={saving}>
               {editing ? "Save changes" : "Add client"}
@@ -184,6 +198,7 @@ export function ClientsClient({ initialClients }: { initialClients: Client[] }) 
                         {[client.phone, client.email].filter(Boolean).join(" · ")}
                       </p>
                     )}
+                    <ClientSocialLinks accounts={client.social_accounts} />
                     {client.notes && (
                       <p className="mt-1 text-[12px] text-text-muted">
                         {client.notes}

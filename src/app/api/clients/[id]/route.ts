@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/api/requireAuth";
-import type { Client } from "@/lib/types";
+import { parseSocialAccountsInput } from "@/lib/clients/socialAccounts";
+import type { Client, ClientSocialAccount } from "@/lib/types";
+
+function normalizeClientRow(row: Client): Client {
+  return {
+    ...row,
+    social_accounts: Array.isArray(row.social_accounts) ? row.social_accounts : [],
+  };
+}
 
 export const runtime = "nodejs";
 
@@ -17,6 +25,7 @@ export async function PATCH(
     phone?: string;
     email?: string;
     notes?: string;
+    social_accounts?: unknown;
   };
   try {
     body = await request.json();
@@ -24,7 +33,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const data: Record<string, string | null> = {};
+  const data: Record<string, string | null | ClientSocialAccount[]> = {};
   if (body.name !== undefined) {
     const name = body.name.trim();
     if (!name) {
@@ -32,9 +41,25 @@ export async function PATCH(
     }
     data.name = name;
   }
-  if (body.phone !== undefined) data.phone = body.phone.trim() || null;
-  if (body.email !== undefined) data.email = body.email.trim() || null;
-  if (body.notes !== undefined) data.notes = body.notes.trim() || null;
+  if (body.phone !== undefined) {
+    data.phone =
+      typeof body.phone === "string" ? body.phone.trim() || null : null;
+  }
+  if (body.email !== undefined) {
+    data.email =
+      typeof body.email === "string" ? body.email.trim() || null : null;
+  }
+  if (body.notes !== undefined) {
+    data.notes =
+      typeof body.notes === "string" ? body.notes.trim() || null : null;
+  }
+  if (body.social_accounts !== undefined) {
+    const socialParsed = parseSocialAccountsInput(body.social_accounts);
+    if (!Array.isArray(socialParsed)) {
+      return NextResponse.json({ error: socialParsed.error }, { status: 400 });
+    }
+    data.social_accounts = socialParsed;
+  }
 
   if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });
@@ -60,7 +85,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Client not found" }, { status: 404 });
   }
 
-  return NextResponse.json(row as Client);
+  return NextResponse.json(normalizeClientRow(row as Client));
 }
 
 export async function DELETE(

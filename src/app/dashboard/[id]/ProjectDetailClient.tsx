@@ -21,6 +21,7 @@ import { useSyncServerPhotos } from "@/hooks/useSyncServerPhotos";
 import { sortPhotosNewestFirst } from "@/lib/sortPhotos";
 import { ProjectActions } from "./ProjectActions";
 import { DeliverablesChecklist } from "@/components/DeliverablesChecklist";
+import { ProjectReferencesSection } from "@/components/ProjectReferencesSection";
 import { LinkedExpensesBlock } from "@/components/finance/LinkedExpensesBlock";
 import type {
   FinanceEventOption,
@@ -278,6 +279,14 @@ export function ProjectDetailClient({
             />
             <div className="border border-border p-4">
               <DeliverablesChecklist projectId={projectState.id} compact />
+            </div>
+            <div className="border border-border p-4">
+              <ProjectReferencesSection
+                projectId={projectState.id}
+                projectName={projectState.name}
+                clientName={projectState.client_name}
+                compact
+              />
             </div>
           </div>
         </header>

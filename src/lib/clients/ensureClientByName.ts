@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { findClientByName } from "@/lib/clients/findClientByName";
 
 export async function ensureClientByName(
   supabase: SupabaseClient,
@@ -7,13 +8,7 @@ export async function ensureClientByName(
   const trimmed = name?.trim();
   if (!trimmed) return;
 
-  const { data: existing } = await supabase
-    .from("clients")
-    .select("id")
-    .ilike("name", trimmed)
-    .limit(1)
-    .maybeSingle();
-
+  const existing = await findClientByName(supabase, trimmed);
   if (existing) return;
 
   const { error } = await supabase.from("clients").insert({ name: trimmed });

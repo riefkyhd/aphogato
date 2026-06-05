@@ -78,6 +78,12 @@ export async function Navbar() {
               Clients
             </Link>
             <Link
+              href="/dashboard/pricing"
+              className="text-[12px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors"
+            >
+              Pricing
+            </Link>
+            <Link
               href="/dashboard/settings"
               className="text-[12px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors"
             >

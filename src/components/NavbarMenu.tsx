@@ -133,6 +133,13 @@ export function NavbarMenu({ shootsToday }: { shootsToday: number }) {
               Clients
             </NavLink>
             <NavLink
+              href="/dashboard/pricing"
+              className={linkClass}
+              onActiveTap={() => setOpen(false)}
+            >
+              Pricing
+            </NavLink>
+            <NavLink
               href="/dashboard/settings"
               className={linkClass}
               onActiveTap={() => setOpen(false)}
