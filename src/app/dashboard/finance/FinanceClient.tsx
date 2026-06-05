@@ -1,9 +1,13 @@
 "use client";
 
 import { format, parseISO } from "date-fns";
+import { Eye, EyeOff, Lock } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { MaskedMoney } from "@/components/privacy/MaskedMoney";
+import { usePrivacyLockContext } from "@/components/privacy/PrivacyLockProvider";
 import { Button } from "@/components/ui/Button";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { ExpenseFormModal } from "@/components/finance/ExpenseFormModal";
@@ -13,7 +17,6 @@ import type {
   FinanceProjectOption,
 } from "@/lib/finance/financeOptions";
 import { saveExpenseApi } from "@/lib/finance/saveExpenseApi";
-import { formatMoney } from "@/lib/finance/formatMoney";
 import {
   formatExpensePrimary,
   formatExpenseSecondary,
@@ -67,6 +70,14 @@ export function FinanceClient({
   const [expenseScope, setExpenseScope] = useState<"all" | "linked" | "general">(
     "all"
   );
+
+  const {
+    isLocked,
+    moneyVisible,
+    toggleMoneyVisible,
+    guardSensitiveAction,
+    requestUnlock,
+  } = usePrivacyLockContext();
 
   const reload = useCallback(async (y: number) => {
     setLoading(true);
@@ -131,8 +142,40 @@ export function FinanceClient({
     [projects]
   );
 
+  const showAmounts = moneyVisible && !isLocked;
+
+  function handleExportCsv() {
+    guardSensitiveAction(
+      () => {
+        const csv = formatFinanceReportCsv({
+          year,
+          month,
+          summary,
+          income,
+          expenses,
+          events,
+          projects,
+        });
+        downloadFinanceReport(csv, year, month);
+        toast.success(
+          `Exported ${formatReportPeriodLabel(year, month)} report`
+        );
+      },
+      {
+        title: "Export finance report",
+        description: "Enter your privacy PIN to export finance data as CSV.",
+      }
+    );
+  }
+
   return (
-    <main className="px-4 sm:px-6 md:px-10 py-6 sm:py-10">
+    <main className="px-4 sm:px-6 md:px-10 py-6 sm:py-10 relative">
+      <div
+        className={cn(
+          "transition-[filter] duration-200",
+          isLocked && "blur-md pointer-events-none select-none"
+        )}
+      >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-6">
         <div>
           <h1 className="text-xl sm:text-2xl font-light tracking-[0.05em] uppercase">
@@ -144,6 +187,20 @@ export function FinanceClient({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Tooltip label={moneyVisible ? "Hide amounts" : "Show amounts"}>
+            <button
+              type="button"
+              className="inline-flex h-9 w-9 items-center justify-center border border-border text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition-colors"
+              aria-label={moneyVisible ? "Hide amounts" : "Show amounts"}
+              onClick={toggleMoneyVisible}
+            >
+              {moneyVisible ? (
+                <EyeOff className="h-4 w-4" aria-hidden />
+              ) : (
+                <Eye className="h-4 w-4" aria-hidden />
+              )}
+            </button>
+          </Tooltip>
           <Label htmlFor="finance-year" className="sr-only">
             Year
           </Label>
@@ -163,21 +220,7 @@ export function FinanceClient({
             type="button"
             variant="secondary"
             className="!text-[11px]"
-            onClick={() => {
-              const csv = formatFinanceReportCsv({
-                year,
-                month,
-                summary,
-                income,
-                expenses,
-                events,
-                projects,
-              });
-              downloadFinanceReport(csv, year, month);
-              toast.success(
-                `Exported ${formatReportPeriodLabel(year, month)} report`
-              );
-            }}
+            onClick={handleExportCsv}
           >
             Export CSV
           </Button>
@@ -206,11 +249,12 @@ export function FinanceClient({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-[2px] mb-6">
-        <SummaryCard label="Income" value={formatMoney(periodIncome)} positive />
-        <SummaryCard label="Expenses" value={formatMoney(periodExpenses)} />
+        <SummaryCard label="Income" amount={periodIncome} visible={showAmounts} positive />
+        <SummaryCard label="Expenses" amount={periodExpenses} visible={showAmounts} />
         <SummaryCard
           label="Net"
-          value={formatMoney(periodNet)}
+          amount={periodNet}
+          visible={showAmounts}
           positive={periodNet >= 0}
           highlight
         />
@@ -238,11 +282,11 @@ export function FinanceClient({
               </span>
               <p
                 className={cn(
-                  "mt-1 text-[11px] sm:text-[12px] font-medium tabular-nums",
+                  "mt-1 text-[11px] sm:text-[12px] font-medium",
                   m.net >= 0 ? "text-status-delivered" : "text-status-editing"
                 )}
               >
-                {formatMoney(m.net)}
+                <MaskedMoney amount={m.net} visible={showAmounts} />
               </p>
             </button>
           ))}
@@ -263,6 +307,7 @@ export function FinanceClient({
           <EntryList
             title="Income"
             empty="No income recorded for this period."
+            showAmounts={showAmounts}
             entries={filteredIncome.map((row) => ({
               id: row.id,
               date: row.entry_date,
@@ -336,6 +381,7 @@ export function FinanceClient({
               />
             </div>
             <EntryListBody
+              showAmounts={showAmounts}
               empty={
                 expenseScope === "general"
                   ? "No general overhead for this period. Use quick add above for tools and subscriptions."
@@ -449,18 +495,48 @@ export function FinanceClient({
           return true;
         }}
       />
+      </div>
+
+      {isLocked ? (
+        <div className="absolute inset-0 z-10 flex items-center justify-center p-6">
+          <div className="max-w-sm w-full border border-border bg-bg-elevated p-6 text-center shadow-lg">
+            <Lock className="h-8 w-8 mx-auto text-text-muted mb-4" aria-hidden />
+            <h2 className="text-lg font-light tracking-[0.05em] uppercase">
+              Finance locked
+            </h2>
+            <p className="mt-2 text-[13px] text-text-secondary">
+              Enter your privacy PIN to view amounts and manage finance.
+            </p>
+            <Button
+              type="button"
+              className="mt-5 w-full"
+              onClick={() =>
+                requestUnlock({
+                  title: "Unlock finance",
+                  description:
+                    "Enter your privacy PIN to view finance and perform sensitive actions.",
+                })
+              }
+            >
+              Enter PIN
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
 
 function SummaryCard({
   label,
-  value,
+  amount,
+  visible,
   positive,
   highlight,
 }: {
   label: string;
-  value: string;
+  amount: number;
+  visible: boolean;
   positive?: boolean;
   highlight?: boolean;
 }) {
@@ -476,12 +552,12 @@ function SummaryCard({
       </p>
       <p
         className={cn(
-          "mt-2 text-lg sm:text-xl font-light tabular-nums",
+          "mt-2 text-lg sm:text-xl font-light",
           positive === true && "text-status-delivered",
           positive === false && "text-status-editing"
         )}
       >
-        {value}
+        <MaskedMoney amount={amount} visible={visible} />
       </p>
     </div>
   );
@@ -490,10 +566,12 @@ function SummaryCard({
 function EntryList({
   title,
   empty,
+  showAmounts,
   entries,
 }: {
   title: string;
   empty: string;
+  showAmounts: boolean;
   entries: Array<{
     id: string;
     date: string;
@@ -509,16 +587,18 @@ function EntryList({
       <h2 className="px-4 py-3 text-[11px] uppercase tracking-label border-b border-border">
         {title}
       </h2>
-      <EntryListBody empty={empty} entries={entries} />
+      <EntryListBody empty={empty} showAmounts={showAmounts} entries={entries} />
     </section>
   );
 }
 
 function EntryListBody({
   empty,
+  showAmounts,
   entries,
 }: {
   empty: string;
+  showAmounts: boolean;
   entries: Array<{
     id: string;
     date: string;
@@ -548,8 +628,8 @@ function EntryListBody({
             </p>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-[13px] tabular-nums text-text-primary">
-              {formatMoney(e.amount)}
+            <p className="text-[13px] text-text-primary">
+              <MaskedMoney amount={e.amount} visible={showAmounts} />
             </p>
             <div className="flex gap-2 mt-1 justify-end">
               <button

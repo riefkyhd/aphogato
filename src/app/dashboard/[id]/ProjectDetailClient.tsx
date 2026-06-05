@@ -9,6 +9,7 @@ import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { DeletePhotosDialog } from "@/components/DeletePhotosDialog";
 import { DeleteProjectDialog } from "@/components/DeleteProjectDialog";
+import { usePrivacyLockContext } from "@/components/privacy/PrivacyLockProvider";
 import { PhotoDropHint } from "@/components/PhotoDropHint";
 import { PhotoGallerySection } from "@/components/PhotoGallerySection";
 import { StatusDot, type ProjectStatus } from "@/components/StatusDot";
@@ -50,6 +51,7 @@ export function ProjectDetailClient({
   financeProjects: FinanceProjectOption[];
 }) {
   const router = useRouter();
+  const { guardSensitiveAction } = usePrivacyLockContext();
   const [projectState, setProjectState] = useState(project);
   const [projectExpenses, setProjectExpenses] = useState(initialProjectExpenses);
   const [photos, setPhotos] = useState(() =>
@@ -171,7 +173,7 @@ export function ProjectDetailClient({
     }
   }
 
-  async function confirmDeleteProject() {
+  async function executeDeleteProject() {
     setDeletingProject(true);
     try {
       const res = await fetch(`/api/projects/${projectState.id}`, {
@@ -194,6 +196,13 @@ export function ProjectDetailClient({
     } finally {
       setDeletingProject(false);
     }
+  }
+
+  function confirmDeleteProject() {
+    guardSensitiveAction(() => void executeDeleteProject(), {
+      title: "Delete project",
+      description: "Enter your privacy PIN to permanently delete this project.",
+    });
   }
 
   return (

@@ -4,6 +4,7 @@ import { Bell, ExternalLink, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { PrivacyFinanceLink } from "@/components/privacy/PrivacyFinanceLink";
 import { SignOutButton } from "@/components/SignOutButton";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { cn } from "@/lib/utils";
@@ -94,13 +95,10 @@ export function NavbarMenu({ shootsToday }: { shootsToday: number }) {
             <NavLink href="/dashboard" className={linkClass} onActiveTap={() => setOpen(false)}>
               Projects
             </NavLink>
-            <NavLink
-              href="/dashboard/finance"
+            <PrivacyFinanceLink
               className={linkClass}
               onActiveTap={() => setOpen(false)}
-            >
-              Finance
-            </NavLink>
+            />
             <NavLink
               href="/dashboard/calendar"
               className={cn(linkClass, "flex items-center gap-2")}

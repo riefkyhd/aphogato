@@ -2,6 +2,7 @@ import { getTodayDateString } from "@/lib/calendar/todayEvents";
 import { Bell, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { PrivacyFinanceLink } from "./privacy/PrivacyFinanceLink";
 import { Logo } from "./Logo";
 import { NavbarMenu } from "./NavbarMenu";
 import { SignOutButton } from "./SignOutButton";
@@ -36,12 +37,7 @@ export async function Navbar() {
             >
               Projects
             </Link>
-            <Link
-              href="/dashboard/finance"
-              className="text-[12px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors"
-            >
-              Finance
-            </Link>
+            <PrivacyFinanceLink className="text-[12px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors" />
             <Link
               href="/dashboard/calendar"
               className="relative inline-flex items-center gap-1.5 text-[12px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors"

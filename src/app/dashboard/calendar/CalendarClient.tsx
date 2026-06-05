@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { CalendarListView } from "@/components/calendar/CalendarListView";
 import { CalendarMonthGrid } from "@/components/calendar/CalendarMonthGrid";
 import { DeleteEventDialog } from "@/components/calendar/DeleteEventDialog";
+import { usePrivacyLockContext } from "@/components/privacy/PrivacyLockProvider";
 import {
   EventDetailPanel,
   type CalendarProject,
@@ -45,6 +46,7 @@ export function CalendarClient({
   initialExpenses: ExpenseEntry[];
   isGoogleConnected: boolean;
 }) {
+  const { guardSensitiveAction } = usePrivacyLockContext();
   const [events, setEvents] = useState<CalendarEvent[]>(initialEvents);
   const [incomeByEventId, setIncomeByEventId] = useState(
     initialIncomeByEventId
@@ -244,7 +246,7 @@ export function CalendarClient({
     setDeleteDialogOpen(true);
   }, [panelEvent]);
 
-  const confirmDelete = useCallback(async () => {
+  const executeDelete = useCallback(async () => {
     if (!panelEvent) return;
     setDeleting(true);
     try {
@@ -266,6 +268,13 @@ export function CalendarClient({
       setDeleting(false);
     }
   }, [panelEvent, closePanel]);
+
+  const confirmDelete = useCallback(() => {
+    guardSensitiveAction(() => void executeDelete(), {
+      title: "Delete event",
+      description: "Enter your privacy PIN to delete this calendar event.",
+    });
+  }, [guardSensitiveAction, executeDelete]);
 
   const handleGlobalSync = useCallback(async () => {
     if (!isGoogleConnected) {
