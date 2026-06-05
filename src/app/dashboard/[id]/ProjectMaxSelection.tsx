@@ -82,9 +82,9 @@ export function ProjectMaxSelection({
           <Button
             type="submit"
             variant="secondary"
+            size="sm"
             loading={saving}
             disabled={saving || !dirty}
-            className="!text-[11px] !px-3 !py-2"
           >
             Save
           </Button>

@@ -23,7 +23,7 @@ const STATUS_LABEL: Record<ProjectStatus, string> = {
   delivered: "Delivered",
 };
 
-const actionBtnClass = "!text-[11px] !px-3 !py-2 shrink-0";
+const actionBtnClass = "shrink-0";
 
 function syncToastMessage(
   added: number,
@@ -180,9 +180,10 @@ export function ProjectActions({
   return (
     <div className="flex flex-col gap-2 w-full lg:w-auto lg:max-w-xl">
       <div className="flex flex-wrap items-center gap-2 justify-start lg:justify-end">
-        <PhotoUploadButton upload={upload} className={actionBtnClass} />
+        <PhotoUploadButton upload={upload} size="sm" className={actionBtnClass} />
         {nextStatus && (
           <Button
+            size="sm"
             onClick={advanceStatus}
             loading={statusBusy}
             disabled={statusBusy}
@@ -194,6 +195,7 @@ export function ProjectActions({
       </div>
       <div className="flex flex-wrap items-center gap-2 justify-start lg:justify-end">
         <Button
+          size="sm"
           variant="secondary"
           onClick={copyLink}
           className={actionBtnClass}
@@ -201,6 +203,7 @@ export function ProjectActions({
           Copy link
         </Button>
         <Button
+          size="sm"
           variant="secondary"
           onClick={downloadList}
           disabled={selectedFilenames.length === 0}
@@ -209,6 +212,7 @@ export function ProjectActions({
           Download list
         </Button>
         <Button
+          size="sm"
           variant="secondary"
           onClick={syncGallery}
           loading={syncing}
@@ -219,6 +223,7 @@ export function ProjectActions({
         </Button>
         <Button
           type="button"
+          size="sm"
           variant="secondary"
           onClick={onDeleteProject}
           className={`${actionBtnClass} !text-status-editing !border-status-editing/40 hover:!border-status-editing`}

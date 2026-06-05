@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { FormActions } from "@/components/ui/FormActions";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { PIN_MAX_LEN } from "@/lib/privacy/constants";
@@ -92,11 +93,10 @@ export function PinModal({
               {error}
             </p>
           ) : null}
-          <div className="flex gap-2">
+          <FormActions className="sm:flex-row sm:[&_button]:flex-1">
             <Button
               type="button"
               variant="secondary"
-              className="flex-1"
               disabled={loading}
               onClick={onClose}
             >
@@ -104,13 +104,12 @@ export function PinModal({
             </Button>
             <Button
               type="submit"
-              className="flex-1"
               loading={loading}
               disabled={loading || pin.length < 4}
             >
               Unlock
             </Button>
-          </div>
+          </FormActions>
         </form>
       </div>
     </div>

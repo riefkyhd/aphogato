@@ -2,6 +2,7 @@ import { getTodayDateString } from "@/lib/calendar/todayEvents";
 import { Bell, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { NavbarLink } from "./NavbarLink";
 import { PrivacyFinanceLink } from "./privacy/PrivacyFinanceLink";
 import { Logo } from "./Logo";
 import { NavbarMenu } from "./NavbarMenu";
@@ -31,16 +32,11 @@ export async function Navbar() {
       <nav className="ml-auto hidden md:flex items-center gap-6">
         {user ? (
           <>
-            <Link
-              href="/dashboard"
-              className="text-[12px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors"
-            >
-              Projects
-            </Link>
-            <PrivacyFinanceLink className="text-[12px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors" />
-            <Link
+            <NavbarLink href="/dashboard">Projects</NavbarLink>
+            <PrivacyFinanceLink />
+            <NavbarLink
               href="/dashboard/calendar"
-              className="relative inline-flex items-center gap-1.5 text-[12px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors"
+              className="relative inline-flex items-center gap-1.5"
               aria-label={
                 shootsToday > 0
                   ? `Calendar, ${shootsToday} shoot${shootsToday === 1 ? "" : "s"} today`
@@ -56,7 +52,7 @@ export async function Navbar() {
                   </span>
                 </span>
               )}
-            </Link>
+            </NavbarLink>
             <a
               href={PORTFOLIO_URL}
               target="_blank"
@@ -67,24 +63,9 @@ export async function Navbar() {
               <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
               <span className="sr-only">(opens in new tab)</span>
             </a>
-            <Link
-              href="/dashboard/clients"
-              className="text-[12px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors"
-            >
-              Clients
-            </Link>
-            <Link
-              href="/dashboard/pricing"
-              className="text-[12px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors"
-            >
-              Pricing
-            </Link>
-            <Link
-              href="/dashboard/settings"
-              className="text-[12px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors"
-            >
-              Settings
-            </Link>
+            <NavbarLink href="/dashboard/clients">Clients</NavbarLink>
+            <NavbarLink href="/dashboard/pricing">Pricing</NavbarLink>
+            <NavbarLink href="/dashboard/settings">Settings</NavbarLink>
             <SignOutButton />
           </>
         ) : (

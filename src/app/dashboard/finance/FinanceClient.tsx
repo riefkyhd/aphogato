@@ -7,6 +7,12 @@ import { toast } from "sonner";
 import { MaskedMoney } from "@/components/privacy/MaskedMoney";
 import { usePrivacyLockContext } from "@/components/privacy/PrivacyLockProvider";
 import { Button } from "@/components/ui/Button";
+import { FormActions } from "@/components/ui/FormActions";
+import {
+  PageToolbarActions,
+  toolbarButtonClass,
+} from "@/components/ui/PageToolbarActions";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -186,65 +192,72 @@ export function FinanceClient({
             subscriptions, etc.)
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Tooltip label={moneyVisible ? "Hide amounts" : "Show amounts"}>
-            <button
-              type="button"
-              className="inline-flex h-9 w-9 items-center justify-center border border-border text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition-colors"
-              aria-label={moneyVisible ? "Hide amounts" : "Show amounts"}
-              onClick={toggleMoneyVisible}
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+          <div className="flex items-center gap-2">
+            <Tooltip label={moneyVisible ? "Hide amounts" : "Show amounts"}>
+              <button
+                type="button"
+                className="inline-flex h-10 w-10 items-center justify-center border border-border text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition-colors"
+                aria-label={moneyVisible ? "Hide amounts" : "Show amounts"}
+                onClick={toggleMoneyVisible}
+              >
+                {moneyVisible ? (
+                  <EyeOff className="h-4 w-4" aria-hidden />
+                ) : (
+                  <Eye className="h-4 w-4" aria-hidden />
+                )}
+              </button>
+            </Tooltip>
+            <Label htmlFor="finance-year" className="sr-only">
+              Year
+            </Label>
+            <select
+              id="finance-year"
+              className="input-dark select-compact w-[100px]"
+              value={year}
+              onChange={(e) => onYearChange(Number(e.target.value))}
             >
-              {moneyVisible ? (
-                <EyeOff className="h-4 w-4" aria-hidden />
-              ) : (
-                <Eye className="h-4 w-4" aria-hidden />
-              )}
-            </button>
-          </Tooltip>
-          <Label htmlFor="finance-year" className="sr-only">
-            Year
-          </Label>
-          <select
-            id="finance-year"
-            className="input-dark w-[100px]"
-            value={year}
-            onChange={(e) => onYearChange(Number(e.target.value))}
-          >
-            {[year - 1, year, year + 1].map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
-          <Button
-            type="button"
-            variant="secondary"
-            className="!text-[11px]"
-            onClick={handleExportCsv}
-          >
-            Export CSV
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            className="!text-[11px]"
-            onClick={() => {
-              setEditingIncome(null);
-              setIncomeModal(true);
-            }}
-          >
-            + Income
-          </Button>
-          <Button
-            type="button"
-            className="!text-[11px]"
-            onClick={() => {
-              setEditingExpense(null);
-              setExpenseModal(true);
-            }}
-          >
-            + Expense
-          </Button>
+              {[year - 1, year, year + 1].map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+          </div>
+          <PageToolbarActions>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className={toolbarButtonClass}
+              onClick={handleExportCsv}
+            >
+              Export CSV
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className={toolbarButtonClass}
+              onClick={() => {
+                setEditingIncome(null);
+                setIncomeModal(true);
+              }}
+            >
+              + Income
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className={toolbarButtonClass}
+              onClick={() => {
+                setEditingExpense(null);
+                setExpenseModal(true);
+              }}
+            >
+              + Expense
+            </Button>
+          </PageToolbarActions>
         </div>
       </div>
 
@@ -341,29 +354,17 @@ export function FinanceClient({
                   General expenses do not need a project or calendar event.
                 </p>
               </div>
-              <div className="flex flex-wrap gap-1">
-                {(
-                  [
-                    ["all", "All"],
-                    ["linked", "Shoot-linked"],
-                    ["general", "General"],
-                  ] as const
-                ).map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setExpenseScope(value)}
-                    className={cn(
-                      "px-2.5 py-1 text-[10px] uppercase tracking-label border border-border transition-colors",
-                      expenseScope === value
-                        ? "bg-bg-elevated text-text-primary"
-                        : "text-text-muted hover:text-text-secondary"
-                    )}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
+              <SegmentedControl
+                value={expenseScope}
+                size="compact"
+                aria-label="Expense scope"
+                options={[
+                  { value: "all", label: "All" },
+                  { value: "linked", label: "Shoot-linked" },
+                  { value: "general", label: "General" },
+                ]}
+                onChange={setExpenseScope}
+              />
             </div>
             <div className="px-4 py-3 border-b border-border bg-bg-primary/40">
               <p className="text-[11px] uppercase tracking-label text-text-muted mb-2">
@@ -748,14 +749,14 @@ function IncomeFormModal({
           </select>
         </div>
         <Field label="Notes" value={notes} onChange={setNotes} />
-        <div className="flex gap-2 pt-2">
-          <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>
+        <FormActions className="sm:flex-row sm:[&_button]:flex-1">
+          <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" className="flex-1" loading={saving}>
+          <Button type="submit" loading={saving}>
             Save
           </Button>
-        </div>
+        </FormActions>
       </form>
     </ModalOverlay>
   );
@@ -795,7 +796,7 @@ function ModalOverlay({
         aria-label="Close"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-md max-h-[90dvh] overflow-y-auto bg-bg-secondary border border-border p-6 sm:rounded-sm">
+      <div className="relative w-full max-w-md max-h-[90dvh] overflow-y-auto bg-bg-elevated border border-border p-6 sm:rounded-sm">
         {children}
       </div>
     </div>

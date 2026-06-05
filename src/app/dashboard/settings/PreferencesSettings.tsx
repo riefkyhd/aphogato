@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useUserPreferencesContext } from "@/components/preferences/UserPreferencesProvider";
-import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import {
@@ -15,48 +14,7 @@ import type {
   PhotoViewMode,
   PinSessionTimeoutMinutes,
 } from "@/lib/preferences/types";
-import { cn } from "@/lib/utils";
-
-function SegmentedOption<T extends string>({
-  label,
-  value,
-  options,
-  onChange,
-  disabled,
-}: {
-  label: string;
-  value: T;
-  options: { value: T; label: string }[];
-  onChange: (value: T) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <div>
-      <p className="text-[11px] uppercase tracking-label text-text-muted mb-2">
-        {label}
-      </p>
-      <div className="inline-flex rounded border border-border overflow-hidden">
-        {options.map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            disabled={disabled}
-            onClick={() => onChange(opt.value)}
-            className={cn(
-              "px-3 py-2 text-[11px] uppercase tracking-label transition-colors",
-              value === opt.value
-                ? "bg-text-primary text-bg-primary"
-                : "bg-bg-secondary text-text-secondary hover:text-text-primary",
-              disabled && "opacity-50 cursor-not-allowed"
-            )}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
+import { SegmentedField } from "@/components/ui/SegmentedControl";
 
 export function PreferencesSettings() {
   const { preferences, saving, updatePreferences } = useUserPreferencesContext();
@@ -113,7 +71,7 @@ export function PreferencesSettings() {
           still remembered in your browser until you change them on that project.
         </p>
         <div className="space-y-5">
-          <SegmentedOption<PhotoViewMode>
+          <SegmentedField<PhotoViewMode>
             label="Photo gallery view"
             value={preferences.defaultPhotoView}
             options={[
@@ -125,7 +83,7 @@ export function PreferencesSettings() {
               void savePatch({ defaultPhotoView: value }, "Default photo view updated")
             }
           />
-          <SegmentedOption
+          <SegmentedField
             label="Photo filter"
             value={preferences.defaultPhotoSelectedFirst ? "selected" : "all"}
             options={[
@@ -159,7 +117,7 @@ export function PreferencesSettings() {
               Pre-fills the limit when you create a new project.
             </p>
           </div>
-          <SegmentedOption<CalendarViewMode>
+          <SegmentedField<CalendarViewMode>
             label="Calendar view"
             value={preferences.defaultCalendarView}
             options={[
@@ -186,33 +144,27 @@ export function PreferencesSettings() {
           lock or after the timeout below.
         </p>
         <div className="space-y-5">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-[13px] text-text-primary">Show amounts by default</p>
-              <p className="text-[12px] text-text-muted mt-1">
-                When off, finance figures start masked until you reveal them.
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant={preferences.moneyVisibleByDefault ? "secondary" : "primary"}
-              className="!text-[11px] shrink-0"
-              disabled={saving}
-              onClick={() =>
-                void savePatch(
-                  {
-                    moneyVisibleByDefault: !preferences.moneyVisibleByDefault,
-                  },
-                  preferences.moneyVisibleByDefault
-                    ? "Amounts will start hidden"
-                    : "Amounts will start visible"
-                )
-              }
-            >
-              {preferences.moneyVisibleByDefault ? "On" : "Off"}
-            </Button>
-          </div>
-          <SegmentedOption
+          <SegmentedField
+            label="Show amounts by default"
+            value={preferences.moneyVisibleByDefault ? "on" : "off"}
+            options={[
+              { value: "off", label: "Hidden" },
+              { value: "on", label: "Visible" },
+            ]}
+            disabled={saving}
+            onChange={(value) =>
+              void savePatch(
+                { moneyVisibleByDefault: value === "on" },
+                value === "on"
+                  ? "Amounts will start visible"
+                  : "Amounts will start hidden"
+              )
+            }
+          />
+          <p className="text-[12px] text-text-muted -mt-3">
+            When hidden, finance figures stay masked until you reveal them.
+          </p>
+          <SegmentedField
             label="PIN unlock timeout"
             value={String(preferences.pinSessionTimeoutMinutes)}
             options={[

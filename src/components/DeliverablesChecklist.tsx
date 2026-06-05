@@ -185,14 +185,14 @@ export function DeliverablesChecklist({
           value={newTitle}
           onChange={(e) => setNewTitle(e.target.value)}
           placeholder="Add deliverable…"
-          className="flex-1 !text-[13px]"
+          className="flex-1 !text-[13px] !h-10"
           aria-label="New deliverable"
         />
         <Tooltip label="Add deliverable">
           <Button
             type="submit"
             variant="secondary"
-            className="!px-3 shrink-0"
+            size="icon"
             loading={adding}
             disabled={!newTitle.trim()}
             aria-label="Add deliverable"

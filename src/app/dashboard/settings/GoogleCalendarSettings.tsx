@@ -54,7 +54,12 @@ export function GoogleCalendarSettings({
             <span className="inline-block h-[6px] w-[6px] rounded-full bg-status-delivered" />
             Connected
           </p>
-          <Button type="button" variant="secondary" onClick={handleDisconnect}>
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full sm:w-auto"
+            onClick={handleDisconnect}
+          >
             Disconnect
           </Button>
         </div>
@@ -66,6 +71,7 @@ export function GoogleCalendarSettings({
           </p>
           <Button
             type="button"
+            className="w-full sm:w-auto"
             onClick={() => {
               window.location.href = "/api/auth/google";
             }}

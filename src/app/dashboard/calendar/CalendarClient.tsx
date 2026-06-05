@@ -23,6 +23,11 @@ import {
 } from "@/components/calendar/EventDetailPanel";
 import { EventFormModal } from "@/components/calendar/EventFormModal";
 import { Button } from "@/components/ui/Button";
+import {
+  PageToolbarActions,
+  toolbarButtonClass,
+} from "@/components/ui/PageToolbarActions";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { downloadCalendarList } from "@/lib/calendar/exportCalendarList";
 import type { FinanceEventOption } from "@/lib/finance/financeOptions";
@@ -330,16 +335,17 @@ export function CalendarClient({
   }, [isGoogleConnected]);
 
   return (
-    <main className="px-4 sm:px-6 md:px-8 py-6 sm:py-8 min-h-[calc(100dvh-3.5rem)] md:min-h-[calc(100vh-60px)] flex flex-col">
+    <main className="px-4 sm:px-6 md:px-10 py-6 sm:py-10 min-h-[calc(100dvh-3.5rem)] md:min-h-[calc(100vh-60px)] flex flex-col">
       <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
         <h1 className="text-xl sm:text-2xl font-light tracking-[0.05em] uppercase">
           Calendar
         </h1>
-        <div className="flex flex-wrap gap-2">
+        <PageToolbarActions>
           <Button
             type="button"
             variant="secondary"
-            className="!text-[11px] flex-1 sm:flex-none min-w-0"
+            size="sm"
+            className={toolbarButtonClass}
             onClick={() => {
               if (exportEvents.length === 0) {
                 toast.error("No events to export for this view");
@@ -361,8 +367,9 @@ export function CalendarClient({
             <Button
               type="button"
               variant="secondary"
+              size="sm"
               loading={syncing}
-              className="!text-[11px] flex-1 sm:flex-none min-w-0"
+              className={toolbarButtonClass}
               onClick={handleGlobalSync}
             >
               Sync all
@@ -371,19 +378,20 @@ export function CalendarClient({
           ) : (
             <Link
               href="/dashboard/settings"
-              className="btn-secondary !text-[11px] inline-flex items-center justify-center px-4 h-10 flex-1 sm:flex-none"
+              className={cn("btn-secondary !text-[11px] !min-h-9 !px-3 !py-2", toolbarButtonClass)}
             >
               Connect Google
             </Link>
           )}
           <Button
             type="button"
+            size="sm"
             onClick={() => openNewEvent()}
-            className="flex-1 sm:flex-none"
+            className={toolbarButtonClass}
           >
             New event
           </Button>
-        </div>
+        </PageToolbarActions>
       </div>
 
       <div className="mb-4 rounded-sm border border-border bg-bg-secondary px-3 py-2.5 sm:px-4">
@@ -451,32 +459,16 @@ export function CalendarClient({
             </Tooltip>
           )}
         </div>
-        <div className="flex gap-1 justify-center sm:justify-end">
-          <button
-            type="button"
-            onClick={() => setView("month")}
-            className={cn(
-              "flex-1 sm:flex-none px-3 py-1.5 text-[11px] uppercase tracking-label border border-border transition-colors",
-              view === "month"
-                ? "bg-bg-elevated text-text-primary"
-                : "text-text-muted hover:text-text-secondary"
-            )}
-          >
-            Month
-          </button>
-          <button
-            type="button"
-            onClick={() => setView("list")}
-            className={cn(
-              "flex-1 sm:flex-none px-3 py-1.5 text-[11px] uppercase tracking-label border border-border transition-colors",
-              view === "list"
-                ? "bg-bg-elevated text-text-primary"
-                : "text-text-muted hover:text-text-secondary"
-            )}
-          >
-            List
-          </button>
-        </div>
+        <SegmentedControl<ViewMode>
+          value={view}
+          options={[
+            { value: "month", label: "Month" },
+            { value: "list", label: "List" },
+          ]}
+          onChange={setView}
+          aria-label="Calendar view"
+          className="w-full sm:w-auto"
+        />
       </div>
 
       <div className="flex flex-1 min-h-0 relative">

@@ -125,7 +125,7 @@ export function ProjectReferencesSection({
               <Button
                 type="button"
                 variant="secondary"
-                className="!px-3 !text-[11px]"
+                size="sm"
                 loading={exporting}
                 onClick={() => void handleExportPdf()}
                 aria-label="Export moodboard PDF"
@@ -139,7 +139,7 @@ export function ProjectReferencesSection({
             <Button
               type="button"
               variant="secondary"
-              className="!px-3 !text-[11px]"
+              size="sm"
               loading={uploading}
               onClick={() => inputRef.current?.click()}
               aria-label="Upload references"

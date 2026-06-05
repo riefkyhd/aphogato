@@ -14,6 +14,7 @@ import {
 import type { CalendarProject } from "@/components/calendar/EventDetailPanel";
 import { ClientNameInput } from "@/components/clients/ClientNameInput";
 import { Button } from "@/components/ui/Button";
+import { FormActions } from "@/components/ui/FormActions";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import type { CalendarEvent, EventStatus, ShootType } from "@/lib/types";
@@ -312,20 +313,19 @@ export function EventFormModal({
               onChange={(e) => setNotes(e.target.value)}
             />
           </div>
-          <div className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
+          <FormActions className="sm:flex-row sm:[&_button]:flex-1">
             <Button
               type="button"
               variant="secondary"
-              className="flex-1"
               disabled={saving}
               onClick={onClose}
             >
               Cancel
             </Button>
-            <Button type="submit" loading={saving} className="flex-1">
+            <Button type="submit" loading={saving}>
               Save
             </Button>
-          </div>
+          </FormActions>
         </form>
       </div>
     </div>

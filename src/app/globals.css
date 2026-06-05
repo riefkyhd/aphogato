@@ -135,6 +135,14 @@ body {
   .input-dark:focus {
     border-color: var(--accent);
   }
+
+  /* Fixed-height selects: input-dark padding alone overflows h-10 */
+  .select-compact {
+    height: 2.5rem;
+    padding: 0 0.75rem;
+    font-size: 13px;
+    line-height: 2.5rem;
+  }
 }
 
 @layer utilities {

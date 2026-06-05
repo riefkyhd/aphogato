@@ -4,11 +4,8 @@ import { Lock } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { usePrivacyLockContext } from "@/components/privacy/PrivacyLockProvider";
+import { financeIsActive } from "@/lib/nav";
 import { cn } from "@/lib/utils";
-
-function financeIsActive(pathname: string) {
-  return pathname === "/dashboard/finance" || pathname.startsWith("/dashboard/finance/");
-}
 
 export function PrivacyFinanceLink({
   className,
@@ -21,11 +18,19 @@ export function PrivacyFinanceLink({
 }) {
   const pathname = usePathname();
   const { pinEnabled, isLocked, settingsLoaded } = usePrivacyLockContext();
+  const active = financeIsActive(pathname);
 
   return (
     <Link
       href="/dashboard/finance"
-      className={cn("inline-flex items-center gap-1.5", className)}
+      aria-current={active ? "page" : undefined}
+      className={cn(
+        "inline-flex items-center gap-1.5 text-[12px] uppercase tracking-label transition-colors",
+        active
+          ? "text-text-primary"
+          : "text-text-secondary hover:text-text-primary",
+        className
+      )}
       onClick={() => {
         onClick?.();
         if (financeIsActive(pathname)) onActiveTap?.();

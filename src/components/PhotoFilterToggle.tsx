@@ -19,8 +19,10 @@ export function PhotoFilterToggle({
       aria-pressed={active}
       aria-label="Selected first"
       className={cn(
-        "inline-flex items-center gap-1.5 p-2 text-[11px] uppercase tracking-label transition-colors",
-        active ? "text-text-primary" : "text-text-muted",
+        "inline-flex items-center gap-1.5 rounded-sm border border-border px-2.5 py-2 text-[11px] uppercase tracking-label transition-colors",
+        active
+          ? "bg-bg-elevated text-text-primary"
+          : "bg-bg-secondary text-text-muted hover:text-text-secondary",
         className
       )}
     >

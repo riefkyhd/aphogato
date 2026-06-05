@@ -13,7 +13,7 @@ export default async function SettingsPage() {
 
   return (
     <main className="px-4 sm:px-6 md:px-10 py-6 sm:py-10">
-      <h1 className="text-2xl font-light tracking-[0.05em] uppercase mb-8">
+      <h1 className="text-xl sm:text-2xl font-light tracking-[0.05em] uppercase mb-8">
         Settings
       </h1>
       <Suspense fallback={null}>

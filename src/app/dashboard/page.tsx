@@ -1,6 +1,7 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import { NavigatingLink } from "@/components/NavigatingLink";
 import { RefreshRouteOnMount } from "@/components/RefreshRouteOnMount";
+import { ProjectsPageHeader } from "@/components/projects/ProjectsPageHeader";
 import {
   ProjectCard,
   type ProjectCardData,
@@ -51,18 +52,7 @@ export default async function DashboardPage() {
   return (
     <main className="px-4 sm:px-6 md:px-10 py-6 sm:py-10">
       <RefreshRouteOnMount />
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-6 sm:mb-10">
-        <h1 className="text-xl sm:text-2xl font-light tracking-[0.05em] uppercase">
-          Projects
-        </h1>
-        <NavigatingLink
-          href="/dashboard/new"
-          className="btn-primary w-full sm:w-auto justify-center"
-          loadingLabel="Opening…"
-        >
-          New project
-        </NavigatingLink>
-      </div>
+      <ProjectsPageHeader />
 
       {projects.length === 0 ? (
         <EmptyState />

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { PageLoadingOverlay } from "@/components/PageLoadingOverlay";
 import { ClientNameInput } from "@/components/clients/ClientNameInput";
 import { Button } from "@/components/ui/Button";
+import { FormActions } from "@/components/ui/FormActions";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { DEFAULT_MAX_PHOTO_SELECTION } from "@/lib/photoSelectionLimit";
@@ -103,13 +104,15 @@ export function NewProjectForm() {
           page.
         </p>
       </div>
-      <Button type="submit" loading={busy} disabled={busy}>
-        {phase === "creating"
-          ? "Creating…"
-          : phase === "opening"
-            ? "Opening project…"
-            : "Create project"}
-      </Button>
+      <FormActions>
+        <Button type="submit" loading={busy} disabled={busy}>
+          {phase === "creating"
+            ? "Creating…"
+            : phase === "opening"
+              ? "Opening project…"
+              : "Create project"}
+        </Button>
+      </FormActions>
     </form>
     </>
   );

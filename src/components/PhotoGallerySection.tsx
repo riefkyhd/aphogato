@@ -115,7 +115,7 @@ export function PhotoGallerySection({
         partitioned.selectedCount > 0 &&
         partitioned.selectedCount < sortedPhotos.length,
     };
-  }, [sortedPhotos, selectedFirst, mode, selectedIds, confirmedSelectionKey]);
+  }, [sortedPhotos, selectedFirst, mode, selectedIds]);
 
   const layoutKey = selectedFirst
     ? mode === "gallery"
@@ -125,7 +125,7 @@ export function PhotoGallerySection({
 
   if (!ready) {
     return (
-      <div className="px-4 md:px-8 text-text-muted text-[13px]">
+      <div className="text-text-muted text-[13px]">
         Loading photos…
       </div>
     );
@@ -133,7 +133,7 @@ export function PhotoGallerySection({
 
   if (photos.length === 0) {
     return (
-      <p className="px-4 md:px-8 text-text-muted text-[13px]">
+      <p className="text-text-muted text-[13px]">
         No photos in this project.
       </p>
     );
@@ -167,7 +167,7 @@ export function PhotoGallerySection({
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 px-3 sm:px-4 md:px-8 mb-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 mb-3">
         <div className="flex flex-wrap items-center gap-2 min-w-0">
           {showManageActions && (
             <>
@@ -177,14 +177,15 @@ export function PhotoGallerySection({
               <Button
                 type="button"
                 variant="secondary"
-                className="!text-[11px] !h-8 !px-3"
+                size="sm"
                 onClick={onClearManageSelection}
               >
                 Clear
               </Button>
               <Button
                 type="button"
-                className="!text-[11px] !h-8 !px-3 !bg-status-editing !border-status-editing hover:opacity-90"
+                size="sm"
+                className="!bg-status-editing !border-status-editing hover:opacity-90"
                 onClick={onDeletePhotos}
               >
                 Delete

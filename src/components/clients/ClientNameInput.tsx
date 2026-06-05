@@ -7,7 +7,7 @@ import type { Client } from "@/lib/types";
 
 export function ClientNameInput({
   id = "client",
-  label = "Client name",
+  label = "Client selection",
   value,
   onChange,
   placeholder = "Salma",

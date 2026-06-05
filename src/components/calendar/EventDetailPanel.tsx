@@ -366,17 +366,18 @@ export function EventDetailPanel({
               )}
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2 pt-6 mt-auto border-t border-border">
-              <Button type="button" className="flex-1" onClick={onEdit}>
-                Edit
-              </Button>
+            <div className="flex flex-col-reverse sm:flex-row gap-2 pt-6 mt-auto border-t border-border [&_button]:w-full [&_button]:sm:flex-1">
               <Button
                 type="button"
                 variant="secondary"
-                className="flex-1 !text-status-editing"
+                size="sm"
+                className="!text-status-editing"
                 onClick={onDelete}
               >
                 Delete
+              </Button>
+              <Button type="button" size="sm" onClick={onEdit}>
+                Edit
               </Button>
             </div>
             </div>

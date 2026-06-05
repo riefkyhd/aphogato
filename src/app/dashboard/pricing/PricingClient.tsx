@@ -1,10 +1,24 @@
 "use client";
 
-import { ArrowDown, ArrowUp, FileDown, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowUp,
+  FileDown,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { BackNavLink } from "@/components/BackNavLink";
 import { Button } from "@/components/ui/Button";
+import { FormActions } from "@/components/ui/FormActions";
+import {
+  PageToolbarActions,
+  toolbarButtonClass,
+} from "@/components/ui/PageToolbarActions";
+import { IconButton } from "@/components/ui/IconButton";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Tooltip } from "@/components/ui/Tooltip";
@@ -182,9 +196,10 @@ export function PricingClient({
     <main className="px-4 sm:px-6 md:px-10 py-6 sm:py-10">
       <BackNavLink
         href="/dashboard"
-        className="inline-block text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary mb-6"
+        className="inline-flex items-center gap-2 text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors mb-6"
       >
-        ← All projects
+        <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
+        All projects
       </BackNavLink>
 
       <header className="mb-8 border-b border-border pb-6">
@@ -198,12 +213,13 @@ export function PricingClient({
               clients.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <PageToolbarActions>
             <Tooltip label="Export as CSV">
               <Button
                 type="button"
                 variant="secondary"
-                className="!text-[11px]"
+                size="sm"
+                className={toolbarButtonClass}
                 onClick={handleExportCsv}
                 disabled={activeCount === 0}
                 aria-label="Export CSV"
@@ -216,7 +232,8 @@ export function PricingClient({
               <Button
                 type="button"
                 variant="secondary"
-                className="!text-[11px]"
+                size="sm"
+                className={toolbarButtonClass}
                 loading={exporting}
                 onClick={() => void handleExportPdf()}
                 disabled={activeCount === 0}
@@ -226,14 +243,14 @@ export function PricingClient({
                 PDF
               </Button>
             </Tooltip>
-          </div>
+          </PageToolbarActions>
         </div>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-8">
         <form
           onSubmit={handleSubmit}
-          className="space-y-4 border border-border p-4 sm:p-5 h-fit"
+          className="space-y-4 border border-border bg-bg-secondary p-4 sm:p-5 h-fit"
         >
           <h2 className="text-[11px] uppercase tracking-label text-text-muted">
             {editing ? "Edit item" : "Add item"}
@@ -277,7 +294,12 @@ export function PricingClient({
               placeholder="Includes 400 edited photos…"
             />
           </div>
-          <div className="flex gap-2 pt-2">
+          <FormActions>
+            {editing && (
+              <Button type="button" variant="secondary" onClick={resetForm}>
+                Cancel
+              </Button>
+            )}
             <Button type="submit" loading={saving}>
               {editing ? (
                 "Save changes"
@@ -288,12 +310,7 @@ export function PricingClient({
                 </>
               )}
             </Button>
-            {editing && (
-              <Button type="button" variant="secondary" onClick={resetForm}>
-                Cancel
-              </Button>
-            )}
-          </div>
+          </FormActions>
         </form>
 
         <section>
@@ -339,48 +356,41 @@ export function PricingClient({
                       Active on exports
                     </label>
                   </div>
-                  <div className="flex shrink-0 gap-0.5">
+                  <div className="flex shrink-0">
                     <Tooltip label="Move up">
-                      <button
-                        type="button"
+                      <IconButton
                         disabled={idx === 0}
                         onClick={() => void moveItem(item, -1)}
-                        className="p-2 text-text-muted hover:text-text-primary disabled:opacity-30"
-                        aria-label="Move up"
+                        label="Move up"
                       >
                         <ArrowUp className="h-4 w-4" aria-hidden />
-                      </button>
+                      </IconButton>
                     </Tooltip>
                     <Tooltip label="Move down">
-                      <button
-                        type="button"
+                      <IconButton
                         disabled={idx === items.length - 1}
                         onClick={() => void moveItem(item, 1)}
-                        className="p-2 text-text-muted hover:text-text-primary disabled:opacity-30"
-                        aria-label="Move down"
+                        label="Move down"
                       >
                         <ArrowDown className="h-4 w-4" aria-hidden />
-                      </button>
+                      </IconButton>
                     </Tooltip>
                     <Tooltip label="Edit item">
-                      <button
-                        type="button"
+                      <IconButton
                         onClick={() => startEdit(item)}
-                        className="p-2 text-text-muted hover:text-text-primary"
-                        aria-label="Edit item"
+                        label="Edit item"
                       >
                         <Pencil className="h-4 w-4" aria-hidden />
-                      </button>
+                      </IconButton>
                     </Tooltip>
                     <Tooltip label="Remove item">
-                      <button
-                        type="button"
+                      <IconButton
                         onClick={() => void removeItem(item)}
-                        className="p-2 text-text-muted hover:text-status-editing"
-                        aria-label="Remove item"
+                        label="Remove item"
+                        className="hover:text-status-editing"
                       >
                         <Trash2 className="h-4 w-4" aria-hidden />
-                      </button>
+                      </IconButton>
                     </Tooltip>
                   </div>
                 </li>

@@ -10,9 +10,11 @@ import type { ProjectPhotoUpload } from "@/hooks/useProjectPhotoUpload";
 export function PhotoUploadButton({
   upload,
   className,
+  size = "default",
 }: {
   upload: ProjectPhotoUpload;
   className?: string;
+  size?: "default" | "sm";
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const { uploading, uploadFiles } = upload;
@@ -32,6 +34,7 @@ export function PhotoUploadButton({
       />
       <Button
         type="button"
+        size={size}
         loading={uploading}
         disabled={uploading}
         className={cn(className)}

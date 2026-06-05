@@ -1,11 +1,13 @@
 "use client";
 
 import { format, parseISO } from "date-fns";
-import { Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { BackNavLink } from "@/components/BackNavLink";
 import { Button } from "@/components/ui/Button";
+import { FormActions } from "@/components/ui/FormActions";
+import { IconButton } from "@/components/ui/IconButton";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Tooltip } from "@/components/ui/Tooltip";
@@ -102,9 +104,10 @@ export function ClientsClient({ initialClients }: { initialClients: Client[] }) 
     <main className="px-4 sm:px-6 md:px-10 py-6 sm:py-10">
       <BackNavLink
         href="/dashboard"
-        className="inline-block text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary mb-6"
+        className="inline-flex items-center gap-2 text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors mb-6"
       >
-        ← All projects
+        <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
+        All projects
       </BackNavLink>
 
       <header className="mb-8 border-b border-border pb-6">
@@ -118,7 +121,10 @@ export function ClientsClient({ initialClients }: { initialClients: Client[] }) 
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-8">
-        <form onSubmit={handleSubmit} className="space-y-4 border border-border p-4 sm:p-5">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4 border border-border bg-bg-secondary p-4 sm:p-5 h-fit"
+        >
           <h2 className="text-[11px] uppercase tracking-label text-text-muted">
             {editing ? "Edit client" : "Add client"}
           </h2>
@@ -164,16 +170,16 @@ export function ClientsClient({ initialClients }: { initialClients: Client[] }) 
             accounts={socialAccounts}
             onChange={setSocialAccounts}
           />
-          <div className="flex gap-2 pt-2">
-            <Button type="submit" loading={saving}>
-              {editing ? "Save changes" : "Add client"}
-            </Button>
+          <FormActions>
             {editing && (
               <Button type="button" variant="secondary" onClick={resetForm}>
                 Cancel
               </Button>
             )}
-          </div>
+            <Button type="submit" loading={saving}>
+              {editing ? "Save changes" : "Add client"}
+            </Button>
+          </FormActions>
         </form>
 
         <section>
@@ -208,26 +214,23 @@ export function ClientsClient({ initialClients }: { initialClients: Client[] }) 
                       Added {format(parseISO(client.created_at), "MMM d, yyyy")}
                     </p>
                   </div>
-                  <div className="flex shrink-0 gap-1">
+                  <div className="flex shrink-0">
                     <Tooltip label="Edit client">
-                      <button
-                        type="button"
+                      <IconButton
                         onClick={() => startEdit(client)}
-                        className="p-2 text-text-muted hover:text-text-primary"
-                        aria-label="Edit client"
+                        label="Edit client"
                       >
                         <Pencil className="h-4 w-4" aria-hidden />
-                      </button>
+                      </IconButton>
                     </Tooltip>
                     <Tooltip label="Remove client">
-                      <button
-                        type="button"
+                      <IconButton
                         onClick={() => void removeClient(client)}
-                        className="p-2 text-text-muted hover:text-status-editing"
-                        aria-label="Remove client"
+                        label="Remove client"
+                        className="hover:text-status-editing"
                       >
                         <Trash2 className="h-4 w-4" aria-hidden />
-                      </button>
+                      </IconButton>
                     </Tooltip>
                   </div>
                 </li>

@@ -7,17 +7,13 @@ import { useEffect, useState } from "react";
 import { PrivacyFinanceLink } from "@/components/privacy/PrivacyFinanceLink";
 import { SignOutButton } from "@/components/SignOutButton";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { navIsActive } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
 const PORTFOLIO_URL = "https://muhammad-hadid.com";
 
 const linkClass =
-  "block py-3 text-[13px] uppercase tracking-label text-text-secondary hover:text-text-primary border-b border-border last:border-0";
-
-function navIsActive(pathname: string, href: string) {
-  if (href === "/dashboard") return pathname === "/dashboard";
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
+  "block py-3 text-[13px] uppercase tracking-label border-b border-border last:border-0 transition-colors";
 
 function NavLink({
   href,
@@ -31,10 +27,17 @@ function NavLink({
   onActiveTap: () => void;
 }) {
   const pathname = usePathname();
+  const active = navIsActive(pathname, href);
   return (
     <Link
       href={href}
-      className={className}
+      aria-current={active ? "page" : undefined}
+      className={cn(
+        className,
+        active
+          ? "text-text-primary"
+          : "text-text-secondary hover:text-text-primary"
+      )}
       onClick={() => {
         if (navIsActive(pathname, href)) onActiveTap();
       }}

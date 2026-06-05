@@ -1,6 +1,5 @@
 "use client";
 
-import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { BackNavLink } from "@/components/BackNavLink";
@@ -23,37 +22,28 @@ import { sortPhotosNewestFirst } from "@/lib/sortPhotos";
 import { ProjectActions } from "./ProjectActions";
 import { DeliverablesChecklist } from "@/components/DeliverablesChecklist";
 import { ProjectReferencesSection } from "@/components/ProjectReferencesSection";
-import { LinkedExpensesBlock } from "@/components/finance/LinkedExpensesBlock";
-import type {
-  FinanceEventOption,
-  FinanceProjectOption,
-} from "@/lib/finance/financeOptions";
+import { ProjectCostsSummary } from "@/components/finance/ProjectCostsSummary";
 import { ProjectMaxSelection } from "./ProjectMaxSelection";
-import { normalizeExpense } from "@/lib/finance/normalize";
-import { filterExpensesForProject } from "@/lib/finance/projectExpenses";
 import {
   isOverSelectionLimit,
   normalizeMaxPhotoSelection,
 } from "@/lib/photoSelectionLimit";
-import type { ExpenseEntry, Photo, Project } from "@/lib/types";
+import type { Photo, Project } from "@/lib/types";
 
 export function ProjectDetailClient({
   project,
   initialPhotos,
-  initialProjectExpenses,
-  financeEvents,
-  financeProjects,
+  projectExpenseTotal,
+  projectExpenseCount,
 }: {
   project: Project;
   initialPhotos: Photo[];
-  initialProjectExpenses: ExpenseEntry[];
-  financeEvents: FinanceEventOption[];
-  financeProjects: FinanceProjectOption[];
+  projectExpenseTotal: number;
+  projectExpenseCount: number;
 }) {
   const router = useRouter();
   const { guardSensitiveAction } = usePrivacyLockContext();
   const [projectState, setProjectState] = useState(project);
-  const [projectExpenses, setProjectExpenses] = useState(initialProjectExpenses);
   const [photos, setPhotos] = useState(() =>
     sortPhotosNewestFirst(initialPhotos)
   );
@@ -99,29 +89,6 @@ export function ProjectDetailClient({
     clientSelectedCount,
     normalizeMaxPhotoSelection(projectState.max_photo_selection)
   );
-
-  const eventIdsForProject = useMemo(() => {
-    const ids = new Set<string>();
-    for (const ev of financeEvents) {
-      if (ev.project_id === projectState.id) ids.add(ev.id);
-    }
-    return ids;
-  }, [financeEvents, projectState.id]);
-
-  const refreshProjectExpenses = useCallback(async () => {
-    try {
-      const res = await fetch("/api/finance/expenses");
-      const json = await res.json();
-      if (!res.ok || !Array.isArray(json)) return;
-      const all = json.map((row: ExpenseEntry) => normalizeExpense(row));
-      setProjectExpenses(
-        filterExpensesForProject(all, projectState.id, eventIdsForProject)
-      );
-      router.refresh();
-    } catch {
-      // ignore
-    }
-  }, [projectState.id, eventIdsForProject, router]);
 
   const clientSelectedIds = useMemo(
     () => new Set(photos.filter((ph) => ph.is_selected).map((ph) => ph.id)),
@@ -277,19 +244,14 @@ export function ProjectDetailClient({
               clientOverLimit={clientOverLimit}
               onUpdated={setProjectState}
             />
-            <LinkedExpensesBlock
-              expenses={projectExpenses}
-              events={financeEvents}
-              projects={financeProjects}
-              defaultProjectId={projectState.id}
-              defaultDate={format(new Date(), "yyyy-MM-dd")}
-              onChanged={() => void refreshProjectExpenses()}
-              compact
+            <ProjectCostsSummary
+              total={projectExpenseTotal}
+              count={projectExpenseCount}
             />
-            <div className="border border-border p-4">
+            <div className="border border-border bg-bg-secondary p-4">
               <DeliverablesChecklist projectId={projectState.id} compact />
             </div>
-            <div className="border border-border p-4">
+            <div className="border border-border bg-bg-secondary p-4">
               <ProjectReferencesSection
                 projectId={projectState.id}
                 projectName={projectState.name}

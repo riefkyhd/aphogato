@@ -4,13 +4,13 @@ import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Tooltip } from "@/components/ui/Tooltip";
 import {
   CLIENT_SOCIAL_LABELS,
   CLIENT_SOCIAL_PLATFORMS,
 } from "@/lib/clients/socialAccounts";
 import type { ClientSocialAccount, ClientSocialPlatform } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 function PlatformPicker({
   value,
@@ -22,33 +22,17 @@ function PlatformPicker({
   onChange: (platform: ClientSocialPlatform) => void;
 }) {
   return (
-    <div
-      className="inline-flex w-full sm:w-auto shrink-0 rounded-sm border border-border overflow-hidden"
-      role="group"
+    <SegmentedControl
+      value={value}
       aria-label="Social platform"
-    >
-      {CLIENT_SOCIAL_PLATFORMS.map((platform) => {
-        const active = value === platform;
-        const disabled = usedPlatforms.has(platform) && !active;
-        return (
-          <button
-            key={platform}
-            type="button"
-            disabled={disabled}
-            onClick={() => onChange(platform)}
-            className={cn(
-              "flex-1 sm:flex-none px-3 py-2 text-[12px] whitespace-nowrap transition-colors",
-              active
-                ? "bg-bg-elevated text-text-primary"
-                : "bg-bg-secondary text-text-muted hover:text-text-secondary",
-              disabled && "opacity-40 cursor-not-allowed hover:text-text-muted"
-            )}
-          >
-            {CLIENT_SOCIAL_LABELS[platform]}
-          </button>
-        );
-      })}
-    </div>
+      className="w-full sm:w-auto shrink-0 [&_button]:flex-1 [&_button]:sm:flex-none [&_button]:whitespace-nowrap [&_button]:normal-case [&_button]:text-[12px] [&_button]:tracking-normal"
+      options={CLIENT_SOCIAL_PLATFORMS.map((platform) => ({
+        value: platform,
+        label: CLIENT_SOCIAL_LABELS[platform],
+        disabled: usedPlatforms.has(platform) && value !== platform,
+      }))}
+      onChange={onChange}
+    />
   );
 }
 
@@ -122,7 +106,7 @@ export function ClientSocialAccountsEditor({
       <Button
         type="button"
         variant="secondary"
-        className="!text-[11px] !px-3 !py-2"
+        size="sm"
         disabled={!availablePlatform}
         onClick={addAccount}
       >

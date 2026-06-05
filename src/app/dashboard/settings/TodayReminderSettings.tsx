@@ -82,7 +82,7 @@ export function TodayReminderSettings() {
           <Button
             type="button"
             variant={preferences.browserReminderEnabled ? "secondary" : "primary"}
-            className="!text-[11px]"
+            className="w-full sm:w-auto"
             disabled={saving}
             onClick={() => void handleToggle()}
           >

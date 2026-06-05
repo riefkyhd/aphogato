@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { FormActions } from "@/components/ui/FormActions";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import {
@@ -55,7 +56,7 @@ function ModalOverlay({
         aria-label="Close"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-md max-h-[90dvh] overflow-y-auto bg-bg-secondary border border-border p-6 sm:rounded-sm">
+      <div className="relative w-full max-w-md max-h-[90dvh] overflow-y-auto bg-bg-elevated border border-border p-6 sm:rounded-sm">
         {children}
       </div>
     </div>
@@ -263,20 +264,14 @@ export function ExpenseFormModal({
           </select>
         </div>
         <Field label="Notes" value={notes} onChange={setNotes} />
-        <div className="flex flex-col gap-2 pt-2 sm:flex-row">
-          <Button
-            type="button"
-            variant="secondary"
-            className="flex-1"
-            onClick={onClose}
-          >
+        <FormActions className="sm:flex-row sm:[&_button]:flex-1">
+          <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
           </Button>
           {!isEdit && (
             <Button
               type="button"
               variant="secondary"
-              className="flex-1"
               loading={saving}
               disabled={saving}
               onClick={() => void handleSubmit("another")}
@@ -284,10 +279,10 @@ export function ExpenseFormModal({
               Save &amp; add another
             </Button>
           )}
-          <Button type="submit" className="flex-1" loading={saving} disabled={saving}>
+          <Button type="submit" loading={saving} disabled={saving}>
             {isEdit ? "Save" : "Save & close"}
           </Button>
-        </div>
+        </FormActions>
       </form>
     </ModalOverlay>
   );

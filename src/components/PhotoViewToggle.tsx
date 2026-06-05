@@ -16,7 +16,10 @@ export function PhotoViewToggle({
 }) {
   return (
     <div
-      className={cn("inline-flex items-center gap-1", className)}
+      className={cn(
+        "inline-flex rounded-sm border border-border overflow-hidden",
+        className
+      )}
       role="group"
       aria-label="Photo view"
     >
@@ -26,15 +29,14 @@ export function PhotoViewToggle({
           onClick={() => onChange("grid")}
           aria-pressed={view === "grid"}
           aria-label="Grid view"
-          className="p-2 transition-colors"
+          className={cn(
+            "p-2 transition-colors",
+            view === "grid"
+              ? "bg-bg-elevated text-text-primary"
+              : "bg-bg-secondary text-text-muted hover:text-text-secondary"
+          )}
         >
-          <LayoutGrid
-            className={cn(
-              "h-5 w-5",
-              view === "grid" ? "text-text-primary" : "text-text-muted"
-            )}
-            strokeWidth={1.5}
-          />
+          <LayoutGrid className="h-5 w-5" strokeWidth={1.5} aria-hidden />
         </button>
       </Tooltip>
       <Tooltip label="List view">
@@ -43,15 +45,14 @@ export function PhotoViewToggle({
           onClick={() => onChange("list")}
           aria-pressed={view === "list"}
           aria-label="List view"
-          className="p-2 transition-colors"
+          className={cn(
+            "p-2 transition-colors",
+            view === "list"
+              ? "bg-bg-elevated text-text-primary"
+              : "bg-bg-secondary text-text-muted hover:text-text-secondary"
+          )}
         >
-          <List
-            className={cn(
-              "h-5 w-5",
-              view === "list" ? "text-text-primary" : "text-text-muted"
-            )}
-            strokeWidth={1.5}
-          />
+          <List className="h-5 w-5" strokeWidth={1.5} aria-hidden />
         </button>
       </Tooltip>
     </div>

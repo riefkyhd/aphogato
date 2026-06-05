@@ -109,9 +109,10 @@ export function ExpenseQuickAdd({
         </div>
         <Button
           type="submit"
+          size="sm"
           loading={saving}
           disabled={saving}
-          className="!text-[10px] !px-3 !py-2 h-9 shrink-0"
+          className="shrink-0"
         >
           Add
         </Button>

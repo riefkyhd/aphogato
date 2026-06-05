@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
+import { FormActions } from "@/components/ui/FormActions";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { usePrivacyLockContext } from "@/components/privacy/PrivacyLockProvider";
@@ -133,21 +134,11 @@ export function PrivacySettings() {
           />
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            className="!text-[11px]"
-            loading={loading}
-            disabled={loading || newPin.length < PIN_MIN_LEN}
-            onClick={() => void handleSetOrChange()}
-          >
-            {pinEnabled ? "Change PIN" : "Enable PIN lock"}
-          </Button>
+        <FormActions>
           {pinEnabled ? (
             <Button
               type="button"
               variant="secondary"
-              className="!text-[11px]"
               loading={loading}
               disabled={loading || currentPin.length < PIN_MIN_LEN}
               onClick={() => void handleRemove()}
@@ -155,7 +146,15 @@ export function PrivacySettings() {
               Remove PIN
             </Button>
           ) : null}
-        </div>
+          <Button
+            type="button"
+            loading={loading}
+            disabled={loading || newPin.length < PIN_MIN_LEN}
+            onClick={() => void handleSetOrChange()}
+          >
+            {pinEnabled ? "Change PIN" : "Enable PIN lock"}
+          </Button>
+        </FormActions>
       </div>
     </section>
   );
