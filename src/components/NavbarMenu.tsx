@@ -4,6 +4,7 @@ import { Bell, ExternalLink, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { usePendingNav } from "@/components/navigation/PendingNavProvider";
 import { PrivacyFinanceLink } from "@/components/privacy/PrivacyFinanceLink";
 import { SignOutButton } from "@/components/SignOutButton";
 import { Tooltip } from "@/components/ui/Tooltip";
@@ -27,22 +28,39 @@ function NavLink({
   onActiveTap: () => void;
 }) {
   const pathname = usePathname();
+  const { startNavigation, isPending } = usePendingNav();
   const active = navIsActive(pathname, href);
+  const pending = isPending(href);
+
   return (
     <Link
       href={href}
       aria-current={active ? "page" : undefined}
+      aria-busy={pending}
       className={cn(
         className,
         active
           ? "text-text-primary"
-          : "text-text-secondary hover:text-text-primary"
+          : "text-text-secondary hover:text-text-primary",
+        pending && "text-text-primary opacity-70"
       )}
       onClick={() => {
-        if (navIsActive(pathname, href)) onActiveTap();
+        if (navIsActive(pathname, href)) {
+          onActiveTap();
+          return;
+        }
+        startNavigation(href);
       }}
     >
-      {children}
+      <span className="inline-flex items-center gap-2">
+        {pending ? (
+          <span
+            className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-text-primary animate-pulse"
+            aria-hidden
+          />
+        ) : null}
+        {children}
+      </span>
     </Link>
   );
 }
