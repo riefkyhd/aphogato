@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { DashboardMain } from "@/components/layout/DashboardShell";
 import { ProjectBoardColumn } from "@/components/projects/ProjectBoardColumn";
 import { ProjectsPageHeader } from "@/components/projects/ProjectsPageHeader";
 import {
@@ -89,7 +90,7 @@ export function ProjectBoardClient({
     : BOARD_COLUMNS;
 
   return (
-    <main className="px-4 sm:px-6 md:px-10 py-6 sm:py-10 flex flex-col min-h-[calc(100dvh-3.5rem)] md:min-h-[calc(100vh-60px)]">
+    <DashboardMain className="flex flex-col min-h-[calc(100dvh-3.5rem)] md:min-h-[calc(100vh-60px)]">
       <ProjectsPageHeader title="Pipeline" />
 
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -121,8 +122,8 @@ export function ProjectBoardClient({
           </p>
         </div>
       ) : (
-        <div className="flex-1 -mx-4 sm:-mx-6 md:-mx-10 px-4 sm:px-6 md:px-10 overflow-x-auto pb-4 snap-x snap-mandatory scroll-px-4 sm:scroll-px-6 md:scroll-px-10 overscroll-x-contain [-webkit-overflow-scrolling:touch]">
-          <div className="flex gap-3 w-max mx-auto h-full pr-1">
+        <div className="flex-1 overflow-x-auto pb-4 snap-x snap-mandatory overscroll-x-contain [-webkit-overflow-scrolling:touch]">
+          <div className="flex gap-3 w-max min-w-full justify-center h-full pr-1">
             {columns.map((col) => (
               <ProjectBoardColumn
                 key={col.status}
@@ -141,6 +142,6 @@ export function ProjectBoardClient({
           </div>
         </div>
       )}
-    </main>
+    </DashboardMain>
   );
 }

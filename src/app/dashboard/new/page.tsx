@@ -1,3 +1,5 @@
+import { ContentColumn } from "@/components/layout/ContentColumn";
+import { DashboardMain } from "@/components/layout/DashboardShell";
 import { NewProjectForm } from "./NewProjectForm";
 
 export const metadata = {
@@ -6,15 +8,17 @@ export const metadata = {
 
 export default function NewProjectPage() {
   return (
-    <main className="px-4 sm:px-6 md:px-10 py-6 sm:py-10 max-w-[560px] mx-auto">
-      <h1 className="text-2xl font-light tracking-[0.05em] uppercase mb-2">
-        New project
-      </h1>
-      <p className="text-text-secondary text-[15px] mb-10 leading-relaxed">
-        Set up a gallery for your client. On the next screen, add your photos
-        and share the link when you&rsquo;re ready.
-      </p>
-      <NewProjectForm />
-    </main>
+    <DashboardMain>
+      <ContentColumn size="md">
+        <h1 className="text-2xl font-light tracking-[0.05em] uppercase mb-2">
+          New project
+        </h1>
+        <p className="text-text-secondary text-[15px] mb-10 leading-relaxed">
+          Set up a gallery for your client. On the next screen, add your photos
+          and share the link when you&rsquo;re ready.
+        </p>
+        <NewProjectForm />
+      </ContentColumn>
+    </DashboardMain>
   );
 }

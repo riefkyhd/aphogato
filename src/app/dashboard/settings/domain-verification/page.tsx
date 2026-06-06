@@ -1,8 +1,11 @@
 import Link from "next/link";
+import { ContentColumn } from "@/components/layout/ContentColumn";
+import { DashboardMain } from "@/components/layout/DashboardShell";
 
 export default function DomainVerificationPage() {
   return (
-    <main className="px-4 sm:px-6 md:px-10 py-6 sm:py-10 max-w-2xl mx-auto w-full">
+    <DashboardMain>
+      <ContentColumn size="lg">
       <Link
         href="/dashboard/settings"
         className="text-[11px] uppercase tracking-label text-text-muted hover:text-text-primary mb-6 inline-block"
@@ -66,6 +69,7 @@ export default function DomainVerificationPage() {
           in the repository.
         </p>
       </article>
-    </main>
+      </ContentColumn>
+    </DashboardMain>
   );
 }

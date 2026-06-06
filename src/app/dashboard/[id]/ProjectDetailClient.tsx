@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
+import { DashboardMain } from "@/components/layout/DashboardShell";
 import { BackNavLink } from "@/components/BackNavLink";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -198,7 +199,7 @@ export function ProjectDetailClient({
         onConfirm={confirmDeleteProject}
       />
 
-      <main className="px-4 sm:px-6 md:px-10 py-6 sm:py-10 max-w-[1400px] mx-auto">
+      <DashboardMain>
         <BackNavLink
           href="/dashboard"
           className="inline-flex items-center gap-2 text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors mb-6"
@@ -324,7 +325,7 @@ export function ProjectDetailClient({
               : "Your client selects favorites from the gallery link."}
           </p>
         </section>
-      </main>
+      </DashboardMain>
     </>
   );
 }

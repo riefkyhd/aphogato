@@ -4,6 +4,7 @@ import { format, parseISO } from "date-fns";
 import { Eye, EyeOff, Loader2, Lock } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { DashboardMain } from "@/components/layout/DashboardShell";
 import { MaskedMoney } from "@/components/privacy/MaskedMoney";
 import { usePrivacyLockContext } from "@/components/privacy/PrivacyLockProvider";
 import { Button } from "@/components/ui/Button";
@@ -178,7 +179,7 @@ export function FinanceClient({
   }
 
   return (
-    <main className="px-4 sm:px-6 md:px-10 py-6 sm:py-10 relative">
+    <DashboardMain className="relative">
       <div
         className={cn(
           "transition-[filter] duration-200",
@@ -543,7 +544,7 @@ export function FinanceClient({
           </div>
         </div>
       ) : null}
-    </main>
+    </DashboardMain>
   );
 }
 

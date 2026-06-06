@@ -46,7 +46,7 @@ export function CalendarListView({
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl flex flex-col">
+    <div className="flex flex-col w-full">
       <ListColumnHeader />
       {[...groups.entries()].map(([monthLabel, monthEvents]) => (
         <section key={monthLabel}>

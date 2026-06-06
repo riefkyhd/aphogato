@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useUserPreferencesContext } from "@/components/preferences/UserPreferencesProvider";
 import { toast } from "sonner";
+import { DashboardMain } from "@/components/layout/DashboardShell";
 import { CalendarListView } from "@/components/calendar/CalendarListView";
 import { CalendarMonthGrid } from "@/components/calendar/CalendarMonthGrid";
 import { DeleteEventDialog } from "@/components/calendar/DeleteEventDialog";
@@ -377,7 +378,7 @@ export function CalendarClient({
   }, [isGoogleConnected]);
 
   return (
-    <main className="px-4 sm:px-6 md:px-10 py-6 sm:py-10 min-h-[calc(100dvh-3.5rem)] md:min-h-[calc(100vh-60px)] flex flex-col">
+    <DashboardMain className="min-h-[calc(100dvh-3.5rem)] md:min-h-[calc(100vh-60px)] flex flex-col">
       <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
         <h1 className="text-xl sm:text-2xl font-light tracking-[0.05em] uppercase">
           Calendar
@@ -586,6 +587,6 @@ export function CalendarClient({
         onClose={() => !deleting && setDeleteDialogOpen(false)}
         onConfirm={confirmDelete}
       />
-    </main>
+    </DashboardMain>
   );
 }

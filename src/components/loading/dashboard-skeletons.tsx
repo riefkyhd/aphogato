@@ -36,12 +36,10 @@ export function ProjectsSkeleton() {
           <Skeleton className="h-10 w-52" />
         </div>
       </div>
-      <div className="mx-auto w-full max-w-6xl">
-        <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 gap-[2px]">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="aspect-[5/3] min-[480px]:aspect-[3/2]" />
-          ))}
-        </div>
+      <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 gap-[2px]">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="aspect-[5/3] min-[480px]:aspect-[3/2]" />
+        ))}
       </div>
     </DashboardPageShell>
   );
@@ -66,7 +64,7 @@ export function BoardSkeleton() {
         <Skeleton className="h-4 w-full max-w-md" />
         <Skeleton className="h-4 w-28" />
       </div>
-      <div className="flex gap-3 w-max mx-auto overflow-hidden pb-4">
+      <div className="flex gap-3 w-max min-w-full justify-center overflow-hidden pb-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
@@ -245,7 +243,7 @@ export function SettingsSkeleton() {
 
 export function ProjectDetailSkeleton() {
   return (
-    <DashboardPageShell className="max-w-[1400px] mx-auto" label="Loading project">
+    <DashboardPageShell label="Loading project">
       <Skeleton className="h-4 w-28 mb-6" />
       <header className="mb-8 space-y-5">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -273,10 +271,7 @@ export function ProjectDetailSkeleton() {
 
 export function NewProjectSkeleton() {
   return (
-    <DashboardPageShell
-      className="max-w-[560px] mx-auto"
-      label="Loading new project form"
-    >
+    <DashboardPageShell label="Loading new project form">
       <Skeleton className="h-8 w-48 mb-2" />
       <Skeleton className="h-4 w-full mb-10" />
       <div className="space-y-6">

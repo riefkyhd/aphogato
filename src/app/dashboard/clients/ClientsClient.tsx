@@ -4,6 +4,7 @@ import { format, parseISO } from "date-fns";
 import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
+import { DashboardMain } from "@/components/layout/DashboardShell";
 import { BackNavLink } from "@/components/BackNavLink";
 import { Button } from "@/components/ui/Button";
 import { FormActions } from "@/components/ui/FormActions";
@@ -101,7 +102,7 @@ export function ClientsClient({ initialClients }: { initialClients: Client[] }) 
   }
 
   return (
-    <main className="px-4 sm:px-6 md:px-10 py-6 sm:py-10">
+    <DashboardMain>
       <BackNavLink
         href="/dashboard"
         className="inline-flex items-center gap-2 text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors mb-6"
@@ -239,6 +240,6 @@ export function ClientsClient({ initialClients }: { initialClients: Client[] }) 
           )}
         </section>
       </div>
-    </main>
+    </DashboardMain>
   );
 }

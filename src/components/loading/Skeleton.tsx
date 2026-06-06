@@ -1,3 +1,4 @@
+import { DashboardShell } from "@/components/layout/DashboardShell";
 import { cn } from "@/lib/utils";
 
 export function Skeleton({
@@ -24,12 +25,12 @@ export function DashboardPageShell({
 }) {
   return (
     <main
-      className={cn("px-4 sm:px-6 md:px-10 py-6 sm:py-10", className)}
+      className={cn("py-6 sm:py-10", className)}
       aria-busy="true"
       aria-live="polite"
       aria-label={label}
     >
-      {children}
+      <DashboardShell>{children}</DashboardShell>
     </main>
   );
 }

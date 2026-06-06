@@ -9,6 +9,7 @@ import {
   isBrowserReminderEnabled,
 } from "@/lib/calendar/todayEvents";
 import type { CalendarEvent } from "@/lib/types";
+import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { cn } from "@/lib/utils";
 import { Bell, Calendar, X } from "lucide-react";
@@ -76,11 +77,12 @@ export function TodayShootsReminder({
     <div
       role="status"
       className={cn(
-        "border border-status-editing/50 bg-bg-secondary px-4 py-3 sm:px-5",
+        "border-b border-status-editing/50 bg-bg-secondary",
         className
       )}
     >
-      <div className="flex gap-3">
+      <DashboardShell className="py-3">
+        <div className="flex gap-3">
         <div
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-status-editing/20 text-status-editing"
           aria-hidden
@@ -138,7 +140,8 @@ export function TodayShootsReminder({
             <X className="h-4 w-4" />
           </button>
         </Tooltip>
-      </div>
+        </div>
+      </DashboardShell>
     </div>
   );
 }

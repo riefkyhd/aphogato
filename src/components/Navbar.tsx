@@ -1,5 +1,6 @@
 import { Bell, ExternalLink } from "lucide-react";
 import Link from "next/link";
+import { DashboardShell } from "@/components/layout/DashboardShell";
 import { NavbarLink } from "./NavbarLink";
 import { PrivacyFinanceLink } from "./privacy/PrivacyFinanceLink";
 import { Logo } from "./Logo";
@@ -16,9 +17,10 @@ export function Navbar({
   shootsToday?: number;
 }) {
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-14 md:h-[60px] bg-bg-primary border-b border-border flex items-center px-4 md:px-6">
-      <Logo href={isAuthenticated ? "/dashboard" : "/"} size="sm" />
-      <nav className="ml-auto hidden md:flex items-center gap-6">
+    <header className="fixed top-0 left-0 right-0 z-50 h-14 md:h-[60px] bg-bg-primary border-b border-border">
+      <DashboardShell className="flex h-full items-center">
+        <Logo href={isAuthenticated ? "/dashboard" : "/"} size="sm" />
+        <nav className="ml-auto hidden md:flex items-center gap-6">
         {isAuthenticated ? (
           <>
             <NavbarLink href="/dashboard">Projects</NavbarLink>
@@ -65,8 +67,9 @@ export function Navbar({
             Sign in
           </Link>
         )}
-      </nav>
-      {isAuthenticated ? <NavbarMenu shootsToday={shootsToday} /> : null}
+        </nav>
+        {isAuthenticated ? <NavbarMenu shootsToday={shootsToday} /> : null}
+      </DashboardShell>
     </header>
   );
 }

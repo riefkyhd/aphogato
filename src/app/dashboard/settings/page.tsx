@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { ContentColumn } from "@/components/layout/ContentColumn";
+import { DashboardMain } from "@/components/layout/DashboardShell";
 import { DomainSecurityInfo } from "@/app/dashboard/settings/DomainSecurityInfo";
 import { GoogleCalendarSettings } from "@/app/dashboard/settings/GoogleCalendarSettings";
 import { PreferencesSettings } from "@/app/dashboard/settings/PreferencesSettings";
@@ -13,7 +14,7 @@ export default async function SettingsPage() {
   const isConnected = await isGoogleCalendarConnected();
 
   return (
-    <main className="px-4 sm:px-6 md:px-10 py-6 sm:py-10">
+    <DashboardMain>
       <ContentColumn size="lg">
         <h1 className="text-xl sm:text-2xl font-light tracking-[0.05em] uppercase mb-8 text-center sm:text-left">
           Settings
@@ -26,6 +27,6 @@ export default async function SettingsPage() {
         <PrivacySettings />
         <DomainSecurityInfo />
       </ContentColumn>
-    </main>
+    </DashboardMain>
   );
 }

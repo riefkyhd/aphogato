@@ -1,4 +1,5 @@
 import { createServerSupabase } from "@/lib/supabase/server";
+import { DashboardMain } from "@/components/layout/DashboardShell";
 import { NavigatingLink } from "@/components/NavigatingLink";
 import { ProjectsPageHeader } from "@/components/projects/ProjectsPageHeader";
 import {
@@ -38,21 +39,19 @@ export default async function DashboardPage() {
   const projects = await loadProjects();
 
   return (
-    <main className="px-4 sm:px-6 md:px-10 py-6 sm:py-10">
+    <DashboardMain>
       <ProjectsPageHeader />
 
       {projects.length === 0 ? (
         <EmptyState />
       ) : (
-        <div className="mx-auto w-full max-w-6xl">
-          <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 gap-[2px]">
-            {projects.map((p) => (
-              <ProjectCard key={p.id} project={p} />
-            ))}
-          </div>
+        <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 gap-[2px]">
+          {projects.map((p) => (
+            <ProjectCard key={p.id} project={p} />
+          ))}
         </div>
       )}
-    </main>
+    </DashboardMain>
   );
 }
 
