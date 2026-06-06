@@ -22,24 +22,20 @@ import { sortPhotosNewestFirst } from "@/lib/sortPhotos";
 import { ProjectActions } from "./ProjectActions";
 import { DeliverablesChecklist } from "@/components/DeliverablesChecklist";
 import { ProjectReferencesSection } from "@/components/ProjectReferencesSection";
-import { ProjectCostsSummary } from "@/components/finance/ProjectCostsSummary";
 import { ProjectMaxSelection } from "./ProjectMaxSelection";
 import {
   isOverSelectionLimit,
   normalizeMaxPhotoSelection,
 } from "@/lib/photoSelectionLimit";
 import type { Photo, Project } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 export function ProjectDetailClient({
   project,
   initialPhotos,
-  projectExpenseTotal,
-  projectExpenseCount,
 }: {
   project: Project;
   initialPhotos: Photo[];
-  projectExpenseTotal: number;
-  projectExpenseCount: number;
 }) {
   const router = useRouter();
   const { guardSensitiveAction } = usePrivacyLockContext();
@@ -51,6 +47,7 @@ export function ProjectDetailClient({
   const [deleteProjectOpen, setDeleteProjectOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deletingProject, setDeletingProject] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
 
   const setPhotosSorted = useCallback(
     (next: Photo[]) => {
@@ -203,7 +200,7 @@ export function ProjectDetailClient({
         onConfirm={confirmDeleteProject}
       />
 
-      <main className="px-4 sm:px-6 md:px-10 py-6 sm:py-10">
+      <main className="px-4 sm:px-6 md:px-10 py-6 sm:py-10 max-w-[1400px] mx-auto">
         <BackNavLink
           href="/dashboard"
           className="inline-flex items-center gap-2 text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors mb-6"
@@ -212,17 +209,24 @@ export function ProjectDetailClient({
           All projects
         </BackNavLink>
 
-        <header className="border-b border-border pb-6 mb-6">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-            <div className="min-w-0">
+        <header className="mb-8">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-w-0 flex-1">
               <h1 className="text-2xl sm:text-3xl font-light tracking-[0.05em] uppercase break-words">
                 {projectState.name}
               </h1>
-              <p className="mt-2 text-text-secondary text-[14px]">
+              <p className="mt-2 text-text-secondary text-[15px]">
                 {projectState.client_name ?? "—"}
               </p>
-              <div className="mt-3">
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] uppercase tracking-label text-text-muted">
                 <StatusDot status={projectState.status as ProjectStatus} />
+                <span>
+                  {photos.length} photo{photos.length === 1 ? "" : "s"}
+                </span>
+                <span>
+                  {clientSelectedCount} client pick
+                  {clientSelectedCount === 1 ? "" : "s"}
+                </span>
               </div>
             </div>
             <ProjectActions
@@ -236,70 +240,92 @@ export function ProjectDetailClient({
             />
           </div>
 
-          <div className="mt-6 space-y-4">
-            <ProjectMaxSelection
-              project={projectState}
-              clientSelectedCount={clientSelectedCount}
-              photoCount={photos.length}
-              clientOverLimit={clientOverLimit}
-              onUpdated={setProjectState}
-            />
-            <ProjectCostsSummary
-              total={projectExpenseTotal}
-              count={projectExpenseCount}
-            />
-            <div className="border border-border bg-bg-secondary p-4">
-              <DeliverablesChecklist projectId={projectState.id} compact />
-            </div>
-            <div className="border border-border bg-bg-secondary p-4">
-              <ProjectReferencesSection
-                projectId={projectState.id}
-                projectName={projectState.name}
-                clientName={projectState.client_name}
-                compact
-              />
+          <div className="mt-6 border border-border bg-bg-secondary">
+            <button
+              type="button"
+              onClick={() => setToolsOpen((o) => !o)}
+              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left sm:px-5"
+              aria-expanded={toolsOpen}
+            >
+              <span className="text-[11px] uppercase tracking-label text-text-secondary">
+                Project setup
+              </span>
+              <span className="text-[11px] text-text-muted">
+                {toolsOpen ? "Hide" : "Show"}
+              </span>
+            </button>
+            <div
+              className={cn(
+                "grid transition-[grid-template-rows] duration-200",
+                toolsOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+              )}
+            >
+              <div className="overflow-hidden">
+                <div className="space-y-[2px] border-t border-border">
+                  <ProjectMaxSelection
+                    project={projectState}
+                    clientSelectedCount={clientSelectedCount}
+                    photoCount={photos.length}
+                    clientOverLimit={clientOverLimit}
+                    onUpdated={setProjectState}
+                  />
+                  <div className="border-t border-border bg-bg-secondary p-4 sm:p-5">
+                    <DeliverablesChecklist projectId={projectState.id} compact />
+                  </div>
+                  <div className="border-t border-border bg-bg-secondary p-4 sm:p-5">
+                    <ProjectReferencesSection
+                      projectId={projectState.id}
+                      projectName={projectState.name}
+                      clientName={projectState.client_name}
+                      compact
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </header>
 
-        {photos.length > 0 && (
-          <p className="mb-4 text-[11px] text-text-muted leading-relaxed max-w-3xl">
-            <span className="md:hidden">
-              Tap or long-press photos to multi-select for delete. Esc clears
-              selection.
-            </span>
-            <span className="hidden md:inline">
-              Click to select · drag to box-select · Ctrl+click or long-press for
-              multi-select · Esc to clear.
-            </span>
+        <section aria-label="Photo gallery">
+          {photos.length > 0 && (
+            <p className="mb-4 text-[11px] text-text-muted leading-relaxed max-w-3xl">
+              <span className="md:hidden">
+                Tap to preview · long-press to select for delete.
+              </span>
+              <span className="hidden md:inline">
+                Click to select · drag to box-select · Ctrl+click or long-press
+                for multi-select · Esc to clear.
+              </span>
+            </p>
+          )}
+
+          <div
+            className="select-none"
+            onSelectCapture={(e) => {
+              if (manage.count > 0) e.preventDefault();
+            }}
+          >
+            <PhotoGallerySection
+              photos={photos}
+              mode="dashboard"
+              viewStorageId={projectState.gallery_token}
+              selectedIds={clientSelectedIds}
+              manageSelectedIds={manage.manageSelected}
+              onManagePhotoActivate={manageActivation.activate}
+              onManagePhotoMarquee={manage.setMarqueeHits}
+              managePreviewId={manageActivation.previewId}
+              onClearManageSelection={manageActivation.clearAll}
+              onCloseManagePreview={manageActivation.closePreview}
+              onDeletePhotos={() => setDeleteDialogOpen(true)}
+            />
+          </div>
+
+          <p className="mt-6 text-[12px] text-text-muted leading-relaxed">
+            {photos.length === 0
+              ? "Drag photos anywhere on this page, or use Upload photos. Then share the gallery link with your client."
+              : "Your client selects favorites from the gallery link."}
           </p>
-        )}
-
-        <div
-          className="select-none"
-          onSelectCapture={(e) => {
-            if (manage.count > 0) e.preventDefault();
-          }}
-        >
-          <PhotoGallerySection
-            photos={photos}
-            mode="dashboard"
-            viewStorageId={projectState.gallery_token}
-            selectedIds={clientSelectedIds}
-            manageSelectedIds={manage.manageSelected}
-            onManagePhotoActivate={manageActivation.activate}
-            onManagePhotoMarquee={manage.setMarqueeHits}
-            managePreviewId={manageActivation.previewId}
-            onClearManageSelection={manageActivation.clearAll}
-            onDeletePhotos={() => setDeleteDialogOpen(true)}
-          />
-        </div>
-
-        <p className="mt-6 text-[12px] text-text-muted leading-relaxed">
-          {photos.length === 0
-            ? "Drag photos anywhere on this page, or use Upload photos. Then share the gallery link with your client."
-            : "Your client selects favorites from the gallery link."}
-        </p>
+        </section>
       </main>
     </>
   );

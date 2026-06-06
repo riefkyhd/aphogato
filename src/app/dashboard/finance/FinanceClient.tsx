@@ -1,7 +1,7 @@
 "use client";
 
 import { format, parseISO } from "date-fns";
-import { Eye, EyeOff, Lock } from "lucide-react";
+import { Eye, EyeOff, Loader2, Lock } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { MaskedMoney } from "@/components/privacy/MaskedMoney";
@@ -28,6 +28,7 @@ import {
   formatExpenseSecondary,
   isGeneralExpense,
 } from "@/lib/finance/linkLabels";
+import { formatMoney } from "@/lib/finance/formatMoney";
 import { filterEntriesByMonth } from "@/lib/finance/summary";
 import {
   downloadFinanceReport,
@@ -108,6 +109,8 @@ export function FinanceClient({
   }, []);
 
   const onYearChange = (y: number) => {
+    if (y === year) return;
+    setLoading(true);
     setYear(y);
     void reload(y);
   };
@@ -211,18 +214,27 @@ export function FinanceClient({
             <Label htmlFor="finance-year" className="sr-only">
               Year
             </Label>
-            <select
-              id="finance-year"
-              className="input-dark select-compact w-[100px]"
-              value={year}
-              onChange={(e) => onYearChange(Number(e.target.value))}
-            >
-              {[year - 1, year, year + 1].map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
+            <div className="relative inline-flex items-center">
+              <select
+                id="finance-year"
+                className="input-dark select-compact w-[100px] pr-8"
+                value={year}
+                disabled={loading}
+                onChange={(e) => onYearChange(Number(e.target.value))}
+              >
+                {[year - 1, year, year + 1].map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+              {loading && (
+                <Loader2
+                  className="pointer-events-none absolute right-2 h-3.5 w-3.5 animate-spin text-text-muted"
+                  aria-hidden
+                />
+              )}
+            </div>
           </div>
           <PageToolbarActions>
             <Button
@@ -261,6 +273,10 @@ export function FinanceClient({
         </div>
       </div>
 
+      {loading ? (
+        <FinanceYearLoading year={year} />
+      ) : (
+        <>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-[2px] mb-6">
         <SummaryCard label="Income" amount={periodIncome} visible={showAmounts} positive />
         <SummaryCard label="Expenses" amount={periodExpenses} visible={showAmounts} />
@@ -277,14 +293,19 @@ export function FinanceClient({
         <p className="text-[11px] uppercase tracking-label text-text-muted mb-2">
           {year} overview
         </p>
-        <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-12 gap-[2px]">
+        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-[2px]">
           {summary.months.map((m) => (
             <button
               key={m.month}
               type="button"
               onClick={() => setMonth(m.month)}
+              title={
+                showAmounts
+                  ? `${MONTH_LABELS[m.month - 1]} ${year}: ${formatMoney(m.net)}`
+                  : undefined
+              }
               className={cn(
-                "border border-border p-2 sm:p-3 text-left transition-colors min-h-[72px]",
+                "border border-border p-2 sm:p-3 text-left transition-colors min-h-[72px] min-w-0",
                 month === m.month
                   ? "bg-bg-elevated border-text-primary"
                   : "bg-bg-secondary hover:bg-bg-elevated"
@@ -295,7 +316,7 @@ export function FinanceClient({
               </span>
               <p
                 className={cn(
-                  "mt-1 text-[11px] sm:text-[12px] font-medium",
+                  "mt-1 text-[10px] sm:text-[11px] font-medium tabular-nums leading-snug break-words",
                   m.net >= 0 ? "text-status-delivered" : "text-status-editing"
                 )}
               >
@@ -313,9 +334,6 @@ export function FinanceClient({
         </button>
       </div>
 
-      {loading ? (
-        <p className="text-text-muted text-[13px]">Loading…</p>
-      ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <EntryList
             title="Income"
@@ -413,6 +431,7 @@ export function FinanceClient({
             />
           </section>
         </div>
+        </>
       )}
 
       <IncomeFormModal
@@ -525,6 +544,50 @@ export function FinanceClient({
         </div>
       ) : null}
     </main>
+  );
+}
+
+function FinanceYearLoading({ year }: { year: number }) {
+  return (
+    <div className="space-y-6" aria-busy="true" aria-label={`Loading ${year} finance data`}>
+      <div className="flex items-center justify-center gap-3 py-4">
+        <Loader2 className="h-6 w-6 animate-spin text-text-muted" aria-hidden />
+        <p className="text-[13px] text-text-secondary">Loading {year}…</p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-[2px]">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="border border-border bg-bg-secondary p-4 sm:p-5 animate-pulse"
+          >
+            <div className="h-3 w-16 bg-bg-elevated rounded-sm" />
+            <div className="mt-3 h-7 w-24 bg-bg-elevated rounded-sm" />
+          </div>
+        ))}
+      </div>
+      <div>
+        <div className="h-3 w-28 bg-bg-elevated rounded-sm mb-3 animate-pulse" />
+        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-[2px]">
+          {MONTH_LABELS.map((label) => (
+            <div
+              key={label}
+              className="border border-border bg-bg-secondary p-2 sm:p-3 min-h-[72px] animate-pulse"
+            >
+              <div className="h-2.5 w-8 bg-bg-elevated rounded-sm" />
+              <div className="mt-2 h-4 w-12 bg-bg-elevated rounded-sm" />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {[0, 1].map((i) => (
+          <div
+            key={i}
+            className="border border-border bg-bg-secondary min-h-[240px] animate-pulse"
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 

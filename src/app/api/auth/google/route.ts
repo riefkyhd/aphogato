@@ -19,7 +19,8 @@ export async function GET(request: Request) {
 
   try {
     const state = randomBytes(16).toString("hex");
-    const url = getGoogleAuthUrl(state);
+    const redirectUri = `${origin}/api/auth/google/callback`;
+    const url = getGoogleAuthUrl(state, redirectUri);
     const response = NextResponse.redirect(url);
     response.cookies.set(STATE_COOKIE, state, {
       httpOnly: true,

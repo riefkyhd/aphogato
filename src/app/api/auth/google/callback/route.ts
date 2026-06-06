@@ -49,7 +49,8 @@ export async function GET(request: Request) {
   }
 
   try {
-    const refreshToken = await exchangeCodeForRefreshToken(code);
+    const redirectUri = `${origin}/api/auth/google/callback`;
+    const refreshToken = await exchangeCodeForRefreshToken(code, redirectUri);
     await storeRefreshToken(refreshToken);
     const response = NextResponse.redirect(
       `${origin}/dashboard/settings?connected=true`

@@ -59,7 +59,7 @@ export function ProjectMaxSelection({
   }
 
   return (
-    <div className="border border-border bg-bg-secondary px-4 py-3 sm:px-5 sm:py-4">
+    <div className="bg-bg-secondary px-4 py-3 sm:px-5 sm:py-4">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <form
           onSubmit={handleSave}

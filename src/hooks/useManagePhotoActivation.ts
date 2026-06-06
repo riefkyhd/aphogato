@@ -19,23 +19,30 @@ export function useManagePhotoActivation(manage: {
 
   const activate = useCallback(
     (photoId: string, meta: ManagePhotoActivateMeta) => {
-      const multi =
-        isMultiSelectActivate(meta) ||
-        (touchLike && !meta.forceNavigate);
+      const multi = isMultiSelectActivate(meta);
 
-      if (!multi) {
-        if (!meta.forceNavigate && previewId === photoId) {
-          setPreviewId(null);
-          clear();
-          return;
-        }
+      if (multi) {
+        toggle(photoId);
         setPreviewId(photoId);
-        selectOnly(photoId);
         return;
       }
 
-      toggle(photoId);
+      if (touchLike) {
+        if (previewId === photoId && !meta.forceNavigate) {
+          setPreviewId(null);
+          return;
+        }
+        setPreviewId(photoId);
+        return;
+      }
+
+      if (!meta.forceNavigate && previewId === photoId) {
+        setPreviewId(null);
+        clear();
+        return;
+      }
       setPreviewId(photoId);
+      selectOnly(photoId);
     },
     [previewId, toggle, selectOnly, clear, touchLike]
   );
@@ -45,11 +52,15 @@ export function useManagePhotoActivation(manage: {
     setPreviewId(null);
   }, [clear]);
 
+  const closePreview = useCallback(() => {
+    setPreviewId(null);
+  }, []);
+
   useEffect(() => {
     if (manage.manageSelected.size === 0) {
       setPreviewId(null);
     }
   }, [manage.manageSelected.size]);
 
-  return { previewId, activate, clearAll };
+  return { previewId, activate, clearAll, closePreview };
 }

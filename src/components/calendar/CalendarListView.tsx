@@ -18,6 +18,16 @@ function groupByMonth(events: CalendarEvent[]): Map<string, CalendarEvent[]> {
   return map;
 }
 
+function ListColumnHeader() {
+  return (
+    <div className="grid grid-cols-[4rem_1fr_auto] gap-3 px-4 py-2 border-b border-border bg-bg-primary text-[10px] uppercase tracking-label text-text-muted">
+      <span>Date</span>
+      <span>Event</span>
+      <span className="w-4" aria-hidden />
+    </div>
+  );
+}
+
 export function CalendarListView({
   events,
   onEventClick,
@@ -37,6 +47,7 @@ export function CalendarListView({
 
   return (
     <div className="mx-auto w-full max-w-3xl flex flex-col">
+      <ListColumnHeader />
       {[...groups.entries()].map(([monthLabel, monthEvents]) => (
         <section key={monthLabel}>
           <h3 className="uppercase tracking-label text-text-secondary border-b border-border py-3 px-4 text-[11px]">
@@ -63,34 +74,20 @@ export function CalendarListView({
                 type="button"
                 onClick={() => onEventClick(ev)}
                 className={cn(
-                  "flex w-full items-center gap-3 min-h-[56px] border-b border-border px-4 py-3 hover:bg-bg-elevated cursor-pointer text-left transition-colors",
+                  "grid grid-cols-[4rem_1fr_auto] gap-3 w-full items-center min-h-[56px] border-b border-border px-4 py-3 hover:bg-bg-elevated cursor-pointer text-left transition-colors",
                   today && "bg-bg-elevated/60 border-l-2 border-l-text-primary"
                 )}
               >
                 <span
                   className={cn(
-                    "w-16 shrink-0 text-[11px] sm:text-[12px] leading-tight",
+                    "text-[11px] sm:text-[12px] tabular-nums leading-tight",
                     today ? "text-text-primary font-medium" : "text-text-muted"
                   )}
                 >
-                  {today ? (
-                    <>
-                      <span className="block">Today</span>
-                      <span className="block text-[10px] text-text-secondary font-normal">
-                        {format(eventDate, "EEE")}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="block">{format(eventDate, "MMM d")}</span>
-                      <span className="block text-[10px] text-text-secondary">
-                        {format(eventDate, "EEE")}
-                      </span>
-                    </>
-                  )}
+                  {format(eventDate, "MMM d")}
                 </span>
 
-                <div className="flex-1 min-w-0 flex flex-col gap-1">
+                <div className="min-w-0 flex flex-col gap-1">
                   <div className="flex items-center gap-2 min-w-0">
                     <ShootTypeBadge shootType={ev.shoot_type} className="shrink-0" />
                     <span className="min-w-0 text-[14px] text-text-primary truncate">

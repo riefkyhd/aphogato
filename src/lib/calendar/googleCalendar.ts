@@ -12,14 +12,21 @@ import type { CalendarEvent } from "@/lib/types";
 const CALENDAR_TIMEZONE = "Asia/Jakarta";
 const DEFAULT_DURATION_MINUTES = 120;
 
-function getGoogleEnv() {
+function getGoogleClientCredentials() {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI;
-  if (!clientId || !clientSecret || !redirectUri) {
+  if (!clientId || !clientSecret) {
     throw new Error("Google OAuth is not configured");
   }
-  return { clientId, clientSecret, redirectUri };
+  return { clientId, clientSecret };
+}
+
+function resolveRedirectUri(override?: string): string {
+  const redirectUri = override ?? process.env.GOOGLE_REDIRECT_URI;
+  if (!redirectUri) {
+    throw new Error("Google OAuth is not configured");
+  }
+  return redirectUri;
 }
 
 export async function getAccessToken(): Promise<string> {
@@ -28,7 +35,7 @@ export async function getAccessToken(): Promise<string> {
     throw new Error("Google Calendar not connected");
   }
 
-  const { clientId, clientSecret } = getGoogleEnv();
+  const { clientId, clientSecret } = getGoogleClientCredentials();
   const res = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -227,8 +234,8 @@ export async function syncEventToGoogle(
   return { google_event_id: googleEventId };
 }
 
-export function getGoogleAuthUrl(state: string): string {
-  const { clientId, redirectUri } = getGoogleEnv();
+export function getGoogleAuthUrl(state: string, redirectUri: string): string {
+  const { clientId } = getGoogleClientCredentials();
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
@@ -242,9 +249,11 @@ export function getGoogleAuthUrl(state: string): string {
 }
 
 export async function exchangeCodeForRefreshToken(
-  code: string
+  code: string,
+  redirectUri: string
 ): Promise<string> {
-  const { clientId, clientSecret, redirectUri } = getGoogleEnv();
+  const { clientId, clientSecret } = getGoogleClientCredentials();
+  const resolvedRedirectUri = resolveRedirectUri(redirectUri);
   const res = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -252,7 +261,7 @@ export async function exchangeCodeForRefreshToken(
       code,
       client_id: clientId,
       client_secret: clientSecret,
-      redirect_uri: redirectUri,
+      redirect_uri: resolvedRedirectUri,
       grant_type: "authorization_code",
     }),
   });

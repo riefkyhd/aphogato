@@ -23,8 +23,6 @@ const STATUS_LABEL: Record<ProjectStatus, string> = {
   delivered: "Delivered",
 };
 
-const actionBtnClass = "shrink-0";
-
 function syncToastMessage(
   added: number,
   removed: number,
@@ -96,6 +94,7 @@ export function ProjectActions({
   const router = useRouter();
   const [statusBusy, setStatusBusy] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   function copyLink() {
     const url = `${window.location.origin}/gallery/${galleryToken}`;
@@ -178,59 +177,95 @@ export function ProjectActions({
   const nextStatus = NEXT_STATUS[status];
 
   return (
-    <div className="flex flex-col gap-2 w-full lg:w-auto lg:max-w-xl">
-      <div className="flex flex-wrap items-center gap-2 justify-start lg:justify-end">
-        <PhotoUploadButton upload={upload} size="sm" className={actionBtnClass} />
+    <div className="w-full lg:w-auto lg:max-w-md shrink-0">
+      <div className="flex flex-wrap gap-2">
+        <PhotoUploadButton upload={upload} size="sm" className="shrink-0" />
+        <Button size="sm" variant="secondary" onClick={copyLink} className="shrink-0">
+          Copy link
+        </Button>
         {nextStatus && (
           <Button
             size="sm"
             onClick={advanceStatus}
             loading={statusBusy}
             disabled={statusBusy}
-            className={actionBtnClass}
+            className="shrink-0"
           >
             {statusBusy ? "Updating…" : STATUS_LABEL[status]}
           </Button>
         )}
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => setMoreOpen((o) => !o)}
+          className="shrink-0 lg:hidden"
+          aria-expanded={moreOpen}
+        >
+          {moreOpen ? "Less" : "More"}
+        </Button>
       </div>
-      <div className="flex flex-wrap items-center gap-2 justify-start lg:justify-end">
-        <Button
-          size="sm"
-          variant="secondary"
-          onClick={copyLink}
-          className={actionBtnClass}
-        >
-          Copy link
-        </Button>
-        <Button
-          size="sm"
-          variant="secondary"
-          onClick={downloadList}
-          disabled={selectedFilenames.length === 0}
-          className={actionBtnClass}
-        >
-          Download list
-        </Button>
+
+      <div className="hidden lg:flex flex-wrap gap-2 mt-2 justify-end">
         <Button
           size="sm"
           variant="secondary"
           onClick={syncGallery}
           loading={syncing}
           disabled={syncing}
-          className={actionBtnClass}
         >
           {syncing ? "Syncing…" : "Sync gallery"}
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={downloadList}
+          disabled={selectedFilenames.length === 0}
+        >
+          Download list
         </Button>
         <Button
           type="button"
           size="sm"
           variant="secondary"
           onClick={onDeleteProject}
-          className={`${actionBtnClass} !text-status-editing !border-status-editing/40 hover:!border-status-editing`}
+          className="!text-status-editing !border-status-editing/40 hover:!border-status-editing"
         >
           Delete project
         </Button>
       </div>
+
+      {moreOpen && (
+        <div className="flex flex-wrap gap-2 mt-2 lg:hidden">
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={syncGallery}
+            loading={syncing}
+            disabled={syncing}
+            className="flex-1 min-w-[calc(50%-0.25rem)]"
+          >
+            {syncing ? "Syncing…" : "Sync gallery"}
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={downloadList}
+            disabled={selectedFilenames.length === 0}
+            className="flex-1 min-w-[calc(50%-0.25rem)]"
+          >
+            Download list
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={onDeleteProject}
+            className="w-full !text-status-editing !border-status-editing/40 hover:!border-status-editing"
+          >
+            Delete project
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

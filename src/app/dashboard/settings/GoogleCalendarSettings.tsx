@@ -69,15 +69,9 @@ export function GoogleCalendarSettings({
             Connect your Google account to sync shoot events to your primary
             calendar.
           </p>
-          <Button
-            type="button"
-            className="w-full sm:w-auto"
-            onClick={() => {
-              window.location.href = "/api/auth/google";
-            }}
-          >
+          <a href="/api/auth/google" className="btn-primary w-full sm:w-auto inline-flex justify-center">
             Connect Google Calendar
-          </Button>
+          </a>
         </div>
       )}
     </section>

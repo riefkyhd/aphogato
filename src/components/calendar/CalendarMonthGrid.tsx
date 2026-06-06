@@ -42,7 +42,7 @@ export function CalendarMonthGrid({
 
   return (
     <div className="flex flex-col min-h-0 flex-1">
-      <div className="hidden sm:grid grid-cols-7 border-b border-border">
+      <div className="grid grid-cols-7 border-b border-border">
         {WEEKDAYS.map((d) => (
           <div
             key={d}
@@ -71,10 +71,7 @@ export function CalendarMonthGrid({
                   "bg-bg-elevated border-text-primary ring-1 ring-inset ring-text-primary/40"
               )}
             >
-              <div className="flex items-center gap-1 mb-1 px-0.5 min-h-[18px]">
-                <span className="sm:hidden text-[8px] uppercase tracking-label text-text-muted leading-none">
-                  {format(day, "EEE")}
-                </span>
+              <div className="flex items-center justify-center sm:justify-start mb-1 px-0.5 min-h-[22px]">
                 <span
                   className={cn(
                     "inline-flex items-center justify-center text-[11px] leading-none",
@@ -86,15 +83,6 @@ export function CalendarMonthGrid({
                 >
                   {format(day, "d")}
                 </span>
-                {isToday(day) ? (
-                  <span className="text-[8px] sm:text-[9px] uppercase tracking-label text-text-primary leading-none">
-                    Today
-                  </span>
-                ) : (
-                  <span className="hidden sm:inline text-[9px] uppercase tracking-label text-text-muted leading-none">
-                    {format(day, "EEE")}
-                  </span>
-                )}
               </div>
               <div className="flex flex-col gap-0.5 flex-1 min-h-0 overflow-hidden">
                 {visible.map((ev) => (

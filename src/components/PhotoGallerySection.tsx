@@ -15,11 +15,14 @@ import {
   writePhotoViewPreference,
   type PhotoViewMode,
 } from "@/lib/photoViewStorage";
+import { ManagePhotoLightbox } from "@/components/ManagePhotoLightbox";
 import { Button } from "@/components/ui/Button";
+import { useTouchLike } from "@/hooks/useTouchLike";
 import type { ManagePhotoActivateMeta } from "@/lib/managePhotoActivate";
 import { partitionPhotosSelectedFirst } from "@/lib/reorderPhotos";
 import { sortPhotosNewestFirst } from "@/lib/sortPhotos";
 import type { Photo } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 export function PhotoGallerySection({
   photos,
@@ -33,6 +36,7 @@ export function PhotoGallerySection({
   managePreviewId,
   onClearManageSelection,
   onDeletePhotos,
+  onCloseManagePreview,
   selectionLimitReached = false,
   ready = true,
 }: {
@@ -48,8 +52,10 @@ export function PhotoGallerySection({
   managePreviewId?: string | null;
   onClearManageSelection?: () => void;
   onDeletePhotos?: () => void;
+  onCloseManagePreview?: () => void;
   ready?: boolean;
 }) {
+  const touchLike = useTouchLike();
   const prefsCtx = useOptionalUserPreferencesContext();
   const [view, setView] = useState<PhotoViewMode>("grid");
   const [selectedFirst, setSelectedFirst] = useState(false);
@@ -144,6 +150,12 @@ export function PhotoGallerySection({
     mode === "dashboard" &&
     Boolean(onManagePhotoActivate && onClearManageSelection && onDeletePhotos) &&
     manageCount > 0;
+  const previewPhoto =
+    managePreviewId && mode === "dashboard"
+      ? photos.find((p) => p.id === managePreviewId) ?? null
+      : null;
+  const showMobileLightbox =
+    touchLike && view === "grid" && Boolean(previewPhoto && onCloseManagePreview);
 
   const isGallery = mode === "gallery";
   /** Client gallery scrolls with the page; dashboard keeps a bounded panel. */
@@ -166,9 +178,12 @@ export function PhotoGallerySection({
       : "absolute inset-0 flex flex-col overflow-hidden invisible pointer-events-none";
 
   return (
-    <div>
+    <div className={cn(showManageActions && "max-sm:pb-[4.5rem]")}>
+      {showMobileLightbox && onCloseManagePreview && (
+        <ManagePhotoLightbox photo={previewPhoto} onClose={onCloseManagePreview} />
+      )}
       <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 mb-3">
-        <div className="flex flex-wrap items-center gap-2 min-w-0">
+        <div className="hidden sm:flex flex-wrap items-center gap-2 min-w-0">
           {showManageActions && (
             <>
               <span className="text-[11px] uppercase tracking-label text-text-secondary whitespace-nowrap">
@@ -231,6 +246,29 @@ export function PhotoGallerySection({
           />
         </div>
       </div>
+      {showManageActions && (
+        <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-bg-secondary/95 backdrop-blur-md px-4 py-3 flex items-center gap-2 safe-area-inset-bottom">
+          <span className="text-[11px] uppercase tracking-label text-text-secondary whitespace-nowrap mr-auto">
+            {manageCount} selected
+          </span>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={onClearManageSelection}
+          >
+            Clear
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            className="!bg-status-editing !border-status-editing hover:opacity-90"
+            onClick={onDeletePhotos}
+          >
+            Delete
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
