@@ -122,7 +122,7 @@ export function ProjectBoardClient({
         </div>
       ) : (
         <div className="flex-1 -mx-4 sm:-mx-6 md:-mx-10 px-4 sm:px-6 md:px-10 overflow-x-auto pb-4 snap-x snap-mandatory scroll-px-4 sm:scroll-px-6 md:scroll-px-10 overscroll-x-contain [-webkit-overflow-scrolling:touch]">
-          <div className="flex gap-3 min-w-min h-full pr-1">
+          <div className="flex gap-3 w-max mx-auto h-full pr-1">
             {columns.map((col) => (
               <ProjectBoardColumn
                 key={col.status}

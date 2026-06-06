@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTouchLike } from "@/hooks/useTouchLike";
 import { cn } from "@/lib/utils";
 
-const DEFAULT_DELAY_MS = 1000;
+const DEFAULT_DELAY_MS = 500;
 
 /**
  * Hover/focus tooltip with a delay. Disabled on touch-first devices to avoid

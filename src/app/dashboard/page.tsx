@@ -44,10 +44,12 @@ export default async function DashboardPage() {
       {projects.length === 0 ? (
         <EmptyState />
       ) : (
-        <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 gap-[2px]">
-          {projects.map((p) => (
-            <ProjectCard key={p.id} project={p} />
-          ))}
+        <div className="mx-auto w-full max-w-6xl">
+          <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 gap-[2px]">
+            {projects.map((p) => (
+              <ProjectCard key={p.id} project={p} />
+            ))}
+          </div>
         </div>
       )}
     </main>

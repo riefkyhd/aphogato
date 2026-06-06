@@ -36,10 +36,12 @@ export function ProjectsSkeleton() {
           <Skeleton className="h-10 w-52" />
         </div>
       </div>
-      <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 gap-[2px]">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="aspect-[5/3] min-[480px]:aspect-[3/2]" />
-        ))}
+      <div className="mx-auto w-full max-w-6xl">
+        <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 gap-[2px]">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="aspect-[5/3] min-[480px]:aspect-[3/2]" />
+          ))}
+        </div>
       </div>
     </DashboardPageShell>
   );
@@ -64,7 +66,7 @@ export function BoardSkeleton() {
         <Skeleton className="h-4 w-full max-w-md" />
         <Skeleton className="h-4 w-28" />
       </div>
-      <div className="flex gap-3 overflow-hidden pb-4">
+      <div className="flex gap-3 w-max mx-auto overflow-hidden pb-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
