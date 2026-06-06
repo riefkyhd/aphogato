@@ -10,6 +10,7 @@ import {
 } from "date-fns";
 import { ChevronLeft, ChevronRight, Download, Info } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useUserPreferencesContext } from "@/components/preferences/UserPreferencesProvider";
 import { toast } from "sonner";
@@ -52,6 +53,7 @@ export function CalendarClient({
   initialExpenses: ExpenseEntry[];
   isGoogleConnected: boolean;
 }) {
+  const router = useRouter();
   const { guardSensitiveAction } = usePrivacyLockContext();
   const { preferences, loaded: prefsLoaded } = useUserPreferencesContext();
   const [events, setEvents] = useState<CalendarEvent[]>(initialEvents);
@@ -178,6 +180,7 @@ export function CalendarClient({
             updated.client_name
           );
           toast.success("Event updated");
+          router.refresh();
         } else {
           const res = await fetch("/api/calendar/events", {
             method: "POST",
@@ -202,6 +205,7 @@ export function CalendarClient({
             created.client_name
           );
           toast.success("Event created");
+          router.refresh();
         }
         setModalOpen(false);
         setEditingEvent(null);
@@ -219,7 +223,7 @@ export function CalendarClient({
         setSaving(false);
       }
     },
-    [editingEvent, saveEventIncome]
+    [editingEvent, saveEventIncome, router]
   );
 
   const financeEvents: FinanceEventOption[] = useMemo(
@@ -278,12 +282,13 @@ export function CalendarClient({
       setDeleteDialogOpen(false);
       closePanel();
       toast.success("Event deleted");
+      router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to delete");
     } finally {
       setDeleting(false);
     }
-  }, [panelEvent, closePanel]);
+  }, [panelEvent, closePanel, router]);
 
   const confirmDelete = useCallback(() => {
     guardSensitiveAction(() => void executeDelete(), {

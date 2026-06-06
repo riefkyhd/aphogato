@@ -1,6 +1,5 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import { NavigatingLink } from "@/components/NavigatingLink";
-import { RefreshRouteOnMount } from "@/components/RefreshRouteOnMount";
 import { ProjectsPageHeader } from "@/components/projects/ProjectsPageHeader";
 import {
   ProjectCard,
@@ -51,7 +50,6 @@ export default async function DashboardPage() {
 
   return (
     <main className="px-4 sm:px-6 md:px-10 py-6 sm:py-10">
-      <RefreshRouteOnMount />
       <ProjectsPageHeader />
 
       {projects.length === 0 ? (

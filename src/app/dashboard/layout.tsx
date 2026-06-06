@@ -3,19 +3,31 @@ import { Navbar } from "@/components/Navbar";
 import { PendingNavProvider } from "@/components/navigation/PendingNavProvider";
 import { UserPreferencesProvider } from "@/components/preferences/UserPreferencesProvider";
 import { PrivacyLockProvider } from "@/components/privacy/PrivacyLockProvider";
+import { loadTodayEvents } from "@/lib/calendar/loadTodayEvents";
+import { createServerSupabase } from "@/lib/supabase/server";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const supabase = createServerSupabase();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const todayEvents = user ? await loadTodayEvents(supabase) : [];
+
   return (
     <UserPreferencesProvider>
       <PrivacyLockProvider>
         <PendingNavProvider>
-          <Navbar />
+          <Navbar
+            isAuthenticated={Boolean(user)}
+            shootsToday={todayEvents.length}
+          />
           <div className="pt-14 md:pt-[60px] flex flex-col min-h-[calc(100dvh-3.5rem)] md:min-h-[calc(100vh-60px)]">
-            <DashboardTodayReminder />
+            <DashboardTodayReminder initialEvents={todayEvents} />
             {children}
           </div>
         </PendingNavProvider>

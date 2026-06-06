@@ -1,4 +1,3 @@
-import { RefreshRouteOnMount } from "@/components/RefreshRouteOnMount";
 import { ProjectBoardClient } from "@/components/projects/ProjectBoardClient";
 import { loadBoardProjects } from "@/lib/projects/loadBoardProjects";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -11,7 +10,6 @@ export default async function ProjectBoardPage() {
 
   return (
     <>
-      <RefreshRouteOnMount />
       <ProjectBoardClient initialProjects={projects} />
     </>
   );

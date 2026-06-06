@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { Bell, Calendar, X } from "lucide-react";
 import Link from "next/link";
 import { useUserPreferencesContext } from "@/components/preferences/UserPreferencesProvider";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 function maybeShowBrowserNotification(events: CalendarEvent[]) {
   if (!isBrowserReminderEnabled()) return;
@@ -23,6 +23,7 @@ function maybeShowBrowserNotification(events: CalendarEvent[]) {
   if (Notification.permission !== "granted") return;
 
   const body = formatTodayShootsSummary(events);
+
   try {
     new Notification(
       events.length === 1 ? "Photoshoot today" : `${events.length} photoshoots today`,
@@ -37,42 +38,32 @@ function maybeShowBrowserNotification(events: CalendarEvent[]) {
   }
 }
 
-export function TodayShootsReminder({ className }: { className?: string }) {
+export function TodayShootsReminder({
+  initialEvents,
+  className,
+}: {
+  initialEvents: CalendarEvent[];
+  className?: string;
+}) {
   const { loaded: prefsLoaded } = useUserPreferencesContext();
-  const [events, setEvents] = useState<CalendarEvent[] | null>(null);
   const [dismissed, setDismissed] = useState(false);
   const [notified, setNotified] = useState(false);
   const today = getTodayDateString();
-
-  const load = useCallback(async () => {
-    try {
-      const res = await fetch("/api/calendar/events/today");
-      if (!res.ok) {
-        setEvents([]);
-        return;
-      }
-      const json = await res.json();
-      const list = (json.events ?? []) as CalendarEvent[];
-      setEvents(list);
-    } catch {
-      setEvents([]);
-    }
-  }, []);
+  const events = initialEvents;
 
   useEffect(() => {
     setDismissed(isBannerDismissedForToday(today));
-    void load();
-  }, [load, today]);
+  }, [today]);
 
   useEffect(() => {
-    if (!prefsLoaded || notified || events === null || events.length === 0) {
+    if (!prefsLoaded || notified || events.length === 0) {
       return;
     }
     maybeShowBrowserNotification(events);
     setNotified(true);
   }, [prefsLoaded, notified, events]);
 
-  if (events === null || events.length === 0 || dismissed) {
+  if (events.length === 0 || dismissed) {
     return null;
   }
 

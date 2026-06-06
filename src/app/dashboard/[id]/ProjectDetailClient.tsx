@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { BackNavLink } from "@/components/BackNavLink";
-import { RefreshRouteOnMount } from "@/components/RefreshRouteOnMount";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { DeletePhotosDialog } from "@/components/DeletePhotosDialog";
@@ -171,7 +170,6 @@ export function ProjectDetailClient({
 
   return (
     <>
-      <RefreshRouteOnMount />
       {isDragging && (
         <PhotoDropHint
           projectName={projectState.name}

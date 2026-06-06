@@ -1,7 +1,5 @@
-import { getTodayDateString } from "@/lib/calendar/todayEvents";
 import { Bell, ExternalLink } from "lucide-react";
 import Link from "next/link";
-import { createServerSupabase } from "@/lib/supabase/server";
 import { NavbarLink } from "./NavbarLink";
 import { PrivacyFinanceLink } from "./privacy/PrivacyFinanceLink";
 import { Logo } from "./Logo";
@@ -10,27 +8,18 @@ import { SignOutButton } from "./SignOutButton";
 
 const PORTFOLIO_URL = "https://muhammad-hadid.com";
 
-export async function Navbar() {
-  const supabase = createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  let shootsToday = 0;
-  if (user) {
-    const today = getTodayDateString();
-    const { count } = await supabase
-      .from("events")
-      .select("*", { count: "exact", head: true })
-      .eq("shoot_date", today);
-    shootsToday = count ?? 0;
-  }
-
+export function Navbar({
+  isAuthenticated,
+  shootsToday = 0,
+}: {
+  isAuthenticated: boolean;
+  shootsToday?: number;
+}) {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-14 md:h-[60px] bg-bg-primary border-b border-border flex items-center px-4 md:px-6">
-      <Logo href={user ? "/dashboard" : "/"} size="sm" />
+      <Logo href={isAuthenticated ? "/dashboard" : "/"} size="sm" />
       <nav className="ml-auto hidden md:flex items-center gap-6">
-        {user ? (
+        {isAuthenticated ? (
           <>
             <NavbarLink href="/dashboard">Projects</NavbarLink>
             <PrivacyFinanceLink />
@@ -77,7 +66,7 @@ export async function Navbar() {
           </Link>
         )}
       </nav>
-      {user ? <NavbarMenu shootsToday={shootsToday} /> : null}
+      {isAuthenticated ? <NavbarMenu shootsToday={shootsToday} /> : null}
     </header>
   );
 }

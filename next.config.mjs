@@ -19,9 +19,9 @@ const nextConfig = {
     ];
   },
   experimental: {
-    // Avoid stale project list / detail after uploads when navigating back.
+    // Short client cache for snappy back-nav; mutations call router.refresh().
     staleTimes: {
-      dynamic: 0,
+      dynamic: 30,
     },
   },
   images: {
