@@ -18,6 +18,7 @@ export interface Photo {
   cloudinary_url: string;
   is_selected: boolean;
   created_at: string;
+  perceptual_hash?: string | null;
 }
 
 export type ShootType =

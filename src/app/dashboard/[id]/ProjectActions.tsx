@@ -26,6 +26,7 @@ const STATUS_LABEL: Record<ProjectStatus, string> = {
 function syncToastMessage(
   added: number,
   removed: number,
+  skippedDuplicates: number,
   newlySelected: number,
   newlyDeselected: number
 ): string {
@@ -35,6 +36,11 @@ function syncToastMessage(
   }
   if (removed > 0) {
     parts.push(`${removed} photo${removed === 1 ? "" : "s"} removed`);
+  }
+  if (skippedDuplicates > 0) {
+    parts.push(
+      `${skippedDuplicates} duplicate${skippedDuplicates === 1 ? "" : "s"} skipped`
+    );
   }
   if (newlySelected > 0) {
     parts.push(
@@ -131,6 +137,10 @@ export function ProjectActions({
       }
       const added = json.added ?? 0;
       const removed = json.removed ?? 0;
+      const skippedDuplicates = json.skipped_duplicates ?? 0;
+      const duplicateWarnings = Array.isArray(json.duplicate_warnings)
+        ? (json.duplicate_warnings as string[])
+        : [];
       const syncedPhotos = Array.isArray(json.photos)
         ? (json.photos as Photo[])
         : photosBeforeSync;
@@ -139,8 +149,21 @@ export function ProjectActions({
         syncedPhotos
       );
       toast.success(
-        syncToastMessage(added, removed, newlySelected, newlyDeselected)
+        syncToastMessage(
+          added,
+          removed,
+          skippedDuplicates,
+          newlySelected,
+          newlyDeselected
+        )
       );
+      if (duplicateWarnings.length > 0) {
+        toast.warning(
+          duplicateWarnings.length === 1
+            ? duplicateWarnings[0]
+            : `${duplicateWarnings.length} duplicates skipped — ${duplicateWarnings.slice(0, 2).join("; ")}${duplicateWarnings.length > 2 ? "…" : ""}`
+        );
+      }
       if (Array.isArray(json.photos)) {
         onPhotosSynced(syncedPhotos);
         router.refresh();

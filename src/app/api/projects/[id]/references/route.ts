@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/api/requireAuth";
 import { uploadImageToFolder } from "@/lib/cloudinary";
+import {
+  computeHashFromBuffer,
+  findDuplicateFilename,
+  type ImageHashRow,
+} from "@/lib/images/duplicateDetection";
 import { isAllowedImageBuffer } from "@/lib/security/imageBytes";
 import type { ProjectReference } from "@/lib/types";
 
@@ -81,12 +86,14 @@ export async function POST(
 
   const { data: existingRefs } = await supabase
     .from("project_references")
-    .select("filename, sort_order")
+    .select("filename, sort_order, perceptual_hash")
     .eq("project_id", project.id);
 
-  const existingFilenames = new Set(
-    (existingRefs ?? []).map((r) => r.filename)
-  );
+  const existingRows: ImageHashRow[] = (existingRefs ?? []).map((r) => ({
+    filename: r.filename as string,
+    perceptual_hash: (r.perceptual_hash as string | null) ?? null,
+  }));
+  const existingFilenames = new Set(existingRows.map((r) => r.filename));
   const baseSortOrder =
     (existingRefs ?? []).reduce(
       (max, r) => Math.max(max, r.sort_order ?? 0),
@@ -119,6 +126,17 @@ export async function POST(
         continue;
       }
 
+      const perceptualHash = await computeHashFromBuffer(buffer);
+      if (perceptualHash) {
+        const duplicateOf = findDuplicateFilename(perceptualHash, existingRows);
+        if (duplicateOf) {
+          errors.push(
+            `${file.name}: duplicate of ${duplicateOf} (same image)`
+          );
+          continue;
+        }
+      }
+
       const resource = await uploadImageToFolder(
         refFolder,
         buffer,
@@ -132,6 +150,7 @@ export async function POST(
           filename: resource.filename,
           cloudinary_url: resource.secure_url,
           sort_order: sortOrder,
+          perceptual_hash: perceptualHash,
         })
         .select("*")
         .single();
@@ -142,6 +161,10 @@ export async function POST(
       }
 
       existingFilenames.add(resource.filename);
+      existingRows.push({
+        filename: resource.filename,
+        perceptual_hash: perceptualHash,
+      });
       uploaded.push(row as ProjectReference);
       sortOrder += 1;
     } catch (err) {

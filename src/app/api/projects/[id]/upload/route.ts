@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/api/requireAuth";
 import { uploadImageToFolder } from "@/lib/cloudinary";
+import {
+  computeHashFromBuffer,
+  findDuplicateFilename,
+  type ImageHashRow,
+} from "@/lib/images/duplicateDetection";
 import { isAllowedImageBuffer } from "@/lib/security/imageBytes";
 import type { Photo } from "@/lib/types";
 
@@ -49,12 +54,14 @@ export async function POST(
 
   const { data: existingPhotos } = await supabase
     .from("photos")
-    .select("filename")
+    .select("filename, perceptual_hash")
     .eq("project_id", project.id);
 
-  const existingFilenames = new Set(
-    (existingPhotos ?? []).map((p) => p.filename)
-  );
+  const existingRows: ImageHashRow[] = (existingPhotos ?? []).map((p) => ({
+    filename: p.filename as string,
+    perceptual_hash: (p.perceptual_hash as string | null) ?? null,
+  }));
+  const existingFilenames = new Set(existingRows.map((p) => p.filename));
 
   const uploaded: Photo[] = [];
   const errors: string[] = [];
@@ -80,6 +87,17 @@ export async function POST(
         continue;
       }
 
+      const perceptualHash = await computeHashFromBuffer(buffer);
+      if (perceptualHash) {
+        const duplicateOf = findDuplicateFilename(perceptualHash, existingRows);
+        if (duplicateOf) {
+          errors.push(
+            `${file.name}: duplicate of ${duplicateOf} (same image)`
+          );
+          continue;
+        }
+      }
+
       const resource = await uploadImageToFolder(
         project.cloudinary_folder,
         buffer,
@@ -93,6 +111,7 @@ export async function POST(
           filename: resource.filename,
           cloudinary_url: resource.secure_url,
           is_selected: false,
+          perceptual_hash: perceptualHash,
         })
         .select("*")
         .single();
@@ -103,6 +122,10 @@ export async function POST(
       }
 
       existingFilenames.add(resource.filename);
+      existingRows.push({
+        filename: resource.filename,
+        perceptual_hash: perceptualHash,
+      });
       uploaded.push(row as Photo);
     } catch (err) {
       errors.push(

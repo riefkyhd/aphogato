@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/api/requireAuth";
 import { listFolder } from "@/lib/cloudinary";
+import {
+  backfillMissingHashes,
+  computeHashFromCloudinaryUrl,
+  findDuplicateFilename,
+  type ImageHashRow,
+} from "@/lib/images/duplicateDetection";
 import type { Photo } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -40,20 +46,55 @@ export async function POST(
 
   const { data: existingPhotos, error: existingError } = await supabase
     .from("photos")
-    .select("id, filename")
+    .select("id, filename, cloudinary_url, perceptual_hash")
     .eq("project_id", project.id);
 
   if (existingError) {
     return NextResponse.json({ error: existingError.message }, { status: 500 });
   }
 
-  const existing = existingPhotos ?? [];
+  type ExistingPhoto = {
+    id: string;
+    filename: string;
+    cloudinary_url: string;
+    perceptual_hash: string | null;
+  };
+
+  const existing = await backfillMissingHashes(
+    (existingPhotos ?? []) as ExistingPhoto[],
+    async (id, hash) => {
+      await supabase.from("photos").update({ perceptual_hash: hash }).eq("id", id);
+    }
+  );
+
   const cloudinaryFilenames = new Set(resources.map((r) => r.filename));
   const existingByFilename = new Map(existing.map((p) => [p.filename, p.id]));
+  const hashRows: ImageHashRow[] = existing.map((p) => ({
+    filename: p.filename,
+    perceptual_hash: p.perceptual_hash,
+  }));
 
-  const newResources = resources.filter(
-    (r) => !existingByFilename.has(r.filename)
-  );
+  const newResources = [];
+  const skippedDuplicates: string[] = [];
+
+  for (const resource of resources) {
+    if (existingByFilename.has(resource.filename)) continue;
+
+    const hash = await computeHashFromCloudinaryUrl(resource.secure_url);
+    if (hash) {
+      const duplicateOf = findDuplicateFilename(hash, hashRows);
+      if (duplicateOf) {
+        skippedDuplicates.push(`${resource.filename} (duplicate of ${duplicateOf})`);
+        continue;
+      }
+    }
+
+    newResources.push({ ...resource, perceptual_hash: hash });
+    hashRows.push({
+      filename: resource.filename,
+      perceptual_hash: hash,
+    });
+  }
 
   const idsToRemove = existing
     .filter((p) => !cloudinaryFilenames.has(p.filename))
@@ -75,6 +116,7 @@ export async function POST(
       filename: r.filename,
       cloudinary_url: r.secure_url,
       is_selected: false,
+      perceptual_hash: r.perceptual_hash,
     }));
 
     const { error: insertError } = await supabase.from("photos").insert(rows);
@@ -100,6 +142,8 @@ export async function POST(
   return NextResponse.json({
     added,
     removed,
+    skipped_duplicates: skippedDuplicates.length,
+    duplicate_warnings: skippedDuplicates,
     total,
     photos: (photos ?? []) as Photo[],
   });
