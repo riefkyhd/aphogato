@@ -10,11 +10,12 @@ import {
 
 type PrivacySettings = { pinEnabled: boolean };
 
-export function usePrivacyLock() {
+export function usePrivacyLock(initialPinEnabled?: boolean) {
   const { preferences, loaded: prefsLoaded, updatePreferences } =
     useUserPreferencesContext();
-  const [pinEnabled, setPinEnabled] = useState(false);
-  const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const hasInitialPin = initialPinEnabled !== undefined;
+  const [pinEnabled, setPinEnabled] = useState(initialPinEnabled ?? false);
+  const [settingsLoaded, setSettingsLoaded] = useState(hasInitialPin);
   const [sessionUnlocked, setSessionUnlocked] = useState(false);
   const [moneyVisible, setMoneyVisible] = useState(false);
   const [pinModalOpen, setPinModalOpen] = useState(false);
@@ -41,8 +42,10 @@ export function usePrivacyLock() {
 
   useEffect(() => {
     setSessionUnlocked(readSessionUnlock());
-    void refreshSettings();
-  }, [refreshSettings]);
+    if (!hasInitialPin) {
+      void refreshSettings();
+    }
+  }, [hasInitialPin, refreshSettings]);
 
   useEffect(() => {
     if (prefsLoaded) {

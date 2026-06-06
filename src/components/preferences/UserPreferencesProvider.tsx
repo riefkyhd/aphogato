@@ -5,15 +5,18 @@ import {
   useUserPreferences,
   type UserPreferencesState,
 } from "@/hooks/useUserPreferences";
+import type { UserPreferences } from "@/lib/preferences/types";
 
 const UserPreferencesContext = createContext<UserPreferencesState | null>(null);
 
 export function UserPreferencesProvider({
   children,
+  initialPreferences,
 }: {
   children: React.ReactNode;
+  initialPreferences?: UserPreferences;
 }) {
-  const prefs = useUserPreferences();
+  const prefs = useUserPreferences(initialPreferences);
 
   return (
     <UserPreferencesContext.Provider value={prefs}>

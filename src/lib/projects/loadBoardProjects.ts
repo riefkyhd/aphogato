@@ -1,4 +1,5 @@
 import type { BoardProject } from "@/lib/projects/board";
+import { loadProjectPhotoStats } from "@/lib/projects/loadProjectPhotoStats";
 import { normalizeProject } from "@/lib/normalizeProject";
 import type { Project, ProjectStatus } from "@/lib/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -15,12 +16,8 @@ export async function loadBoardProjects(
 
   const ids = projects.map((p) => p.id as string);
 
-  const [photosRes, deliverablesRes, eventsRes] = await Promise.all([
-    supabase
-      .from("photos")
-      .select("project_id, cloudinary_url, created_at")
-      .in("project_id", ids)
-      .order("created_at", { ascending: true }),
+  const [photoStats, deliverablesRes, eventsRes] = await Promise.all([
+    loadProjectPhotoStats(supabase, ids),
     supabase
       .from("deliverable_items")
       .select("project_id, done")
@@ -31,16 +28,6 @@ export async function loadBoardProjects(
       .in("project_id", ids)
       .order("shoot_date", { ascending: true }),
   ]);
-
-  const coverByProject = new Map<string, string>();
-  const countByProject = new Map<string, number>();
-  for (const row of photosRes.data ?? []) {
-    const pid = row.project_id as string;
-    countByProject.set(pid, (countByProject.get(pid) ?? 0) + 1);
-    if (!coverByProject.has(pid)) {
-      coverByProject.set(pid, row.cloudinary_url as string);
-    }
-  }
 
   const deliverablesByProject = new Map<
     string,
@@ -94,8 +81,8 @@ export async function loadBoardProjects(
       client_name: p.client_name,
       status: (p.status as ProjectStatus) ?? "pending",
       created_at: p.created_at,
-      cover_url: coverByProject.get(id) ?? null,
-      photo_count: countByProject.get(id) ?? 0,
+      cover_url: photoStats.get(id)?.cover_url ?? null,
+      photo_count: photoStats.get(id)?.photo_count ?? 0,
       deliverables_done: deliverables.done,
       deliverables_total: deliverables.total,
       next_shoot_date:

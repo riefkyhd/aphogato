@@ -5,6 +5,7 @@ import {
   ProjectCard,
   type ProjectCardData,
 } from "@/components/ProjectCard";
+import { loadProjectPhotoStats } from "@/lib/projects/loadProjectPhotoStats";
 import type { Project } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -21,28 +22,16 @@ async function loadProjects(): Promise<ProjectCardData[]> {
   const ids = projects.map((p) => p.id);
   if (ids.length === 0) return [];
 
-  const { data: photos } = await supabase
-    .from("photos")
-    .select("project_id, cloudinary_url, created_at")
-    .in("project_id", ids)
-    .order("created_at", { ascending: true });
+  const photoStats = await loadProjectPhotoStats(supabase, ids);
 
-  const coverByProject = new Map<string, string>();
-  const countByProject = new Map<string, number>();
-  for (const p of photos ?? []) {
-    countByProject.set(p.project_id, (countByProject.get(p.project_id) ?? 0) + 1);
-    if (!coverByProject.has(p.project_id)) {
-      coverByProject.set(p.project_id, p.cloudinary_url);
-    }
-  }
-
-  return projects.map((p) => ({
-    ...(p as Project),
-    cover: coverByProject.has(p.id)
-      ? { cloudinary_url: coverByProject.get(p.id)! }
-      : null,
-    photo_count: countByProject.get(p.id) ?? 0,
-  }));
+  return projects.map((p) => {
+    const stats = photoStats.get(p.id);
+    return {
+      ...(p as Project),
+      cover: stats?.cover_url ? { cloudinary_url: stats.cover_url } : null,
+      photo_count: stats?.photo_count ?? 0,
+    };
+  });
 }
 
 export default async function DashboardPage() {

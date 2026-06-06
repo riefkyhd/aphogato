@@ -4,6 +4,7 @@ import { PendingNavProvider } from "@/components/navigation/PendingNavProvider";
 import { UserPreferencesProvider } from "@/components/preferences/UserPreferencesProvider";
 import { PrivacyLockProvider } from "@/components/privacy/PrivacyLockProvider";
 import { loadTodayEvents } from "@/lib/calendar/loadTodayEvents";
+import { loadDashboardBootstrap } from "@/lib/dashboard/loadDashboardBootstrap";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 export default async function DashboardLayout({
@@ -16,11 +17,16 @@ export default async function DashboardLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const todayEvents = user ? await loadTodayEvents(supabase) : [];
+  const [todayEvents, bootstrap] = user
+    ? await Promise.all([
+        loadTodayEvents(supabase),
+        loadDashboardBootstrap(supabase, user.id),
+      ])
+    : [[], null];
 
   return (
-    <UserPreferencesProvider>
-      <PrivacyLockProvider>
+    <UserPreferencesProvider initialPreferences={bootstrap?.preferences}>
+      <PrivacyLockProvider initialPinEnabled={bootstrap?.pinEnabled}>
         <PendingNavProvider>
           <Navbar
             isAuthenticated={Boolean(user)}

@@ -12,11 +12,11 @@ import type {
   UserPreferencesPatch,
 } from "@/lib/preferences/types";
 
-export function useUserPreferences() {
+export function useUserPreferences(initialPreferences?: UserPreferences) {
   const [preferences, setPreferences] = useState<UserPreferences>(
-    DEFAULT_USER_PREFERENCES
+    initialPreferences ?? DEFAULT_USER_PREFERENCES
   );
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(Boolean(initialPreferences));
   const [saving, setSaving] = useState(false);
   const migratedRef = useRef(false);
 
@@ -66,11 +66,19 @@ export function useUserPreferences() {
   );
 
   useEffect(() => {
+    if (initialPreferences) {
+      setPreferencesCache(initialPreferences);
+    }
+  }, [initialPreferences]);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function load() {
       try {
-        await refreshPreferences();
+        if (!initialPreferences) {
+          await refreshPreferences();
+        }
 
         if (!migratedRef.current) {
           migratedRef.current = true;
@@ -91,7 +99,7 @@ export function useUserPreferences() {
           }
         }
       } catch {
-        if (!cancelled) {
+        if (!cancelled && !initialPreferences) {
           applyPreferences(DEFAULT_USER_PREFERENCES);
         }
       } finally {
@@ -106,7 +114,7 @@ export function useUserPreferences() {
     return () => {
       cancelled = true;
     };
-  }, [applyPreferences, refreshPreferences]);
+  }, [applyPreferences, initialPreferences, refreshPreferences]);
 
   return useMemo(
     () => ({

@@ -33,6 +33,7 @@ export function EventDetailPanel({
   isGoogleConnected,
   income,
   eventExpenses,
+  financeLoading = false,
   financeEvents,
   financeProjects,
   onExpensesChanged,
@@ -46,6 +47,7 @@ export function EventDetailPanel({
   isGoogleConnected: boolean;
   income: IncomeEntry | null;
   eventExpenses: ExpenseEntry[];
+  financeLoading?: boolean;
   financeEvents: FinanceEventOption[];
   financeProjects: FinanceProjectOption[];
   onExpensesChanged: () => void;
@@ -380,7 +382,11 @@ export function EventDetailPanel({
                 <p className="text-[11px] uppercase tracking-label text-text-muted mb-1">
                   Client income
                 </p>
-                {income ? (
+                {financeLoading ? (
+                  <p className="text-[12px] text-text-muted animate-pulse">
+                    Loading…
+                  </p>
+                ) : income ? (
                   <p className="text-[15px] text-status-delivered tabular-nums">
                     {formatMoney(income.amount, income.currency)}
                   </p>
@@ -398,7 +404,7 @@ export function EventDetailPanel({
               </div>
 
               <LinkedExpensesBlock
-                expenses={eventExpenses}
+                expenses={financeLoading ? [] : eventExpenses}
                 events={financeEvents}
                 projects={financeProjects}
                 defaultEventId={event.id}

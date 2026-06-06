@@ -9,8 +9,14 @@ import {
 
 const PrivacyLockContext = createContext<PrivacyLockState | null>(null);
 
-export function PrivacyLockProvider({ children }: { children: React.ReactNode }) {
-  const privacy = usePrivacyLock();
+export function PrivacyLockProvider({
+  children,
+  initialPinEnabled,
+}: {
+  children: React.ReactNode;
+  initialPinEnabled?: boolean;
+}) {
+  const privacy = usePrivacyLock(initialPinEnabled);
 
   return (
     <PrivacyLockContext.Provider value={privacy}>
