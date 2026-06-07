@@ -1,28 +1,17 @@
 import { buildQuotationExportFilename } from "@/lib/quotations/exportFilename";
+import {
+  canvasSizeToMm,
+  prepareQuotationElementForCapture,
+  readQuotationInlineStyles,
+  renderQuotationCanvas,
+  restoreQuotationElementAfterCapture,
+} from "@/lib/quotations/quotationCapture";
+import { QUOTATION_PAGE_HEIGHT_MM } from "@/lib/quotations/quotationPage";
 import type { QuotationDraft } from "@/lib/quotations/types";
 
-/** A4 width at 96dpi — matches print layout for the preview component. */
-export const QUOTATION_PDF_CAPTURE_WIDTH_PX = 794;
-
-async function waitForImages(root: HTMLElement): Promise<void> {
-  const images = Array.from(root.querySelectorAll("img"));
-  await Promise.all(
-    images.map(
-      (img) =>
-        new Promise<void>((resolve) => {
-          if (img.complete) {
-            resolve();
-            return;
-          }
-          img.addEventListener("load", () => resolve(), { once: true });
-          img.addEventListener("error", () => resolve(), { once: true });
-        })
-    )
-  );
-}
-
 /**
- * Renders the on-screen quotation preview into a PDF so export matches preview.
+ * Builds a PDF from the live preview element at 1:1 scale — no squash/stretch.
+ * Page height matches content on single-page quotes; multi-page uses exact slices.
  */
 export async function exportQuotationPdf(
   draft: QuotationDraft,
@@ -33,40 +22,58 @@ export async function exportQuotationPdf(
     throw new Error("Add at least one line item with a description");
   }
 
-  await waitForImages(element);
+  const previousStyles = readQuotationInlineStyles(element);
+  prepareQuotationElementForCapture(element);
 
-  const html2canvas = (await import("html2canvas")).default;
-  const { jsPDF } = await import("jspdf");
+  try {
+    const canvas = await renderQuotationCanvas(element);
+    const imgData = canvas.toDataURL("image/png", 1);
+    const { widthMm, heightMm } = canvasSizeToMm(canvas);
+    const pageWidthMm = widthMm;
+    const pageHeightMm = QUOTATION_PAGE_HEIGHT_MM;
 
-  const canvas = await html2canvas(element, {
-    scale: 2,
-    useCORS: true,
-    backgroundColor: "#ffffff",
-    logging: false,
-    width: element.scrollWidth,
-    height: element.scrollHeight,
-    windowWidth: element.scrollWidth,
-  });
+    const { jsPDF } = await import("jspdf");
 
-  const imgData = canvas.toDataURL("image/png");
-  const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
-  const imgWidth = pageWidth;
-  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    if (heightMm <= pageHeightMm + 0.01) {
+      const pdf = new jsPDF({
+        unit: "mm",
+        format: [pageWidthMm, heightMm],
+        orientation: "portrait",
+      });
+      pdf.addImage(imgData, "PNG", 0, 0, pageWidthMm, heightMm);
+      pdf.save(buildQuotationExportFilename(draft));
+      return;
+    }
 
-  let heightLeft = imgHeight;
-  let position = 0;
+    const pdf = new jsPDF({
+      unit: "mm",
+      format: "a4",
+      orientation: "portrait",
+    });
 
-  pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-  heightLeft -= pageHeight;
+    let offsetMm = 0;
+    let pageIndex = 0;
 
-  while (heightLeft > 0) {
-    position -= pageHeight;
-    pdf.addPage();
-    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
+    while (offsetMm < heightMm - 0.01) {
+      const remainingMm = heightMm - offsetMm;
+      const sliceMm = Math.min(pageHeightMm, remainingMm);
+      const isLastSlice = remainingMm <= pageHeightMm + 0.01;
+
+      if (pageIndex > 0) {
+        pdf.addPage(
+          isLastSlice && sliceMm < pageHeightMm
+            ? [pageWidthMm, sliceMm]
+            : "a4"
+        );
+      }
+
+      pdf.addImage(imgData, "PNG", 0, -offsetMm, pageWidthMm, heightMm);
+      offsetMm += pageHeightMm;
+      pageIndex += 1;
+    }
+
+    pdf.save(buildQuotationExportFilename(draft));
+  } finally {
+    restoreQuotationElementAfterCapture(element, previousStyles);
   }
-
-  pdf.save(buildQuotationExportFilename(draft));
 }

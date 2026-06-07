@@ -1,15 +1,16 @@
 import { format, parseISO } from "date-fns";
-import Image from "next/image";
+import { forwardRef } from "react";
 import {
   quotationDownPayment,
   quotationSubtotal,
 } from "@/lib/quotations/calculations";
 import type { QuotationDraft } from "@/lib/quotations/types";
 import { formatMoney } from "@/lib/finance/formatMoney";
-import {
-  QUOTATION_BANK_ACCOUNTS,
-  quotationBalance,
-} from "@/lib/quotations/payment";
+import { QUOTATION_BANK_ACCOUNT } from "@/lib/quotations/payment";
+
+function formatTermsParagraph(text: string): string {
+  return text.replace(/\s*\n+\s*/g, " ").trim();
+}
 
 function formatDisplayDate(iso: string): string {
   if (!iso) return "—";
@@ -22,25 +23,21 @@ function formatDisplayDate(iso: string): string {
 
 function MetaLabel({ children }: { children: React.ReactNode }) {
   return (
-    <dt className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-1">
+    <dt className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-1 leading-none">
       {children}
     </dt>
   );
 }
 
-export function QuotationPreview({
-  draft,
-  exportMode = false,
-}: {
-  draft: QuotationDraft;
-  /** Fixed desktop layout for PDF capture (no responsive mobile cards). */
-  exportMode?: boolean;
-}) {
+/** Print-layout quotation preview — always A4 desktop structure (see QuotationPageFrame). */
+export const QuotationPreview = forwardRef<
+  HTMLElement,
+  { draft: QuotationDraft }
+>(function QuotationPreview({ draft }, ref) {
   const items = draft.lineItems.filter((i) => i.description.trim());
   const deliverables = draft.deliverables.filter((d) => d.description.trim());
   const total = quotationSubtotal(draft.lineItems);
   const downPayment = quotationDownPayment(draft.lineItems);
-  const balance = quotationBalance(draft.lineItems);
   const hasEventDetails =
     draft.projectTitle.trim() ||
     draft.eventDate.trim() ||
@@ -49,106 +46,105 @@ export function QuotationPreview({
 
   return (
     <article
-      className={
-        exportMode
-          ? "quotation-document border border-neutral-200 bg-white text-neutral-900 rounded-sm overflow-hidden"
-          : "quotation-document border border-neutral-200 bg-white text-neutral-900 shadow-sm rounded-sm overflow-hidden"
-      }
+      ref={ref}
+      className="quotation-document border border-neutral-200 bg-white text-neutral-900"
     >
-      <header className="border-b border-neutral-200 px-4 py-6 sm:px-8 sm:py-8">
-        <div className="flex items-start justify-between gap-4 sm:gap-6">
-          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-            <Image
-              src="/images/logo/MH_logo.png"
-              alt="Muhammad Hadid"
-              width={48}
-              height={48}
-              priority={exportMode}
-              className={
-                exportMode
-                  ? "h-12 w-12 object-contain shrink-0"
-                  : "h-10 w-10 sm:h-12 sm:w-12 object-contain shrink-0"
-              }
-            />
-            <div className="min-w-0">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-900">
-                Muhammad Hadid
-              </p>
-              <p className="text-[11px] uppercase tracking-[0.1em] text-neutral-500">
-                Photography
-              </p>
-            </div>
-          </div>
-          <div className="text-right shrink-0">
-            <p className="text-[11px] uppercase tracking-[0.1em] text-neutral-500">
-              Quotation
-            </p>
-            {draft.quoteNumber ? (
-              <p className="text-[12px] text-neutral-700 mt-1 tabular-nums break-all">
-                {draft.quoteNumber}
-              </p>
-            ) : null}
-          </div>
-        </div>
+      <header className="border-b border-neutral-200 px-8 py-6">
+        <table className="w-full border-collapse">
+          <tbody>
+            <tr>
+              <td className="w-12 align-middle pr-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/logo/MH_logo.png"
+                  alt="Muhammad Hadid"
+                  width={48}
+                  height={48}
+                  className="block h-12 w-12 object-contain"
+                />
+              </td>
+              <td className="align-middle">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-900 leading-tight m-0">
+                  Muhammad Hadid
+                </p>
+                <p className="text-[11px] uppercase tracking-[0.1em] text-neutral-500 leading-tight m-0 mt-0.5">
+                  Photography
+                </p>
+              </td>
+              <td className="align-middle text-right whitespace-nowrap pl-4">
+                <p className="text-[11px] uppercase tracking-[0.1em] text-neutral-500 leading-tight m-0">
+                  Quotation
+                </p>
+                {draft.quoteNumber ? (
+                  <p className="text-[12px] text-neutral-700 mt-1 tabular-nums break-all m-0">
+                    {draft.quoteNumber}
+                  </p>
+                ) : null}
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </header>
 
-      <div className="px-4 py-5 sm:px-8 sm:py-6 space-y-5 sm:space-y-6 border-b border-neutral-200 text-[13px]">
-        <dl className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      <div className="px-8 py-6 space-y-6 border-b border-neutral-200 text-[13px]">
+        <dl className="grid grid-cols-3 gap-4 m-0">
           <div>
             <MetaLabel>Date</MetaLabel>
-            <dd>{formatDisplayDate(draft.quoteDate)}</dd>
+            <dd className="m-0">{formatDisplayDate(draft.quoteDate)}</dd>
           </div>
           <div>
             <MetaLabel>Valid until</MetaLabel>
-            <dd>{formatDisplayDate(draft.validUntil)}</dd>
+            <dd className="m-0">{formatDisplayDate(draft.validUntil)}</dd>
           </div>
-          <div className="col-span-2 sm:col-span-1">
+          <div>
             <MetaLabel>Prepared for</MetaLabel>
-            <dd>{draft.clientName.trim() || "—"}</dd>
+            <dd className="m-0">{draft.clientName.trim() || "—"}</dd>
             {draft.clientPhone.trim() ? (
-              <dd className="text-neutral-600 text-[12px] mt-0.5 break-words">
+              <dd className="text-neutral-600 text-[12px] mt-0.5 break-words m-0">
                 {draft.clientPhone.trim()}
               </dd>
             ) : null}
             {draft.clientSocial.trim() ? (
-              <dd className="text-neutral-600 text-[12px] mt-0.5 break-words">
+              <dd className="text-neutral-600 text-[12px] mt-0.5 break-words m-0">
                 {draft.clientSocial.trim()}
               </dd>
             ) : null}
           </div>
         </dl>
         {hasEventDetails ? (
-          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <dl className="grid grid-cols-2 gap-4 m-0">
             {draft.projectTitle.trim() ? (
-              <div className="sm:col-span-2">
+              <div className="col-span-2">
                 <MetaLabel>Event</MetaLabel>
-                <dd className="break-words">{draft.projectTitle.trim()}</dd>
+                <dd className="break-words m-0">{draft.projectTitle.trim()}</dd>
               </div>
             ) : null}
             <div>
               <MetaLabel>Event date</MetaLabel>
-              <dd>{formatDisplayDate(draft.eventDate)}</dd>
+              <dd className="m-0">{formatDisplayDate(draft.eventDate)}</dd>
             </div>
             <div>
               <MetaLabel>Duration</MetaLabel>
-              <dd>{draft.eventDuration.trim() || "—"}</dd>
+              <dd className="m-0">{draft.eventDuration.trim() || "—"}</dd>
             </div>
-            <div className="sm:col-span-2">
+            <div className="col-span-2">
               <MetaLabel>Location</MetaLabel>
-              <dd className="break-words">{draft.eventLocation.trim() || "—"}</dd>
+              <dd className="break-words m-0">
+                {draft.eventLocation.trim() || "—"}
+              </dd>
             </div>
           </dl>
         ) : null}
       </div>
 
       {deliverables.length > 0 ? (
-        <div className="px-4 py-5 sm:px-8 border-b border-neutral-200">
-          <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-3">
+        <div className="px-8 py-5 border-b border-neutral-200">
+          <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-3 m-0">
             Deliverables
           </p>
-          <ul className="space-y-2 text-[13px] text-neutral-700">
+          <ul className="space-y-2 text-[13px] text-neutral-700 m-0 p-0 list-none">
             {deliverables.map((item) => (
-              <li key={item.id} className="flex gap-2 leading-relaxed">
+              <li key={item.id} className="flex gap-2 leading-relaxed m-0">
                 <span className="text-neutral-400 shrink-0">·</span>
                 <span className="break-words">{item.description.trim()}</span>
               </li>
@@ -157,148 +153,84 @@ export function QuotationPreview({
         </div>
       ) : null}
 
-      <div className="px-4 py-5 sm:px-8 sm:py-6">
+      <div className="px-8 py-6">
         {items.length === 0 ? (
-          <p className="py-8 text-center text-neutral-500 text-[12px]">
+          <p className="py-8 text-center text-neutral-500 text-[12px] m-0">
             Add line items to preview the quotation
           </p>
         ) : (
           <>
-            <div
-              className={
-                exportMode
-                  ? "block overflow-x-auto -mx-1 px-1"
-                  : "hidden sm:block overflow-x-auto -mx-1 px-1"
-              }
-            >
-              <table className="w-full min-w-[520px] text-[13px]">
-                <thead>
-                  <tr className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 border-b border-neutral-200">
-                    <th className="text-left font-normal pb-3 pr-4">Description</th>
-                    <th className="text-right font-normal pb-3 w-12">Qty</th>
-                    <th className="text-right font-normal pb-3 w-28">Rate</th>
-                    <th className="text-right font-normal pb-3 w-28">Amount</th>
+            <table className="w-full text-[13px] border-collapse">
+              <thead>
+                <tr className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 border-b border-neutral-200">
+                  <th className="text-left font-normal pb-3 pr-4">Description</th>
+                  <th className="text-right font-normal pb-3 w-12">Qty</th>
+                  <th className="text-right font-normal pb-3 w-28">Rate</th>
+                  <th className="text-right font-normal pb-3 w-28">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item) => (
+                  <tr
+                    key={item.id}
+                    className="border-b border-neutral-100 align-top"
+                  >
+                    <td className="py-3 pr-4 text-neutral-900 break-words">
+                      {item.description.trim()}
+                    </td>
+                    <td className="py-3 text-right tabular-nums text-neutral-600">
+                      {item.qty}
+                    </td>
+                    <td className="py-3 text-right tabular-nums text-neutral-600">
+                      {formatMoney(item.unitPrice)}
+                    </td>
+                    <td className="py-3 text-right tabular-nums text-neutral-900">
+                      {formatMoney(item.qty * item.unitPrice)}
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {items.map((item) => (
-                    <tr
-                      key={item.id}
-                      className="border-b border-neutral-100 align-top"
-                    >
-                      <td className="py-3 pr-4 text-neutral-900 break-words">
-                        {item.description.trim()}
-                      </td>
-                      <td className="py-3 text-right tabular-nums text-neutral-600">
-                        {item.qty}
-                      </td>
-                      <td className="py-3 text-right tabular-nums text-neutral-600">
-                        {formatMoney(item.unitPrice)}
-                      </td>
-                      <td className="py-3 text-right tabular-nums text-neutral-900">
-                        {formatMoney(item.qty * item.unitPrice)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <ul className={exportMode ? "hidden" : "sm:hidden space-y-3"}>
-              {items.map((item) => (
-                <li
-                  key={item.id}
-                  className="border border-neutral-200 rounded-sm p-3 space-y-2"
-                >
-                  <p className="text-[13px] text-neutral-900 break-words leading-relaxed">
-                    {item.description.trim()}
-                  </p>
-                  <dl className="grid grid-cols-3 gap-2 text-[12px]">
-                    <div>
-                      <dt className="text-neutral-500 uppercase tracking-[0.08em] text-[10px]">
-                        Qty
-                      </dt>
-                      <dd className="tabular-nums mt-0.5">{item.qty}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-neutral-500 uppercase tracking-[0.08em] text-[10px]">
-                        Rate
-                      </dt>
-                      <dd className="tabular-nums mt-0.5 text-neutral-700">
-                        {formatMoney(item.unitPrice)}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-neutral-500 uppercase tracking-[0.08em] text-[10px]">
-                        Amount
-                      </dt>
-                      <dd className="tabular-nums mt-0.5 font-medium">
-                        {formatMoney(item.qty * item.unitPrice)}
-                      </dd>
-                    </div>
-                  </dl>
-                </li>
-              ))}
-            </ul>
+                ))}
+              </tbody>
+            </table>
 
             <div className="mt-6 pt-4 border-t border-neutral-200 space-y-4">
-              <div className={exportMode ? "flex justify-end" : "sm:flex sm:justify-end"}>
-                <div
-                  className={
-                    exportMode
-                      ? "w-full max-w-xs space-y-3 text-right"
-                      : "w-full sm:max-w-xs space-y-3 sm:text-right"
-                  }
-                >
+              <div className="flex justify-end">
+                <div className="w-full max-w-xs space-y-3 text-right">
                   <div>
-                    <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-1">
+                    <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-1 m-0">
                       Total
                     </p>
-                    <p className="text-lg font-light tracking-[0.04em] tabular-nums text-neutral-900">
+                    <p className="text-lg font-light tracking-[0.04em] tabular-nums text-neutral-900 m-0">
                       {formatMoney(total)}
                     </p>
                   </div>
                   <div className="border-t border-neutral-100 pt-3">
-                    <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-1">
+                    <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-1 m-0">
                       Down payment (50%)
                     </p>
-                    <p className="text-[15px] tabular-nums text-neutral-900">
+                    <p className="text-[15px] tabular-nums text-neutral-900 m-0">
                       {formatMoney(downPayment)}
                     </p>
-                    <p className="text-[12px] text-neutral-500 mt-1.5 leading-relaxed">
+                    <p className="text-[12px] text-neutral-500 mt-1.5 leading-relaxed m-0">
                       Non-refundable. Required to secure the booking date.
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-1">
-                      Balance
-                    </p>
-                    <p className="text-[13px] tabular-nums text-neutral-700">
-                      {formatMoney(balance)}
-                    </p>
-                    <p className="text-[12px] text-neutral-500 mt-1">
-                      Due before final delivery of edited images.
                     </p>
                   </div>
                 </div>
               </div>
               <div className="border-t border-neutral-100 pt-4">
-                <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-2">
+                <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-2 m-0">
                   Payment
                 </p>
-                <p className="text-[12px] text-neutral-500 mb-3 leading-relaxed">
-                  Transfer the down payment to one of the accounts below.
+                <p className="text-[12px] text-neutral-500 mb-3 leading-relaxed m-0">
+                  Transfer the down payment to the account below.
                 </p>
-                <ul className="space-y-2 text-[13px] text-neutral-700">
-                  {QUOTATION_BANK_ACCOUNTS.map((account) => (
-                    <li key={account.number} className="break-words">
-                      {account.bank} · {account.name} ·{" "}
-                      <span className="tabular-nums text-neutral-900">
-                        {account.number}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                <div className="space-y-1">
+                  <p className="text-[13px] text-neutral-700 m-0">
+                    {QUOTATION_BANK_ACCOUNT.bank} · {QUOTATION_BANK_ACCOUNT.name}
+                  </p>
+                  <p className="text-[15px] tabular-nums tracking-[0.02em] text-neutral-900 m-0">
+                    {QUOTATION_BANK_ACCOUNT.number}
+                  </p>
+                </div>
               </div>
             </div>
           </>
@@ -306,31 +238,41 @@ export function QuotationPreview({
       </div>
 
       {draft.notes.trim() ? (
-        <div className="px-4 py-5 sm:px-8 border-t border-neutral-200">
-          <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-2">
+        <div className="px-8 py-5 border-t border-neutral-200">
+          <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-2 m-0">
             Notes
           </p>
-          <p className="text-[13px] text-neutral-700 whitespace-pre-wrap leading-relaxed break-words">
+          <p className="text-[13px] text-neutral-700 whitespace-pre-wrap leading-relaxed break-words m-0">
             {draft.notes.trim()}
           </p>
         </div>
       ) : null}
 
-      {draft.terms.trim() ? (
-        <div className="px-4 py-5 sm:px-8 border-t border-neutral-200 bg-neutral-50">
-          <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-2">
-            Terms
-          </p>
-          <p className="text-[12px] text-neutral-600 whitespace-pre-wrap leading-relaxed break-words">
-            {draft.terms.trim()}
-          </p>
-        </div>
-      ) : null}
+      <div className="border-t border-neutral-200">
+        {draft.terms.trim() ? (
+          <div className="px-8 pt-3 pb-2 bg-neutral-50">
+            <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-1 m-0">
+              Terms
+            </p>
+            <p className="text-[10px] text-neutral-500 leading-[1.45] break-words m-0">
+              {formatTermsParagraph(draft.terms)}
+            </p>
+          </div>
+        ) : null}
 
-      <footer className="px-4 py-4 sm:px-8 border-t border-neutral-200 flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-2 text-[10px] uppercase tracking-[0.1em] text-neutral-500">
-        <span>Indonesia · Available worldwide</span>
-        <span>muhammad-hadid.com</span>
-      </footer>
+        <footer className="border-t border-neutral-200 px-8 py-2.5">
+          <table className="w-full border-collapse">
+            <tbody>
+              <tr className="text-[10px] uppercase tracking-[0.1em] text-neutral-500">
+                <td className="text-left align-middle">Indonesia · Available worldwide</td>
+                <td className="text-right align-middle whitespace-nowrap">
+                  muhammad-hadid.com
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </footer>
+      </div>
     </article>
   );
-}
+});

@@ -145,6 +145,25 @@ body {
   }
 }
 
+@layer components {
+  .quotation-document {
+    box-sizing: border-box;
+  }
+
+  .quotation-document table {
+    border-collapse: collapse;
+  }
+
+  .quotation-document img {
+    display: block;
+  }
+
+  .quotation-document p,
+  .quotation-document dd {
+    margin: 0;
+  }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;

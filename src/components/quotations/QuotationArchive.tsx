@@ -49,55 +49,48 @@ export function QuotationArchive({
           "Untitled quotation";
 
         return (
-          <li key={item.id}>
+          <li
+            key={item.id}
+            className={cn(
+              "flex items-start gap-0 transition-colors hover:bg-bg-primary/40",
+              activeId === item.id && "bg-bg-primary/50"
+            )}
+          >
             <button
               type="button"
               onClick={() => onLoad(item)}
-              className={cn(
-                "w-full text-left px-4 py-3 transition-colors hover:bg-bg-primary/40",
-                activeId === item.id && "bg-bg-primary/50"
-              )}
+              className="min-w-0 flex-1 text-left px-4 py-3"
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-[12px] text-text-primary truncate">
-                    {item.quote_number}
-                  </p>
-                  <p className="text-[13px] text-text-secondary mt-0.5 truncate">
-                    {label}
-                  </p>
-                  <p className="text-[11px] text-text-muted mt-1">
-                    {formatListDate(item.quote_date)} · {formatMoney(item.subtotal)}
-                  </p>
-                </div>
-                <div className="flex items-center shrink-0">
-                  <Tooltip label="Create revision">
-                    <IconButton
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onRevision(item);
-                      }}
-                      label={`Create revision for ${item.quote_number}`}
-                    >
-                      <GitBranchPlus className="h-4 w-4" aria-hidden />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip label="Delete from archive">
-                    <IconButton
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onRequestDelete(item);
-                      }}
-                      disabled={deletingId === item.id}
-                      label={`Delete ${item.quote_number}`}
-                      className="hover:text-status-editing"
-                    >
-                      <Trash2 className="h-4 w-4" aria-hidden />
-                    </IconButton>
-                  </Tooltip>
-                </div>
-              </div>
+              <p className="text-[12px] text-text-primary truncate">
+                {item.quote_number}
+              </p>
+              <p className="text-[13px] text-text-secondary mt-0.5 truncate">
+                {label}
+              </p>
+              <p className="text-[11px] text-text-muted mt-1">
+                {formatListDate(item.quote_date)} · {formatMoney(item.subtotal)}
+              </p>
             </button>
+            <div className="flex items-center shrink-0 pr-1 py-1">
+              <Tooltip label="Create revision">
+                <IconButton
+                  onClick={() => onRevision(item)}
+                  label={`Create revision for ${item.quote_number}`}
+                >
+                  <GitBranchPlus className="h-4 w-4" aria-hidden />
+                </IconButton>
+              </Tooltip>
+              <Tooltip label="Delete from archive">
+                <IconButton
+                  onClick={() => onRequestDelete(item)}
+                  disabled={deletingId === item.id}
+                  label={`Delete ${item.quote_number}`}
+                  className="hover:text-status-editing"
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden />
+                </IconButton>
+              </Tooltip>
+            </div>
           </li>
         );
       })}

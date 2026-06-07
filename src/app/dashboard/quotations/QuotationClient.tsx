@@ -8,6 +8,7 @@ import { DashboardMain } from "@/components/layout/DashboardShell";
 import { ClientEventTools } from "@/components/quotations/ClientEventTools";
 import { QuotationArchive } from "@/components/quotations/QuotationArchive";
 import { QuotationConfirmDialog } from "@/components/quotations/QuotationConfirmDialog";
+import { QuotationPageFrame } from "@/components/quotations/QuotationPageFrame";
 import { QuotationPreview } from "@/components/quotations/QuotationPreview";
 import { BackNavLink } from "@/components/BackNavLink";
 import { Button } from "@/components/ui/Button";
@@ -35,10 +36,7 @@ import {
   type SavedQuotation,
   savedQuotationToDraft,
 } from "@/lib/quotations/db";
-import {
-  exportQuotationPdf,
-  QUOTATION_PDF_CAPTURE_WIDTH_PX,
-} from "@/lib/quotations/exportQuotationPdf";
+import { exportQuotationPdf } from "@/lib/quotations/exportQuotationPdf";
 import type {
   QuotationDeliverable,
   QuotationDraft,
@@ -81,7 +79,7 @@ export function QuotationClient({
   const [draftRevision, setDraftRevision] = useState(0);
   const [hydrated, setHydrated] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const pdfExportRef = useRef<HTMLDivElement>(null);
+  const pdfExportRef = useRef<HTMLElement>(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SavedQuotation | null>(null);
@@ -873,20 +871,17 @@ export function QuotationClient({
         </div>
 
         <div className="xl:sticky xl:top-[4.75rem] xl:max-h-[calc(100dvh-6rem)] xl:overflow-y-auto -mx-1 px-1">
-          <p className="text-[10px] uppercase tracking-label text-text-muted mb-3">
-            Preview
-          </p>
-          <QuotationPreview draft={draft} />
-        </div>
-      </div>
-
-      <div
-        aria-hidden
-        className="fixed top-0 left-0 -z-50 opacity-0 pointer-events-none overflow-hidden"
-        style={{ width: QUOTATION_PDF_CAPTURE_WIDTH_PX }}
-      >
-        <div ref={pdfExportRef}>
-          <QuotationPreview draft={draft} exportMode />
+          <div className="flex items-baseline justify-between gap-3 mb-3">
+            <p className="text-[10px] uppercase tracking-label text-text-muted">
+              Preview
+            </p>
+            <p className="text-[10px] uppercase tracking-label text-text-muted">
+              A4 · 210 × 297 mm
+            </p>
+          </div>
+          <QuotationPageFrame>
+            <QuotationPreview ref={pdfExportRef} draft={draft} />
+          </QuotationPageFrame>
         </div>
       </div>
     </DashboardMain>
