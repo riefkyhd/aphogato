@@ -178,6 +178,30 @@ body {
   }
 }
 
+@media print {
+  .quotation-document {
+    width: 210mm !important;
+    max-width: 210mm !important;
+    transform: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .quotation-header,
+  .quotation-meta,
+  .quotation-event,
+  .quotation-deliverables,
+  .quotation-line-item,
+  .quotation-totals,
+  .quotation-payment,
+  .quotation-terms {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
 @keyframes photo-drop-overlay-in {
   from {
     opacity: 0;

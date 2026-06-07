@@ -401,7 +401,7 @@ export function QuotationClient({
     setExporting(true);
     try {
       await exportQuotationPdf(draft, exportRoot);
-      toast.success("Quotation PDF downloaded");
+      toast.success("Print dialog opened — choose Save as PDF");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Export failed");
     } finally {

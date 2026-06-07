@@ -49,7 +49,7 @@ export const QuotationPreview = forwardRef<
       ref={ref}
       className="quotation-document border border-neutral-200 bg-white text-neutral-900"
     >
-      <header className="border-b border-neutral-200 px-8 py-6">
+      <header className="quotation-header border-b border-neutral-200 px-8 py-6">
         <table className="w-full border-collapse">
           <tbody>
             <tr>
@@ -86,7 +86,7 @@ export const QuotationPreview = forwardRef<
         </table>
       </header>
 
-      <div className="px-8 py-6 space-y-6 border-b border-neutral-200 text-[13px]">
+      <section className="quotation-meta px-8 py-6 border-b border-neutral-200 text-[13px]">
         <dl className="grid grid-cols-3 gap-4 m-0">
           <div>
             <MetaLabel>Date</MetaLabel>
@@ -111,7 +111,10 @@ export const QuotationPreview = forwardRef<
             ) : null}
           </div>
         </dl>
-        {hasEventDetails ? (
+      </section>
+
+      {hasEventDetails ? (
+        <section className="quotation-event px-8 py-6 border-b border-neutral-200 text-[13px]">
           <dl className="grid grid-cols-2 gap-4 m-0">
             {draft.projectTitle.trim() ? (
               <div className="col-span-2">
@@ -134,11 +137,11 @@ export const QuotationPreview = forwardRef<
               </dd>
             </div>
           </dl>
-        ) : null}
-      </div>
+        </section>
+      ) : null}
 
       {deliverables.length > 0 ? (
-        <div className="px-8 py-5 border-b border-neutral-200">
+        <section className="quotation-deliverables px-8 py-5 border-b border-neutral-200">
           <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-3 m-0">
             Deliverables
           </p>
@@ -150,7 +153,7 @@ export const QuotationPreview = forwardRef<
               </li>
             ))}
           </ul>
-        </div>
+        </section>
       ) : null}
 
       <div className="px-8 py-6">
@@ -160,6 +163,7 @@ export const QuotationPreview = forwardRef<
           </p>
         ) : (
           <>
+            <section className="quotation-line-item">
             <table className="w-full text-[13px] border-collapse">
               <thead>
                 <tr className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 border-b border-neutral-200">
@@ -191,9 +195,10 @@ export const QuotationPreview = forwardRef<
                 ))}
               </tbody>
             </table>
+            </section>
 
             <div className="mt-6 pt-4 border-t border-neutral-200 space-y-4">
-              <div className="flex justify-end">
+              <section className="quotation-totals flex justify-end">
                 <div className="w-full max-w-xs space-y-3 text-right">
                   <div>
                     <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-1 m-0">
@@ -215,8 +220,8 @@ export const QuotationPreview = forwardRef<
                     </p>
                   </div>
                 </div>
-              </div>
-              <div className="border-t border-neutral-100 pt-4">
+              </section>
+              <section className="quotation-payment border-t border-neutral-100 pt-4">
                 <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-2 m-0">
                   Payment
                 </p>
@@ -231,7 +236,7 @@ export const QuotationPreview = forwardRef<
                     {QUOTATION_BANK_ACCOUNT.number}
                   </p>
                 </div>
-              </div>
+              </section>
             </div>
           </>
         )}
@@ -250,14 +255,14 @@ export const QuotationPreview = forwardRef<
 
       <div className="border-t border-neutral-200">
         {draft.terms.trim() ? (
-          <div className="px-8 pt-3 pb-2 bg-neutral-50">
+          <section className="quotation-terms px-8 pt-3 pb-2 bg-neutral-50">
             <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-1 m-0">
               Terms
             </p>
             <p className="text-[10px] text-neutral-500 leading-[1.45] break-words m-0">
               {formatTermsParagraph(draft.terms)}
             </p>
-          </div>
+          </section>
         ) : null}
 
         <footer className="border-t border-neutral-200 px-8 py-2.5">
