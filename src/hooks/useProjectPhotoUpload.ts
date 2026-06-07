@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { UploadProgressState } from "@/components/PhotoUploadProgress";
 import { filterImageUploadFiles } from "@/lib/imageUploadFiles";
@@ -15,6 +15,9 @@ export function useProjectPhotoUpload(
 ) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState<UploadProgressState | null>(null);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [uploadedCount, setUploadedCount] = useState(0);
+  const abortRef = useRef<AbortController | null>(null);
 
   const uploadFiles = useCallback(
     async (fileList: FileList | File[] | null) => {
@@ -24,7 +27,13 @@ export function useProjectPhotoUpload(
         return;
       }
 
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+
       setUploading(true);
+      setUploadedCount(0);
+      setCancelDialogOpen(false);
       setProgress({
         currentIndex: 1,
         total: files.length,
@@ -33,12 +42,23 @@ export function useProjectPhotoUpload(
       });
 
       try {
-        const { uploaded, errors } = await uploadProjectPhotos(
+        const { uploaded, errors, cancelled } = await uploadProjectPhotos(
           projectId,
           files,
           setProgress,
-          (photos) => onPhotosUpdated(sortPhotosNewestFirst(photos))
+          (photos) => onPhotosUpdated(sortPhotosNewestFirst(photos)),
+          controller.signal,
+          setUploadedCount
         );
+
+        if (cancelled) {
+          toast.info(
+            uploaded > 0
+              ? `Upload cancelled — ${uploaded} photo${uploaded === 1 ? "" : "s"} kept`
+              : "Upload cancelled"
+          );
+          return;
+        }
 
         if (uploaded > 0) {
           toast.success(
@@ -58,15 +78,40 @@ export function useProjectPhotoUpload(
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Upload failed");
       } finally {
+        abortRef.current = null;
         setUploading(false);
         setProgress(null);
+        setCancelDialogOpen(false);
         onBatchComplete?.();
       }
     },
     [projectId, onPhotosUpdated, onBatchComplete]
   );
 
-  return { uploading, progress, uploadFiles };
+  const requestCancelUpload = useCallback(() => {
+    if (!uploading) return;
+    setCancelDialogOpen(true);
+  }, [uploading]);
+
+  const dismissCancelDialog = useCallback(() => {
+    setCancelDialogOpen(false);
+  }, []);
+
+  const confirmCancelUpload = useCallback(() => {
+    abortRef.current?.abort();
+    setCancelDialogOpen(false);
+  }, []);
+
+  return {
+    uploading,
+    progress,
+    uploadFiles,
+    cancelDialogOpen,
+    uploadedCount,
+    requestCancelUpload,
+    dismissCancelDialog,
+    confirmCancelUpload,
+  };
 }
 
 export type ProjectPhotoUpload = ReturnType<typeof useProjectPhotoUpload>;

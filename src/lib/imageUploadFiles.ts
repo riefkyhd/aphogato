@@ -1,12 +1,10 @@
-import {
-  ALLOWED_IMAGE_UPLOAD_TYPES,
-  IMAGE_UPLOAD_ACCEPT,
-} from "@/lib/imageUploadLimits";
+import { IMAGE_UPLOAD_ACCEPT } from "@/lib/imageUploadLimits";
+import { resolveImageMimeType } from "@/lib/prepareImageForUpload";
 
 export { IMAGE_UPLOAD_ACCEPT };
 
 export function isImageUploadFile(file: File): boolean {
-  return ALLOWED_IMAGE_UPLOAD_TYPES.has(file.type);
+  return resolveImageMimeType(file) !== null;
 }
 
 export function filterImageUploadFiles(files: FileList | File[] | null): File[] {

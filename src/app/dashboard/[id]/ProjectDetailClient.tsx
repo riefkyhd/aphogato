@@ -12,6 +12,7 @@ import { usePrivacyLockContext } from "@/components/privacy/PrivacyLockProvider"
 import { PhotoDropHint } from "@/components/PhotoDropHint";
 import { PhotoGallerySection } from "@/components/PhotoGallerySection";
 import { StatusDot, type ProjectStatus } from "@/components/StatusDot";
+import { CancelUploadDialog } from "@/components/CancelUploadDialog";
 import { UploadProgressDock } from "@/components/UploadProgressDock";
 import { usePhotoDropZone } from "@/hooks/usePhotoDropZone";
 import { useManagePhotoActivation } from "@/hooks/useManagePhotoActivation";
@@ -190,7 +191,20 @@ export function ProjectDetailClient({
         />
       )}
       {upload.uploading && upload.progress && (
-        <UploadProgressDock progress={upload.progress} />
+        <UploadProgressDock
+          progress={upload.progress}
+          onCancel={upload.requestCancelUpload}
+        />
+      )}
+
+      {upload.cancelDialogOpen && upload.progress && (
+        <CancelUploadDialog
+          open={upload.cancelDialogOpen}
+          progress={upload.progress}
+          uploadedCount={upload.uploadedCount}
+          onClose={upload.dismissCancelDialog}
+          onConfirm={upload.confirmCancelUpload}
+        />
       )}
 
       <DeletePhotosDialog

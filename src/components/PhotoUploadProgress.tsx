@@ -7,6 +7,7 @@ export type UploadProgressState = {
   total: number;
   fileName: string;
   filePercent: number;
+  preparing?: boolean;
 };
 
 export function overallUploadPercent(state: UploadProgressState): number {
@@ -66,7 +67,7 @@ export function PhotoUploadProgress({
       >
         {progress.fileName}
         <span className="text-text-muted ml-2 tabular-nums">
-          ({progress.filePercent}%)
+          {progress.preparing ? "(compressing…)" : `(${progress.filePercent}%)`}
         </span>
       </p>
       <div

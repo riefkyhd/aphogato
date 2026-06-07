@@ -1,4 +1,6 @@
 import type { Photo, ProjectReference } from "@/lib/types";
+import { prepareImageForUpload } from "@/lib/prepareImageForUpload";
+import { UploadCancelledError } from "@/lib/uploadCancelled";
 
 type UploadBatchResult = {
   uploaded: number;
@@ -32,15 +34,24 @@ function uploadErrorMessage(
   fallback: string
 ): string {
   if (status === 413) {
-    return `${fileName}: file is too large to upload (max 20MB)`;
+    return `${fileName}: file is too large for Cloudinary (max 10MB after compression)`;
   }
   return `${fileName}: ${fallback}`;
 }
 
+function throwIfAborted(signal?: AbortSignal): void {
+  if (signal?.aborted) {
+    throw new UploadCancelledError();
+  }
+}
+
 async function requestUploadSign(
   signUrl: string,
-  file: File
+  file: File,
+  signal?: AbortSignal
 ): Promise<SignedCloudinaryUpload> {
+  throwIfAborted(signal);
+
   const response = await fetch(signUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -49,6 +60,7 @@ async function requestUploadSign(
       mimeType: file.type,
       size: file.size,
     }),
+    signal,
   });
 
   let payload: SignedCloudinaryUpload & { error?: string };
@@ -76,9 +88,12 @@ async function requestUploadSign(
 function uploadFileToCloudinary(
   file: File,
   signed: SignedCloudinaryUpload,
-  onProgress: (filePercent: number) => void
+  onProgress: (filePercent: number) => void,
+  signal?: AbortSignal
 ): Promise<CloudinaryUploadResponse> {
   return new Promise((resolve, reject) => {
+    throwIfAborted(signal);
+
     const xhr = new XMLHttpRequest();
     const formData = new FormData();
     formData.append("file", file);
@@ -95,7 +110,18 @@ function uploadFileToCloudinary(
       }
     });
 
+    function cleanup() {
+      signal?.removeEventListener("abort", onAbort);
+    }
+
+    function onAbort() {
+      xhr.abort();
+    }
+
+    signal?.addEventListener("abort", onAbort);
+
     xhr.addEventListener("load", () => {
+      cleanup();
       let payload: CloudinaryUploadResponse;
       try {
         payload = JSON.parse(xhr.responseText) as CloudinaryUploadResponse;
@@ -122,7 +148,13 @@ function uploadFileToCloudinary(
     });
 
     xhr.addEventListener("error", () => {
+      cleanup();
       reject(new Error(`${file.name}: network error`));
+    });
+
+    xhr.addEventListener("abort", () => {
+      cleanup();
+      reject(new UploadCancelledError());
     });
 
     xhr.open("POST", signed.uploadUrl);
@@ -132,8 +164,11 @@ function uploadFileToCloudinary(
 
 async function completeSignedUpload<T>(
   completeUrl: string,
-  cloudinaryResult: CloudinaryUploadResponse
+  cloudinaryResult: CloudinaryUploadResponse,
+  signal?: AbortSignal
 ): Promise<T> {
+  throwIfAborted(signal);
+
   const response = await fetch(completeUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -145,6 +180,7 @@ async function completeSignedUpload<T>(
       bytes: cloudinaryResult.bytes,
       format: cloudinaryResult.format,
     }),
+    signal,
   });
 
   let payload: T & { error?: string };
@@ -169,29 +205,49 @@ async function uploadViaSignedCloudinary<T>(
   signUrl: string,
   completeUrl: string,
   file: File,
-  onProgress: (filePercent: number) => void
+  onProgress: (filePercent: number) => void,
+  signal?: AbortSignal,
+  onPreparing?: () => void
 ): Promise<T> {
-  const signed = await requestUploadSign(signUrl, file);
+  onPreparing?.();
+  const prepared = await prepareImageForUpload(file, signal);
+  const signed = await requestUploadSign(signUrl, prepared, signal);
   onProgress(0);
-  const cloudinaryResult = await uploadFileToCloudinary(file, signed, onProgress);
-  return completeSignedUpload<T>(completeUrl, cloudinaryResult);
+  const cloudinaryResult = await uploadFileToCloudinary(
+    prepared,
+    signed,
+    onProgress,
+    signal
+  );
+  return completeSignedUpload<T>(completeUrl, cloudinaryResult, signal);
 }
 
 export async function uploadProjectPhotoViaCloudinary(
   projectId: string,
   file: File,
-  onProgress: (filePercent: number) => void
-): Promise<{ ok: boolean; result: UploadBatchResult }> {
+  onProgress: (filePercent: number) => void,
+  signal?: AbortSignal,
+  onPreparing?: () => void
+): Promise<{ ok: boolean; result: UploadBatchResult; cancelled?: boolean }> {
   try {
     const result = await uploadViaSignedCloudinary<UploadBatchResult>(
       `/api/projects/${projectId}/upload/sign`,
       `/api/projects/${projectId}/upload/complete`,
       file,
-      onProgress
+      onProgress,
+      signal,
+      onPreparing
     );
 
     return { ok: true, result };
   } catch (err) {
+    if (err instanceof UploadCancelledError) {
+      return {
+        ok: false,
+        cancelled: true,
+        result: { uploaded: 0, errors: [], photos: [] },
+      };
+    }
     return {
       ok: false,
       result: {

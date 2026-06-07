@@ -1,4 +1,8 @@
+/** Max size accepted from the client before compression. */
 export const MAX_IMAGE_UPLOAD_BYTES = 20 * 1024 * 1024;
+
+/** Cloudinary direct-upload body limit (plan-dependent; 10MB on free tier). */
+export const CLOUDINARY_MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 export const IMAGE_UPLOAD_ACCEPT =
   "image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif";

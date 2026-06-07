@@ -12,8 +12,10 @@ import {
 
 export function UploadProgressDock({
   progress,
+  onCancel,
 }: {
   progress: UploadProgressState;
+  onCancel: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const overall = overallUploadPercent(progress);
@@ -58,18 +60,27 @@ export function UploadProgressDock({
               <ChevronUp className="h-5 w-5 shrink-0 text-text-muted" />
             )}
           </button>
-          {expanded && (
-            <Tooltip label="Close upload details">
-              <button
-                type="button"
-                className="p-2 -mr-1 text-text-muted hover:text-text-primary rounded-sm hover:bg-bg-primary/60 transition-colors"
-                aria-label="Close upload details"
-                onClick={() => setExpanded(false)}
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </Tooltip>
-          )}
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              className="px-2.5 py-1.5 text-[11px] uppercase tracking-label text-status-editing hover:text-text-primary rounded-sm hover:bg-bg-primary/60 transition-colors"
+              onClick={onCancel}
+            >
+              Cancel
+            </button>
+            {expanded && (
+              <Tooltip label="Close upload details">
+                <button
+                  type="button"
+                  className="p-2 text-text-muted hover:text-text-primary rounded-sm hover:bg-bg-primary/60 transition-colors"
+                  aria-label="Close upload details"
+                  onClick={() => setExpanded(false)}
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </Tooltip>
+            )}
+          </div>
         </div>
 
         {!expanded && (
@@ -83,7 +94,9 @@ export function UploadProgressDock({
             <p className="text-[13px] text-text-secondary truncate leading-snug">
               {progress.fileName}
               <span className="text-text-muted ml-2 tabular-nums">
-                {progress.filePercent}%
+                {progress.preparing
+                  ? "compressing…"
+                  : `${progress.filePercent}%`}
               </span>
             </p>
           </div>
