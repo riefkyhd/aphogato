@@ -1,6 +1,9 @@
 import "server-only";
 import { v2 as cloudinary } from "cloudinary";
 
+/** Safety cap when listing a project folder (Cloudinary paginates 100 per request). */
+export const CLOUDINARY_LIST_MAX_RESOURCES = 10_000;
+
 export interface CloudinaryResource {
   public_id: string;
   secure_url: string;
@@ -167,7 +170,7 @@ async function listByAssetFolder(
  */
 export async function listFolder(
   folder: string,
-  { maxResources = 500 }: { maxResources?: number } = {}
+  { maxResources = CLOUDINARY_LIST_MAX_RESOURCES }: { maxResources?: number } = {}
 ): Promise<CloudinaryResource[]> {
   const normalized = normalizeFolderInput(folder);
   if (!normalized) {
@@ -186,7 +189,11 @@ export async function listFolder(
     merged.set(resource.public_id, resource);
   }
 
-  return Array.from(merged.values()).slice(0, maxResources);
+  const all = Array.from(merged.values());
+  if (all.length > maxResources) {
+    return all.slice(0, maxResources);
+  }
+  return all;
 }
 
 export function previewUrl(publicId: string, width = 600, quality = 70) {
