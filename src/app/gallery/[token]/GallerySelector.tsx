@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import {
   GALLERY_ERROR_CODES,
@@ -20,9 +20,16 @@ import {
   pruneSelectionToPhotos,
 } from "@/lib/gallerySelection";
 import { gallerySelectionStorageKey } from "@/lib/galleryStorage";
+import { GalleryPhotosLoading } from "@/components/GalleryPhotosLoading";
 import { PhotoGallerySection } from "@/components/PhotoGallerySection";
+import {
+  DashboardShell,
+  dashboardShellClass,
+} from "@/components/layout/DashboardShell";
 import { Button } from "@/components/ui/Button";
+import { Skeleton } from "@/components/ui/Skeleton";
 import type { Photo, Project } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 type GalleryApiResponse = {
   project: Project;
@@ -410,21 +417,31 @@ export function GallerySelector({
   }
 
   const total = photos.length;
-  const headerLabel = useMemo(
-    () => `${total} photo${total === 1 ? "" : "s"}`,
-    [total]
-  );
-
   const isUpdateFlow =
     project.status !== "pending" || previouslyConfirmed;
 
   const topNotice = saveNotice ?? syncNotice;
 
+  const refreshButton = (
+    <Button
+      type="button"
+      variant="secondary"
+      size="sm"
+      loading={syncing}
+      disabled={syncing || !ready}
+      className="shrink-0 whitespace-nowrap"
+      onClick={syncGallery}
+    >
+      {!syncing && <RefreshCw className="h-3.5 w-3.5 shrink-0" aria-hidden />}
+      {syncing ? "Refreshing…" : "Refresh gallery"}
+    </Button>
+  );
+
   return (
-    <main className="min-h-screen bg-bg-primary pb-[80px]">
+    <main className="min-h-screen bg-bg-primary pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:pb-[calc(5rem+env(safe-area-inset-bottom))]">
       {topNotice && (
         <div
-          className="fixed top-4 left-4 right-4 z-40 flex justify-center pointer-events-none sm:top-5 sm:left-6 sm:right-6"
+          className="fixed top-4 left-4 right-4 z-40 flex justify-center pointer-events-none sm:top-5"
           role="status"
           aria-live="polite"
         >
@@ -436,117 +453,146 @@ export function GallerySelector({
         </div>
       )}
 
-      <header className="px-4 md:px-8 pt-8 pb-4">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-light tracking-[0.05em] uppercase">
-              {project.name}
-            </h1>
-            {project.client_name && (
-              <p className="mt-2 text-text-secondary text-[14px] leading-relaxed">
-                Hi {project.client_name}, select up to {maxSelection} photo
-                {maxSelection === 1 ? "" : "s"} you&rsquo;d like edited.
-              </p>
-            )}
-            {!project.client_name && (
-              <p className="mt-2 text-text-secondary text-[14px] leading-relaxed">
-                Select up to {maxSelection} photo
-                {maxSelection === 1 ? "" : "s"} for editing.
-              </p>
-            )}
-            <p className="mt-3 text-[11px] uppercase tracking-label text-text-muted">
-              {ready ? headerLabel.toUpperCase() : "Loading…"}
-            </p>
+      <DashboardShell className="pt-[max(1.5rem,env(safe-area-inset-top))] pb-3 sm:pt-10 sm:pb-4">
+        <header>
+          <div className="flex flex-col gap-4 sm:gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl leading-tight sm:text-2xl md:text-3xl font-light tracking-[0.05em] uppercase break-words">
+                {project.name}
+              </h1>
+              {project.client_name ? (
+                <p className="mt-2 text-text-secondary text-[14px] sm:text-[15px] leading-relaxed">
+                  Hi {project.client_name}, select up to {maxSelection} photo
+                  {maxSelection === 1 ? "" : "s"} you&rsquo;d like edited.
+                </p>
+              ) : (
+                <p className="mt-2 text-text-secondary text-[14px] sm:text-[15px] leading-relaxed">
+                  Select up to {maxSelection} photo
+                  {maxSelection === 1 ? "" : "s"} for editing.
+                </p>
+              )}
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] uppercase tracking-label text-text-muted">
+                {ready ? (
+                  <span>
+                    {total} photo{total === 1 ? "" : "s"}
+                  </span>
+                ) : (
+                  <Skeleton className="h-3 w-24 rounded-sm" />
+                )}
+                {ready && selectedCount > 0 && (
+                  <span>
+                    {selectedCount} selected
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="hidden lg:block shrink-0">{refreshButton}</div>
           </div>
-          <Button
-            type="button"
-            variant="secondary"
-            loading={syncing}
-            disabled={syncing || !ready}
-            className="shrink-0 !text-[11px]"
-            onClick={syncGallery}
-          >
-            {!syncing && <RefreshCw className="h-3.5 w-3.5 shrink-0" aria-hidden />}
-            {syncing ? "Refreshing…" : "Refresh gallery"}
-          </Button>
-        </div>
-      </header>
+        </header>
+      </DashboardShell>
 
       {error && (
+        <DashboardShell className="mb-4">
+          <div
+            className="rounded-sm border border-status-editing/40 bg-bg-elevated px-4 py-3"
+            role="alert"
+          >
+            <p className="text-[13px] text-text-primary leading-relaxed">
+              {error}
+            </p>
+          </div>
+        </DashboardShell>
+      )}
+
+      <DashboardShell>
+        <section aria-label="Photo gallery">
+          {!ready ? (
+            <GalleryPhotosLoading />
+          ) : photos.length === 0 ? (
+            <p className="text-text-secondary text-[14px] leading-relaxed">
+              {GALLERY_MESSAGES.galleryEmpty}
+            </p>
+          ) : (
+            <>
+              <p className="mb-3 hidden text-[11px] text-text-muted leading-relaxed max-w-3xl sm:mb-4 sm:block">
+                Tap a photo to select it for editing.
+              </p>
+              <PhotoGallerySection
+                photos={photos}
+                mode="gallery"
+                viewStorageId={token}
+                selectedIds={selected}
+                onToggleSelect={toggle}
+                selectionLimitReached={selectionLimitReached}
+              />
+            </>
+          )}
+        </section>
+      </DashboardShell>
+
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-bg-secondary/95 backdrop-blur-md">
         <div
-          className="mx-4 md:mx-8 mb-4 border border-status-editing/40 bg-bg-elevated px-4 py-3"
-          role="alert"
+          className={cn(
+            dashboardShellClass,
+            "flex flex-col gap-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:min-h-16 sm:flex-row sm:items-center sm:justify-between"
+          )}
         >
-          <p className="text-[13px] text-text-primary leading-relaxed">
-            {error}
-          </p>
-        </div>
-      )}
-
-      {ready && photos.length === 0 ? (
-        <p className="px-4 md:px-8 text-text-secondary text-[14px] leading-relaxed">
-          {GALLERY_MESSAGES.galleryEmpty}
-        </p>
-      ) : (
-        <PhotoGallerySection
-          photos={photos}
-          mode="gallery"
-          viewStorageId={token}
-          selectedIds={selected}
-          onToggleSelect={toggle}
-          selectionLimitReached={selectionLimitReached}
-          ready={ready}
-        />
-      )}
-
-      <div
-        className="fixed bottom-0 left-0 right-0 z-50 min-h-16 border-t border-border flex flex-wrap items-center justify-between gap-3 px-4 md:px-8 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
-        style={{
-          background: "rgba(10,10,10,0.95)",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
-        }}
-      >
-        <span
-          className={
-            overSelectionLimit
-              ? "text-[11px] uppercase tracking-label text-status-editing"
-              : "text-[11px] uppercase tracking-label text-text-primary"
-          }
-        >
-          {formatSelectionCount(selectedCount, maxSelection)}
-          {overSelectionLimit ? " · deselect extras to save" : ""}
-        </span>
-        <div className="flex items-center gap-3">
-          <Button
-            type="button"
-            variant="secondary"
-            className="!text-[11px] lg:hidden"
-            loading={syncing}
-            disabled={syncing || !ready}
-            onClick={syncGallery}
-          >
-            {syncing ? "Refreshing…" : "Refresh"}
-          </Button>
-          <Button
-            type="button"
-            loading={submitting}
-            onClick={submitSelection}
-            disabled={
-              submitting ||
-              syncing ||
-              !ready ||
-              selectedCount === 0 ||
-              total === 0 ||
+          <span
+            className={cn(
+              "text-center text-[11px] uppercase tracking-label sm:text-left",
               overSelectionLimit
-            }
+                ? "text-status-editing"
+                : "text-text-primary"
+            )}
           >
-            {submitting
-              ? "Saving…"
-              : isUpdateFlow
-                ? "Update selection"
-                : "Confirm selection"}
-          </Button>
+            {formatSelectionCount(selectedCount, maxSelection)}
+            {overSelectionLimit ? (
+              <span className="block sm:inline sm:before:content-['·'] sm:before:mx-1">
+                deselect extras to save
+              </span>
+            ) : null}
+          </span>
+          <div className="grid w-full grid-cols-[auto_1fr] gap-2 sm:flex sm:w-auto sm:items-center">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="lg:hidden !w-9 !min-w-9 !px-0 sm:!w-auto sm:!min-w-0 sm:!px-3 whitespace-nowrap"
+              loading={syncing}
+              disabled={syncing || !ready}
+              onClick={syncGallery}
+              aria-label={syncing ? "Refreshing gallery" : "Refresh gallery"}
+            >
+              {!syncing && (
+                <RefreshCw className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              )}
+              <span className="hidden sm:inline">
+                {syncing ? "Refreshing…" : "Refresh"}
+              </span>
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className="min-w-0"
+              loading={submitting}
+              onClick={submitSelection}
+              disabled={
+                submitting ||
+                syncing ||
+                !ready ||
+                selectedCount === 0 ||
+                total === 0 ||
+                overSelectionLimit
+              }
+            >
+              {submitting
+                ? "Saving…"
+                : isUpdateFlow
+                  ? "Update selection"
+                  : "Confirm selection"}
+            </Button>
+          </div>
         </div>
       </div>
     </main>

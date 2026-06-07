@@ -60,18 +60,18 @@ export function PhotoSortSelect({
   return (
     <div
       className={cn(
-        "inline-flex items-stretch rounded-sm border border-border overflow-hidden bg-bg-secondary",
+        "flex w-full min-w-0 items-stretch rounded-sm border border-border overflow-hidden bg-bg-secondary sm:inline-flex sm:w-auto",
         className
       )}
     >
-      <label className="inline-flex items-center gap-1.5 px-2.5 py-2 text-text-muted hover:text-text-secondary transition-colors">
+      <label className="inline-flex min-w-0 flex-1 items-center gap-1.5 px-2.5 py-2 text-text-muted hover:text-text-secondary transition-colors sm:flex-none">
         <ArrowUpDown className="h-4 w-4 shrink-0" strokeWidth={1.5} aria-hidden />
         <span className="sr-only">Sort photos by</span>
         <select
           value={mode}
           onChange={(e) => handleModeChange(e.target.value as PhotoSortMode)}
           aria-label="Sort photos by"
-          className="bg-transparent text-[11px] uppercase tracking-label text-inherit outline-none cursor-pointer max-w-[7.5rem] sm:max-w-none"
+          className="min-w-0 flex-1 bg-transparent text-[11px] uppercase tracking-label text-inherit outline-none cursor-pointer sm:flex-none sm:max-w-none"
         >
           {PHOTO_SORT_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>

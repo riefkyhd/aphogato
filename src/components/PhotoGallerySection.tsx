@@ -144,11 +144,7 @@ export function PhotoGallerySection({
     : "default";
 
   if (!ready) {
-    return (
-      <div className="text-text-muted text-[13px]">
-        Loading photos…
-      </div>
-    );
+    return null;
   }
 
   if (photos.length === 0) {
@@ -185,7 +181,7 @@ export function PhotoGallerySection({
       : "absolute inset-0 overflow-hidden invisible pointer-events-none";
   const listLayerClass = isGallery
     ? view === "list"
-      ? "flex flex-col min-h-[calc(100dvh-11.5rem)] max-h-[calc(100dvh-11.5rem)]"
+      ? "flex flex-col min-h-[280px] lg:min-h-[calc(100dvh-11.5rem)] lg:max-h-[calc(100dvh-11.5rem)]"
       : "hidden"
     : view === "list"
       ? "absolute inset-0 flex flex-col overflow-hidden"
@@ -196,7 +192,12 @@ export function PhotoGallerySection({
       {showMobileLightbox && onCloseManagePreview && (
         <ManagePhotoLightbox photo={previewPhoto} onClose={onCloseManagePreview} />
       )}
-      <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 mb-3">
+      <div
+        className={cn(
+          "mb-3 flex flex-wrap items-center gap-2 sm:gap-3",
+          showManageActions ? "justify-between" : "justify-end w-full"
+        )}
+      >
         <div className="hidden sm:flex flex-wrap items-center gap-2 min-w-0">
           {showManageActions && (
             <>
@@ -222,17 +223,25 @@ export function PhotoGallerySection({
             </>
           )}
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div
+          className={cn(
+            isGallery
+              ? "flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end"
+              : "flex shrink-0 flex-wrap items-center justify-end gap-2"
+          )}
+        >
           <PhotoSortSelect
             preference={sortPreference}
             onChange={setSortPreference}
             viewStorageId={viewStorageId}
           />
-          <PhotoFilterToggle
-            active={selectedFirst}
-            onChange={handleFilterChange}
-          />
-          <PhotoViewToggle view={view} onChange={handleViewChange} />
+          <div className="flex items-center justify-end gap-2">
+            <PhotoFilterToggle
+              active={selectedFirst}
+              onChange={handleFilterChange}
+            />
+            <PhotoViewToggle view={view} onChange={handleViewChange} />
+          </div>
         </div>
       </div>
       <div key={layoutKey} className={viewportClass}>

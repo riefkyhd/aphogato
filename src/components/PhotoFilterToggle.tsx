@@ -19,7 +19,7 @@ export function PhotoFilterToggle({
       aria-pressed={active}
       aria-label="Selected first"
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-sm border border-border px-2.5 py-2 text-[11px] uppercase tracking-label transition-colors",
+        "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-border text-[11px] uppercase tracking-label transition-colors sm:h-auto sm:w-auto sm:gap-1.5 sm:px-2.5 sm:py-2",
         active
           ? "bg-bg-elevated text-text-primary"
           : "bg-bg-secondary text-text-muted hover:text-text-secondary",
@@ -27,7 +27,7 @@ export function PhotoFilterToggle({
       )}
     >
       <ArrowUpDown className="h-4 w-4 shrink-0" strokeWidth={1.5} />
-      <span>Selected first</span>
+      <span className="hidden sm:inline">Selected first</span>
     </button>
   );
 }

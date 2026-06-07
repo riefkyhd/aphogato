@@ -10,7 +10,8 @@ export function useColumnCount(mode: "gallery" | "dashboard" = "dashboard") {
       if (mode === "gallery") {
         // Fewer columns → wider tiles, easier to judge portraits on client gallery.
         if (window.matchMedia("(min-width: 1024px)").matches) setCount(3);
-        else setCount(2);
+        else if (window.matchMedia("(min-width: 480px)").matches) setCount(2);
+        else setCount(1);
         return;
       }
       if (window.matchMedia("(min-width: 1024px)").matches) setCount(4);
