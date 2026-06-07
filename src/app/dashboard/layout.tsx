@@ -1,6 +1,5 @@
 import { DashboardTodayReminder } from "@/app/dashboard/DashboardTodayReminder";
 import { Navbar } from "@/components/Navbar";
-import { PendingNavProvider } from "@/components/navigation/PendingNavProvider";
 import { UserPreferencesProvider } from "@/components/preferences/UserPreferencesProvider";
 import { PrivacyLockProvider } from "@/components/privacy/PrivacyLockProvider";
 import { loadTodayEvents } from "@/lib/calendar/loadTodayEvents";
@@ -27,16 +26,14 @@ export default async function DashboardLayout({
   return (
     <UserPreferencesProvider initialPreferences={bootstrap?.preferences}>
       <PrivacyLockProvider initialPinEnabled={bootstrap?.pinEnabled}>
-        <PendingNavProvider>
-          <Navbar
-            isAuthenticated={Boolean(user)}
-            shootsToday={todayEvents.length}
-          />
-          <div className="pt-14 md:pt-[60px] flex flex-col min-h-[calc(100dvh-3.5rem)] md:min-h-[calc(100vh-60px)]">
-            <DashboardTodayReminder initialEvents={todayEvents} />
-            {children}
-          </div>
-        </PendingNavProvider>
+        <Navbar
+          isAuthenticated={Boolean(user)}
+          shootsToday={todayEvents.length}
+        />
+        <div className="pt-14 md:pt-[60px] flex flex-col min-h-[calc(100dvh-3.5rem)] md:min-h-[calc(100vh-60px)]">
+          <DashboardTodayReminder initialEvents={todayEvents} />
+          {children}
+        </div>
       </PrivacyLockProvider>
     </UserPreferencesProvider>
   );
