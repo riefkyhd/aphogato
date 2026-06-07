@@ -2,7 +2,7 @@
 
 import { ArrowLeft, FileDown, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DashboardMain } from "@/components/layout/DashboardShell";
 import { ClientEventTools } from "@/components/quotations/ClientEventTools";
@@ -35,7 +35,10 @@ import {
   type SavedQuotation,
   savedQuotationToDraft,
 } from "@/lib/quotations/db";
-import { exportQuotationPdf } from "@/lib/quotations/exportQuotationPdf";
+import {
+  exportQuotationPdf,
+  QUOTATION_PDF_CAPTURE_WIDTH_PX,
+} from "@/lib/quotations/exportQuotationPdf";
 import type {
   QuotationDeliverable,
   QuotationDraft,
@@ -78,6 +81,7 @@ export function QuotationClient({
   const [draftRevision, setDraftRevision] = useState(0);
   const [hydrated, setHydrated] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const pdfExportRef = useRef<HTMLDivElement>(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SavedQuotation | null>(null);
@@ -390,9 +394,15 @@ export function QuotationClient({
   }, [deleteTarget, savedId, startNewBaseDraft]);
 
   const handleExportPdf = useCallback(async () => {
+    const exportRoot = pdfExportRef.current;
+    if (!exportRoot) {
+      toast.error("Preview not ready for export");
+      return;
+    }
+
     setExporting(true);
     try {
-      await exportQuotationPdf(draft);
+      await exportQuotationPdf(draft, exportRoot);
       toast.success("Quotation PDF downloaded");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Export failed");
@@ -867,6 +877,16 @@ export function QuotationClient({
             Preview
           </p>
           <QuotationPreview draft={draft} />
+        </div>
+      </div>
+
+      <div
+        aria-hidden
+        className="fixed top-0 left-0 -z-50 opacity-0 pointer-events-none overflow-hidden"
+        style={{ width: QUOTATION_PDF_CAPTURE_WIDTH_PX }}
+      >
+        <div ref={pdfExportRef}>
+          <QuotationPreview draft={draft} exportMode />
         </div>
       </div>
     </DashboardMain>

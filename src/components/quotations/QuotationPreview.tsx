@@ -28,7 +28,14 @@ function MetaLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function QuotationPreview({ draft }: { draft: QuotationDraft }) {
+export function QuotationPreview({
+  draft,
+  exportMode = false,
+}: {
+  draft: QuotationDraft;
+  /** Fixed desktop layout for PDF capture (no responsive mobile cards). */
+  exportMode?: boolean;
+}) {
   const items = draft.lineItems.filter((i) => i.description.trim());
   const deliverables = draft.deliverables.filter((d) => d.description.trim());
   const total = quotationSubtotal(draft.lineItems);
@@ -41,7 +48,13 @@ export function QuotationPreview({ draft }: { draft: QuotationDraft }) {
     draft.eventDuration.trim();
 
   return (
-    <article className="quotation-document border border-neutral-200 bg-white text-neutral-900 shadow-sm rounded-sm overflow-hidden">
+    <article
+      className={
+        exportMode
+          ? "quotation-document border border-neutral-200 bg-white text-neutral-900 rounded-sm overflow-hidden"
+          : "quotation-document border border-neutral-200 bg-white text-neutral-900 shadow-sm rounded-sm overflow-hidden"
+      }
+    >
       <header className="border-b border-neutral-200 px-4 py-6 sm:px-8 sm:py-8">
         <div className="flex items-start justify-between gap-4 sm:gap-6">
           <div className="flex items-center gap-3 sm:gap-4 min-w-0">
@@ -50,7 +63,12 @@ export function QuotationPreview({ draft }: { draft: QuotationDraft }) {
               alt="Muhammad Hadid"
               width={48}
               height={48}
-              className="h-10 w-10 sm:h-12 sm:w-12 object-contain shrink-0"
+              priority={exportMode}
+              className={
+                exportMode
+                  ? "h-12 w-12 object-contain shrink-0"
+                  : "h-10 w-10 sm:h-12 sm:w-12 object-contain shrink-0"
+              }
             />
             <div className="min-w-0">
               <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-900">
@@ -146,7 +164,13 @@ export function QuotationPreview({ draft }: { draft: QuotationDraft }) {
           </p>
         ) : (
           <>
-            <div className="hidden sm:block overflow-x-auto -mx-1 px-1">
+            <div
+              className={
+                exportMode
+                  ? "block overflow-x-auto -mx-1 px-1"
+                  : "hidden sm:block overflow-x-auto -mx-1 px-1"
+              }
+            >
               <table className="w-full min-w-[520px] text-[13px]">
                 <thead>
                   <tr className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 border-b border-neutral-200">
@@ -180,7 +204,7 @@ export function QuotationPreview({ draft }: { draft: QuotationDraft }) {
               </table>
             </div>
 
-            <ul className="sm:hidden space-y-3">
+            <ul className={exportMode ? "hidden" : "sm:hidden space-y-3"}>
               {items.map((item) => (
                 <li
                   key={item.id}
@@ -218,8 +242,14 @@ export function QuotationPreview({ draft }: { draft: QuotationDraft }) {
             </ul>
 
             <div className="mt-6 pt-4 border-t border-neutral-200 space-y-4">
-              <div className="sm:flex sm:justify-end">
-                <div className="w-full sm:max-w-xs space-y-3 sm:text-right">
+              <div className={exportMode ? "flex justify-end" : "sm:flex sm:justify-end"}>
+                <div
+                  className={
+                    exportMode
+                      ? "w-full max-w-xs space-y-3 text-right"
+                      : "w-full sm:max-w-xs space-y-3 sm:text-right"
+                  }
+                >
                   <div>
                     <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-1">
                       Total
