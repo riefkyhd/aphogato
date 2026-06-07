@@ -1,17 +1,12 @@
-export const IMAGE_UPLOAD_ACCEPT =
-  "image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif";
+import {
+  ALLOWED_IMAGE_UPLOAD_TYPES,
+  IMAGE_UPLOAD_ACCEPT,
+} from "@/lib/imageUploadLimits";
 
-const ALLOWED_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-  "image/heic",
-  "image/heif",
-]);
+export { IMAGE_UPLOAD_ACCEPT };
 
 export function isImageUploadFile(file: File): boolean {
-  return ALLOWED_TYPES.has(file.type);
+  return ALLOWED_IMAGE_UPLOAD_TYPES.has(file.type);
 }
 
 export function filterImageUploadFiles(files: FileList | File[] | null): File[] {

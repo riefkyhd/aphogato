@@ -6,21 +6,15 @@ import {
   findDuplicateFilename,
   type ImageHashRow,
 } from "@/lib/images/duplicateDetection";
+import {
+  ALLOWED_IMAGE_UPLOAD_TYPES,
+  MAX_IMAGE_UPLOAD_BYTES,
+  MAX_IMAGE_UPLOAD_FILES_PER_REQUEST,
+} from "@/lib/imageUploadLimits";
 import { isAllowedImageBuffer } from "@/lib/security/imageBytes";
 import type { Photo } from "@/lib/types";
 
 export const runtime = "nodejs";
-
-const MAX_FILE_BYTES = 20 * 1024 * 1024;
-const MAX_FILES_PER_REQUEST = 40;
-const ALLOWED_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-  "image/heic",
-  "image/heif",
-]);
 
 export async function POST(
   request: Request,
@@ -45,9 +39,9 @@ export async function POST(
   if (entries.length === 0) {
     return NextResponse.json({ error: "No files provided" }, { status: 400 });
   }
-  if (entries.length > MAX_FILES_PER_REQUEST) {
+  if (entries.length > MAX_IMAGE_UPLOAD_FILES_PER_REQUEST) {
     return NextResponse.json(
-      { error: `Maximum ${MAX_FILES_PER_REQUEST} files per upload` },
+      { error: `Maximum ${MAX_IMAGE_UPLOAD_FILES_PER_REQUEST} files per upload` },
       { status: 400 }
     );
   }
@@ -67,11 +61,11 @@ export async function POST(
   const errors: string[] = [];
 
   for (const file of entries as File[]) {
-    if (!ALLOWED_TYPES.has(file.type)) {
+    if (!ALLOWED_IMAGE_UPLOAD_TYPES.has(file.type)) {
       errors.push(`${file.name}: unsupported file type`);
       continue;
     }
-    if (file.size > MAX_FILE_BYTES) {
+    if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
       errors.push(`${file.name}: file too large (max 20MB)`);
       continue;
     }

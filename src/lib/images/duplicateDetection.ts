@@ -6,6 +6,9 @@ import {
   isPerceptualDuplicate,
 } from "@/lib/images/perceptualHash";
 
+/** When false, uploads are deduped by filename only (burst/similar shots are allowed). */
+export const PERCEPTUAL_DUPLICATE_CHECK_ENABLED = false;
+
 export type ImageHashRow = {
   filename: string;
   perceptual_hash: string | null;
@@ -15,6 +18,10 @@ export function findDuplicateFilename(
   hash: string,
   existing: ImageHashRow[]
 ): string | null {
+  if (!PERCEPTUAL_DUPLICATE_CHECK_ENABLED) {
+    return null;
+  }
+
   for (const row of existing) {
     if (!row.perceptual_hash) continue;
     if (isPerceptualDuplicate(hash, row.perceptual_hash)) {
@@ -27,6 +34,10 @@ export function findDuplicateFilename(
 export async function computeHashFromBuffer(
   buffer: Buffer
 ): Promise<string | null> {
+  if (!PERCEPTUAL_DUPLICATE_CHECK_ENABLED) {
+    return null;
+  }
+
   try {
     return await computePerceptualHash(buffer);
   } catch {
@@ -37,6 +48,10 @@ export async function computeHashFromBuffer(
 export async function computeHashFromCloudinaryUrl(
   url: string
 ): Promise<string | null> {
+  if (!PERCEPTUAL_DUPLICATE_CHECK_ENABLED) {
+    return null;
+  }
+
   try {
     const buffer = await fetchImageBufferForHashing(url);
     return await computePerceptualHash(buffer);
@@ -53,6 +68,10 @@ export async function backfillMissingHashes<
   update: (id: string, hash: string) => Promise<void>,
   limit = 12
 ): Promise<T[]> {
+  if (!PERCEPTUAL_DUPLICATE_CHECK_ENABLED) {
+    return rows;
+  }
+
   const updated = [...rows];
   let processed = 0;
 

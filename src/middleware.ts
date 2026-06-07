@@ -45,7 +45,9 @@ export async function middleware(request: NextRequest) {
     if (limited) return limited;
   }
 
-  const uploadMatch = pathname.match(/^\/api\/projects\/[^/]+\/upload$/);
+  const uploadMatch = pathname.match(
+    /^\/api\/projects\/[^/]+\/(?:upload(?:\/sign|\/complete)?|references\/(?:sign|complete))$/
+  );
   if (uploadMatch && request.method === "POST") {
     const limited = rateLimitedResponse(request, "project-upload", 40, 60_000);
     if (limited) return limited;
@@ -110,5 +112,9 @@ export const config = {
     "/login",
     "/api/gallery/confirm",
     "/api/projects/:path*/upload",
+    "/api/projects/:path*/upload/sign",
+    "/api/projects/:path*/upload/complete",
+    "/api/projects/:path*/references/sign",
+    "/api/projects/:path*/references/complete",
   ],
 };

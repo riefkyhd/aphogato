@@ -6,6 +6,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { uploadProjectReferenceViaCloudinary } from "@/lib/directCloudinaryClientUpload";
+import { filterImageUploadFiles } from "@/lib/imageUploadFiles";
 import { exportMoodboardPdf } from "@/lib/references/exportMoodboardPdf";
 import type { ProjectReference } from "@/lib/types";
 
@@ -45,32 +47,46 @@ export function ProjectReferencesSection({
   }, [load]);
 
   async function handleUpload(files: FileList | null) {
-    if (!files?.length) return;
+    const entries = filterImageUploadFiles(files);
+    if (entries.length === 0) {
+      toast.error("No supported image files to upload");
+      return;
+    }
+
     setUploading(true);
     try {
-      const formData = new FormData();
-      for (const file of Array.from(files)) {
-        formData.append("files", file);
+      let uploaded = 0;
+      const errors: string[] = [];
+      let latestReferences: ProjectReference[] | null = null;
+
+      for (const file of entries) {
+        const result = await uploadProjectReferenceViaCloudinary(
+          projectId,
+          file
+        );
+        uploaded += result.uploaded;
+        if (result.errors.length > 0) {
+          errors.push(...result.errors);
+        }
+        if (result.references.length > 0) {
+          latestReferences = result.references;
+        }
       }
-      const res = await fetch(`/api/projects/${projectId}/references`, {
-        method: "POST",
-        body: formData,
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Upload failed");
-      if (Array.isArray(json.errors) && json.errors.length > 0) {
-        toast.warning(json.errors.join("; "));
+
+      if (errors.length > 0) {
+        toast.warning(errors.join("; "));
       }
-      if (Array.isArray(json.references)) {
-        setReferences(json.references as ProjectReference[]);
-      } else {
+      if (latestReferences) {
+        setReferences(latestReferences);
+      } else if (uploaded > 0) {
         await load();
       }
-      const count = json.uploaded ?? 0;
-      if (count > 0) {
+      if (uploaded > 0) {
         toast.success(
-          `Added ${count} reference${count === 1 ? "" : "s"} to moodboard`
+          `Added ${uploaded} reference${uploaded === 1 ? "" : "s"} to moodboard`
         );
+      } else if (errors.length === 0) {
+        toast.error("Upload failed");
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
