@@ -174,12 +174,19 @@ export async function listFolder(
     throw new Error("Folder path is required");
   }
 
-  const byPrefix = await listByPublicIdPrefix(normalized, maxResources);
-  if (byPrefix.length > 0) {
-    return byPrefix;
+  // Merge prefix + asset_folder results. Using only one source misses assets when
+  // uploads mix public_id paths with Media Library asset_folder layout.
+  const [byPrefix, byFolder] = await Promise.all([
+    listByPublicIdPrefix(normalized, maxResources),
+    listByAssetFolder(normalized, maxResources),
+  ]);
+
+  const merged = new Map<string, CloudinaryResource>();
+  for (const resource of [...byPrefix, ...byFolder]) {
+    merged.set(resource.public_id, resource);
   }
 
-  return listByAssetFolder(normalized, maxResources);
+  return Array.from(merged.values()).slice(0, maxResources);
 }
 
 export function previewUrl(publicId: string, width = 600, quality = 70) {

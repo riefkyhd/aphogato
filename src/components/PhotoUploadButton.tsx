@@ -35,13 +35,11 @@ export function PhotoUploadButton({
       <Button
         type="button"
         size={size}
-        loading={uploading}
-        disabled={uploading}
         className={cn(className)}
         onClick={() => inputRef.current?.click()}
       >
-        {!uploading && <Upload className="h-3.5 w-3.5 shrink-0" aria-hidden />}
-        {uploading ? "Uploading…" : "Upload photos"}
+        <Upload className="h-3.5 w-3.5 shrink-0" aria-hidden />
+        {uploading ? "Add more photos" : "Upload photos"}
       </Button>
     </>
   );

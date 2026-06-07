@@ -50,6 +50,9 @@ export function UploadProgressDock({
           >
             <span className="text-[13px] font-medium uppercase tracking-label text-text-primary truncate">
               Uploading {progress.currentIndex} of {progress.total}
+              {progress.queuedBatches
+                ? ` · +${progress.queuedBatches} batch${progress.queuedBatches === 1 ? "" : "es"}`
+                : ""}
             </span>
             <span className="shrink-0 text-[13px] tabular-nums text-text-secondary">
               {overall}%

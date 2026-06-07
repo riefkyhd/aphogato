@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/api/requireAuth";
-import { listFolder } from "@/lib/cloudinary";
+import { listFolder, publicIdFromUrl } from "@/lib/cloudinary";
 import {
   backfillMissingHashes,
   computeHashFromCloudinaryUrl,
@@ -68,7 +68,18 @@ export async function POST(
   );
 
   const cloudinaryFilenames = new Set(resources.map((r) => r.filename));
+  const cloudinaryFilenamesLower = new Set(
+    resources.map((r) => r.filename.toLowerCase())
+  );
+  const cloudinaryPublicIds = new Set(resources.map((r) => r.public_id));
   const existingByFilename = new Map(existing.map((p) => [p.filename, p.id]));
+
+  function photoExistsInCloudinary(photo: ExistingPhoto): boolean {
+    if (cloudinaryFilenames.has(photo.filename)) return true;
+    if (cloudinaryFilenamesLower.has(photo.filename.toLowerCase())) return true;
+    const publicId = publicIdFromUrl(photo.cloudinary_url);
+    return Boolean(publicId && cloudinaryPublicIds.has(publicId));
+  }
   const hashRows: ImageHashRow[] = existing.map((p) => ({
     filename: p.filename,
     perceptual_hash: p.perceptual_hash,
@@ -97,7 +108,7 @@ export async function POST(
   }
 
   const idsToRemove = existing
-    .filter((p) => !cloudinaryFilenames.has(p.filename))
+    .filter((p) => !photoExistsInCloudinary(p))
     .map((p) => p.id);
 
   if (idsToRemove.length > 0) {

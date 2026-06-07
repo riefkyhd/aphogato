@@ -8,6 +8,7 @@ import { PhotoUploadButton } from "@/components/PhotoUploadButton";
 import type { ProjectPhotoUpload } from "@/hooks/useProjectPhotoUpload";
 import type { Photo } from "@/lib/types";
 import type { ProjectStatus } from "@/components/StatusDot";
+import { cn } from "@/lib/utils";
 
 const NEXT_STATUS: Record<ProjectStatus, ProjectStatus | null> = {
   pending: null,
@@ -76,6 +77,8 @@ function countSelectionChanges(
   }
   return { newlySelected, newlyDeselected };
 }
+
+const actionBtn = "shrink-0 whitespace-nowrap";
 
 export function ProjectActions({
   projectId,
@@ -199,96 +202,158 @@ export function ProjectActions({
 
   const nextStatus = NEXT_STATUS[status];
 
-  return (
-    <div className="w-full lg:w-auto lg:max-w-md shrink-0">
-      <div className="flex flex-wrap gap-2">
-        <PhotoUploadButton upload={upload} size="sm" className="shrink-0" />
-        <Button size="sm" variant="secondary" onClick={copyLink} className="shrink-0">
-          Copy link
-        </Button>
-        {nextStatus && (
-          <Button
-            size="sm"
-            onClick={advanceStatus}
-            loading={statusBusy}
-            disabled={statusBusy}
-            className="shrink-0"
-          >
-            {statusBusy ? "Updating…" : STATUS_LABEL[status]}
-          </Button>
+  const secondaryActions = (
+    <>
+      <Button
+        size="sm"
+        variant="secondary"
+        onClick={syncGallery}
+        loading={syncing}
+        disabled={syncing}
+        className={actionBtn}
+      >
+        {syncing ? "Syncing…" : "Sync gallery"}
+      </Button>
+      <Button
+        size="sm"
+        variant="secondary"
+        onClick={downloadList}
+        disabled={selectedFilenames.length === 0}
+        className={actionBtn}
+      >
+        Download list
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        variant="secondary"
+        onClick={onDeleteProject}
+        className={cn(
+          actionBtn,
+          "!text-status-editing !border-status-editing/40 hover:!border-status-editing"
         )}
-        <Button
-          size="sm"
-          variant="secondary"
-          onClick={() => setMoreOpen((o) => !o)}
-          className="shrink-0 lg:hidden"
-          aria-expanded={moreOpen}
-        >
-          {moreOpen ? "Less" : "More"}
-        </Button>
-      </div>
+      >
+        Delete project
+      </Button>
+    </>
+  );
 
-      <div className="hidden lg:flex flex-wrap gap-2 mt-2 justify-end">
-        <Button
-          size="sm"
-          variant="secondary"
-          onClick={syncGallery}
-          loading={syncing}
-          disabled={syncing}
-        >
-          {syncing ? "Syncing…" : "Sync gallery"}
-        </Button>
-        <Button
-          size="sm"
-          variant="secondary"
-          onClick={downloadList}
-          disabled={selectedFilenames.length === 0}
-        >
-          Download list
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="secondary"
-          onClick={onDeleteProject}
-          className="!text-status-editing !border-status-editing/40 hover:!border-status-editing"
-        >
-          Delete project
-        </Button>
-      </div>
-
-      {moreOpen && (
-        <div className="flex flex-wrap gap-2 mt-2 lg:hidden">
+  return (
+    <div className="w-full shrink-0 lg:w-auto">
+      {/* Desktop: grouped action panel */}
+      <div className="hidden lg:block rounded-sm border border-border bg-bg-secondary/30 p-3">
+        <div className="flex flex-nowrap items-center justify-end gap-2">
+          <PhotoUploadButton upload={upload} size="sm" className={actionBtn} />
           <Button
             size="sm"
             variant="secondary"
-            onClick={syncGallery}
-            loading={syncing}
-            disabled={syncing}
-            className="flex-1 min-w-[calc(50%-0.25rem)]"
+            onClick={copyLink}
+            className={actionBtn}
           >
-            {syncing ? "Syncing…" : "Sync gallery"}
+            Copy link
           </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={downloadList}
-            disabled={selectedFilenames.length === 0}
-            className="flex-1 min-w-[calc(50%-0.25rem)]"
-          >
-            Download list
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            onClick={onDeleteProject}
-            className="w-full !text-status-editing !border-status-editing/40 hover:!border-status-editing"
-          >
-            Delete project
-          </Button>
+          {nextStatus && (
+            <Button
+              size="sm"
+              onClick={advanceStatus}
+              loading={statusBusy}
+              disabled={statusBusy}
+              className={actionBtn}
+            >
+              {statusBusy ? "Updating…" : STATUS_LABEL[status]}
+            </Button>
+          )}
         </div>
-      )}
+        <div
+          className="mt-2.5 flex flex-nowrap items-center justify-end gap-2 border-t border-border/80 pt-2.5"
+          role="toolbar"
+          aria-label="Gallery tools"
+        >
+          {secondaryActions}
+        </div>
+      </div>
+
+      {/* Mobile / tablet */}
+      <div className="lg:hidden rounded-sm border border-border bg-bg-secondary/30 p-3 space-y-2">
+        <PhotoUploadButton upload={upload} size="sm" className="w-full" />
+        <div className="grid grid-cols-2 gap-2">
+          <Button size="sm" variant="secondary" onClick={copyLink}>
+            Copy link
+          </Button>
+          {nextStatus ? (
+            <Button
+              size="sm"
+              onClick={advanceStatus}
+              loading={statusBusy}
+              disabled={statusBusy}
+            >
+              {statusBusy ? "Updating…" : STATUS_LABEL[status]}
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setMoreOpen((o) => !o)}
+              aria-expanded={moreOpen}
+            >
+              {moreOpen ? "Less" : "More"}
+            </Button>
+          )}
+        </div>
+
+        {(moreOpen || nextStatus) && (
+          <>
+            {nextStatus && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setMoreOpen((o) => !o)}
+                className="w-full"
+                aria-expanded={moreOpen}
+              >
+                {moreOpen ? "Hide gallery tools" : "Gallery tools"}
+              </Button>
+            )}
+            {(moreOpen || !nextStatus) && moreOpen && (
+              <div
+                className="grid grid-cols-2 gap-2 border-t border-border/80 pt-2"
+                role="toolbar"
+                aria-label="Gallery tools"
+              >
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={syncGallery}
+                  loading={syncing}
+                  disabled={syncing}
+                >
+                  {syncing ? "Syncing…" : "Sync gallery"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={downloadList}
+                  disabled={selectedFilenames.length === 0}
+                >
+                  Download list
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={onDeleteProject}
+                  className={cn(
+                    "col-span-2",
+                    "!text-status-editing !border-status-editing/40 hover:!border-status-editing"
+                  )}
+                >
+                  Delete project
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

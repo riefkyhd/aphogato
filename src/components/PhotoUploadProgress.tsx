@@ -8,6 +8,7 @@ export type UploadProgressState = {
   fileName: string;
   filePercent: number;
   preparing?: boolean;
+  queuedBatches?: number;
 };
 
 export function overallUploadPercent(state: UploadProgressState): number {

@@ -86,7 +86,7 @@ export function ProjectDetailClient({
   );
 
   const { isDragging, draggedFileCount } = usePhotoDropZone({
-    enabled: !upload.uploading,
+    enabled: true,
     onDropFiles: handleDropFiles,
   });
 
@@ -235,7 +235,7 @@ export function ProjectDetailClient({
         </BackNavLink>
 
         <header className="mb-8">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
             <div className="min-w-0 flex-1">
               <h1 className="text-2xl sm:text-3xl font-light tracking-[0.05em] uppercase break-words">
                 {projectState.name}

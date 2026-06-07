@@ -1,4 +1,5 @@
 import type { Photo, ProjectReference } from "@/lib/types";
+import { CLOUDINARY_MAX_UPLOAD_BYTES } from "@/lib/imageUploadLimits";
 import { prepareImageForUpload } from "@/lib/prepareImageForUpload";
 import { UploadCancelledError } from "@/lib/uploadCancelled";
 
@@ -209,7 +210,9 @@ async function uploadViaSignedCloudinary<T>(
   signal?: AbortSignal,
   onPreparing?: () => void
 ): Promise<T> {
-  onPreparing?.();
+  if (file.size > CLOUDINARY_MAX_UPLOAD_BYTES) {
+    onPreparing?.();
+  }
   const prepared = await prepareImageForUpload(file, signal);
   const signed = await requestUploadSign(signUrl, prepared, signal);
   onProgress(0);

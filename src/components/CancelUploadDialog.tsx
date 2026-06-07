@@ -55,7 +55,10 @@ export function CancelUploadDialog({
       </p>
       <p className="mt-3 text-[13px] text-text-muted">
         Now uploading {progress.currentIndex} of {progress.total}
-        {remaining > 0 ? ` · ${remaining} left in queue` : ""} · {overall}%
+        {remaining > 0 ? ` · ${remaining} left in this batch` : ""} · {overall}%
+        {progress.queuedBatches
+          ? ` · ${progress.queuedBatches} more batch${progress.queuedBatches === 1 ? "" : "es"} will upload after`
+          : ""}
       </p>
       <div className="mt-6 flex flex-col-reverse sm:flex-row sm:flex-wrap sm:justify-end gap-3">
         <Button
