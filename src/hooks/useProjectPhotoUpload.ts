@@ -10,7 +10,8 @@ import type { Photo } from "@/lib/types";
 
 export function useProjectPhotoUpload(
   projectId: string,
-  onUploaded: (photos: Photo[]) => void
+  onPhotosUpdated: (photos: Photo[]) => void,
+  onBatchComplete?: () => void
 ) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState<UploadProgressState | null>(null);
@@ -32,10 +33,11 @@ export function useProjectPhotoUpload(
       });
 
       try {
-        const { uploaded, errors, photos } = await uploadProjectPhotos(
+        const { uploaded, errors } = await uploadProjectPhotos(
           projectId,
           files,
-          setProgress
+          setProgress,
+          (photos) => onPhotosUpdated(sortPhotosNewestFirst(photos))
         );
 
         if (uploaded > 0) {
@@ -53,17 +55,15 @@ export function useProjectPhotoUpload(
         if (uploaded === 0 && errors.length === 0) {
           toast.error("Upload failed");
         }
-        if (photos.length > 0) {
-          onUploaded(sortPhotosNewestFirst(photos));
-        }
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Upload failed");
       } finally {
         setUploading(false);
         setProgress(null);
+        onBatchComplete?.();
       }
     },
-    [projectId, onUploaded]
+    [projectId, onPhotosUpdated, onBatchComplete]
   );
 
   return { uploading, progress, uploadFiles };

@@ -14,6 +14,8 @@ export type UploadProgressCallback = (progress: {
   filePercent: number;
 }) => void;
 
+export type UploadPhotosUpdatedCallback = (photos: Photo[]) => void;
+
 /** Upload one file directly to Cloudinary, then register it in the project. */
 export function uploadProjectPhoto(
   projectId: string,
@@ -27,7 +29,8 @@ export function uploadProjectPhoto(
 export async function uploadProjectPhotos(
   projectId: string,
   files: File[],
-  onProgress: UploadProgressCallback
+  onProgress: UploadProgressCallback,
+  onPhotosUpdated?: UploadPhotosUpdatedCallback
 ): Promise<UploadBatchResult> {
   const errors: string[] = [];
   let uploaded = 0;
@@ -57,6 +60,9 @@ export async function uploadProjectPhotos(
 
     if (result.photos.length > 0) {
       lastPhotos = result.photos;
+      if (result.uploaded > 0) {
+        onPhotosUpdated?.(result.photos);
+      }
     }
     uploaded += result.uploaded ?? 0;
     if (result.errors?.length) {

@@ -49,17 +49,29 @@ export function ProjectDetailClient({
   const [deletingProject, setDeletingProject] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
 
-  const setPhotosSorted = useCallback(
+  const setPhotosSorted = useCallback((next: Photo[]) => {
+    setPhotos(sortPhotosNewestFirst(next));
+  }, []);
+
+  const refreshProjectPhotos = useCallback(() => {
+    router.refresh();
+  }, [router]);
+
+  const applyServerPhotos = useCallback(
     (next: Photo[]) => {
-      setPhotos(sortPhotosNewestFirst(next));
-      router.refresh();
+      setPhotosSorted(next);
+      refreshProjectPhotos();
     },
-    [router]
+    [setPhotosSorted, refreshProjectPhotos]
   );
 
   useSyncServerPhotos(initialPhotos, setPhotos);
 
-  const upload = useProjectPhotoUpload(projectState.id, setPhotosSorted);
+  const upload = useProjectPhotoUpload(
+    projectState.id,
+    setPhotosSorted,
+    refreshProjectPhotos
+  );
 
   const photoIds = useMemo(() => photos.map((p) => p.id), [photos]);
   const manage = usePhotoManageSelection(photoIds);
@@ -126,7 +138,7 @@ export function ProjectDetailClient({
         `Deleted ${deleted} photo${deleted === 1 ? "" : "s"}`
       );
       if (Array.isArray(json.photos)) {
-        setPhotosSorted(json.photos as Photo[]);
+        applyServerPhotos(json.photos as Photo[]);
       }
       manageActivation.clearAll();
       setDeleteDialogOpen(false);
@@ -233,7 +245,7 @@ export function ProjectDetailClient({
               galleryToken={projectState.gallery_token}
               status={projectState.status as ProjectStatus}
               photos={photos}
-              onPhotosSynced={setPhotosSorted}
+              onPhotosSynced={applyServerPhotos}
               onDeleteProject={() => setDeleteProjectOpen(true)}
               upload={upload}
             />
