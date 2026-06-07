@@ -73,7 +73,7 @@ export function ExpenseQuickAdd({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-2">
-      <div className="grid grid-cols-[1fr_minmax(6.5rem,8rem)_auto] gap-2 items-end">
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_minmax(6.5rem,8rem)_auto] gap-2 items-end">
         <div className="min-w-0">
           <Label htmlFor="quick-expense-category" className="sr-only">
             Category

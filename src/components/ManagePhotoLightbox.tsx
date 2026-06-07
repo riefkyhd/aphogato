@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Loader2, X } from "lucide-react";
+import { IconButton } from "@/components/ui/IconButton";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { previewLargeUrl } from "@/lib/cloudinaryUrls";
 import type { Photo } from "@/lib/types";
 
@@ -36,18 +38,15 @@ export function ManagePhotoLightbox({
       aria-modal="true"
       aria-label={`Preview ${photo.filename}`}
     >
-      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 py-3 safe-area-inset-top">
+      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3">
         <p className="min-w-0 truncate text-[13px] text-text-primary">
           {photo.filename}
         </p>
-        <button
-          type="button"
-          onClick={onClose}
-          className="shrink-0 p-1 text-text-muted hover:text-text-primary"
-          aria-label="Close preview"
-        >
-          <X className="h-5 w-5" />
-        </button>
+        <Tooltip label="Close preview">
+          <IconButton onClick={onClose} label="Close preview">
+            <X className="h-5 w-5" aria-hidden />
+          </IconButton>
+        </Tooltip>
       </div>
       <div className="relative flex flex-1 items-center justify-center p-4 min-h-0">
         {loading && (

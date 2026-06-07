@@ -1,0 +1,56 @@
+---
+description: UI interaction patterns — tooltips, icon buttons, touch targets
+globs: "**/*.tsx"
+alwaysApply: false
+---
+
+# UI interaction patterns
+
+## Icon-only actions need tooltips
+
+Every icon-only control (toolbar, list row, archive) must have:
+
+1. **`Tooltip`** with a short uppercase label (matches existing tooltips).
+2. **`aria-label`** on the button — use `IconButton` which sets it from `label`.
+
+```tsx
+// ✅ GOOD — ClientsClient, PricingClient, QuotationArchive
+<Tooltip label="Create revision">
+  <IconButton onClick={...} label="Create revision for MH-202606-0001">
+    <GitBranchPlus className="h-4 w-4" aria-hidden />
+  </IconButton>
+</Tooltip>
+
+// ❌ BAD — icon button with only aria-label, no Tooltip
+<button aria-label="Delete"><Trash2 /></button>
+```
+
+`Tooltip` is disabled on touch devices; `aria-label` remains required for accessibility.
+
+## When to use what
+
+| Control | Component |
+|---------|-----------|
+| Row / list icon action | `IconButton` + `Tooltip` |
+| Toolbar text+icon | `Button` + `Tooltip` |
+| Destructive action | confirm dialog + `hover:text-status-editing` on delete icon |
+
+## Touch & layout
+
+- Minimum touch target: **40×40** (`IconButton` = `h-10 w-10`).
+- Stop propagation on nested row buttons (`e.stopPropagation()`).
+- Modals: `ModalShell` + `useBodyScrollLock`; safe-area utilities on mobile.
+
+## Already covered elsewhere
+
+- Text buttons (Edit, Delete, Copy link) — no tooltip needed.
+- Photo grid cells, modal backdrop dismiss — `aria-label` only.
+- Segmented controls — group `aria-label` + visible segment text.
+
+## Checklist for new UI
+
+- [ ] Icon-only? → `Tooltip` + `IconButton`
+- [ ] Toolbar icon or icon+text? → `Tooltip` + `Button`
+- [ ] Delete / irreversible? → confirmation dialog
+- [ ] Loading state on async actions
+- [ ] Mobile: test narrow viewport and safe areas

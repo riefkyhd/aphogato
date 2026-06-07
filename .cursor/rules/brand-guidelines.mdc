@@ -1,0 +1,30 @@
+---
+description: Muhammad Hadid / aphogato brand and client-document guidelines
+alwaysApply: true
+---
+
+# Brand guidelines
+
+## Product identity
+
+- **Brand**: Muhammad Hadid Photography — editorial, minimal, high-end.
+- **App**: aphogato — internal admin (galleries, clients, calendar, finance, quotations).
+
+## Admin UI (dashboard)
+
+- Dark theme: CSS vars in `globals.css` (`--bg-primary`, `--text-secondary`, etc.).
+- Headings & labels: uppercase, wide letter-spacing (`tracking-[0.1em]`, `.label-text`).
+- Buttons: `.btn-primary` / `.btn-secondary` or shared `Button` — 2px radius, uppercase 11–12px.
+- Spacing: restrained; borders `border-border`; hover via opacity or `bg-bg-primary/40`.
+
+## Client-facing documents (quotation PDF / preview)
+
+- **Light theme only** — white background, `neutral-*` text, thin borders.
+- Header: logo + “Muhammad Hadid / Photography” + quote number.
+- Tone: plain language (Indonesian OK for WhatsApp templates); avoid corporate legalese.
+- Footer: brand stamp (`Indonesia · Available worldwide` + `muhammad-hadid.com`), not payment details.
+
+## Copy & templates
+
+- WhatsApp client template lives in `clientEventTemplate.ts` — keep greeting casual (“Hai kak!”).
+- Terms: short, human-readable; DP 50% non-refundable is standard default.

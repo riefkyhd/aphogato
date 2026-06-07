@@ -5,10 +5,12 @@ import {
   ArrowLeft,
   ArrowUp,
   FileDown,
+  FileText,
   Pencil,
   Plus,
   Trash2,
 } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { DashboardMain } from "@/components/layout/DashboardShell";
@@ -215,6 +217,18 @@ export function PricingClient({
             </p>
           </div>
           <PageToolbarActions>
+            <Tooltip label="Create client quotation">
+              <Link
+                href="/dashboard/quotations"
+                className={cn(
+                  "btn-secondary !text-[11px] !min-h-9 !px-3 !py-2 inline-flex items-center justify-center gap-1.5",
+                  toolbarButtonClass
+                )}
+              >
+                <FileText className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                Quotation
+              </Link>
+            </Tooltip>
             <Tooltip label="Export as CSV">
               <Button
                 type="button"

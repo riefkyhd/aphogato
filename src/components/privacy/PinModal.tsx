@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { FormActions } from "@/components/ui/FormActions";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { ModalShell } from "@/components/ui/ModalShell";
 import { PIN_MAX_LEN } from "@/lib/privacy/constants";
 
 export function PinModal({
@@ -40,78 +41,69 @@ export function PinModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, loading, onClose]);
 
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-[120] flex items-center justify-center p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="pin-modal-title"
+    <ModalShell
+      open={open}
+      onClose={() => !loading && onClose()}
+      titleId="pin-modal-title"
+      zClassName="z-[120]"
+      maxWidthClassName="max-w-sm"
     >
-      <button
-        type="button"
-        className="absolute inset-0 bg-bg-primary/80 backdrop-blur-sm"
-        aria-label="Close"
-        onClick={() => !loading && onClose()}
-      />
-      <div className="relative w-full max-w-sm border border-border bg-bg-elevated p-6 shadow-lg">
-        <h2
-          id="pin-modal-title"
-          className="text-lg font-light tracking-[0.05em] uppercase text-text-primary"
-        >
-          {title}
-        </h2>
-        <p className="mt-2 text-[13px] text-text-secondary leading-relaxed">
-          {description}
-        </p>
-        <form
-          className="mt-5 space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (pin.trim()) void onSubmit(pin.trim());
-          }}
-        >
-          <div>
-            <Label htmlFor="privacy-pin-input">PIN</Label>
-            <Input
-              ref={inputRef}
-              id="privacy-pin-input"
-              type="password"
-              inputMode="numeric"
-              autoComplete="off"
-              maxLength={PIN_MAX_LEN}
-              value={pin}
-              disabled={loading}
-              placeholder="••••"
-              className="tracking-[0.3em] text-center"
-              onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
-            />
-          </div>
-          {error ? (
-            <p className="text-[12px] text-status-editing" role="alert">
-              {error}
-            </p>
-          ) : null}
-          <FormActions className="sm:flex-row sm:[&_button]:flex-1">
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={loading}
-              onClick={onClose}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              loading={loading}
-              disabled={loading || pin.length < 4}
-            >
-              Unlock
-            </Button>
-          </FormActions>
-        </form>
-      </div>
-    </div>
+      <h2
+        id="pin-modal-title"
+        className="text-lg font-light tracking-[0.05em] uppercase text-text-primary"
+      >
+        {title}
+      </h2>
+      <p className="mt-2 text-[13px] text-text-secondary leading-relaxed">
+        {description}
+      </p>
+      <form
+        className="mt-5 space-y-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (pin.trim()) void onSubmit(pin.trim());
+        }}
+      >
+        <div>
+          <Label htmlFor="privacy-pin-input">PIN</Label>
+          <Input
+            ref={inputRef}
+            id="privacy-pin-input"
+            type="password"
+            inputMode="numeric"
+            autoComplete="off"
+            maxLength={PIN_MAX_LEN}
+            value={pin}
+            disabled={loading}
+            placeholder="••••"
+            className="tracking-[0.3em] text-center"
+            onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+          />
+        </div>
+        {error ? (
+          <p className="text-[12px] text-status-editing" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <FormActions className="sm:flex-row sm:[&_button]:flex-1">
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={loading}
+            onClick={onClose}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            loading={loading}
+            disabled={loading || pin.length < 4}
+          >
+            Unlock
+          </Button>
+        </FormActions>
+      </form>
+    </ModalShell>
   );
 }

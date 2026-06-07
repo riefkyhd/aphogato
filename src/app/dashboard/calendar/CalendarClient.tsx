@@ -384,14 +384,16 @@ export function CalendarClient({
           Calendar
         </h1>
         <PageToolbarActions>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className={toolbarButtonClass}
-            loading={exporting}
-            disabled={exporting}
-            onClick={() => {
+          <Tooltip label="Export schedule as PDF">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className={toolbarButtonClass}
+              loading={exporting}
+              disabled={exporting}
+              aria-label="Export schedule as PDF"
+              onClick={() => {
               if (exportEvents.length === 0) {
                 toast.error("No events to export for this view");
                 return;
@@ -414,39 +416,49 @@ export function CalendarClient({
                   )
                 )
                 .finally(() => setExporting(false));
-            }}
-          >
-            <Download className="h-3.5 w-3.5 mr-1.5 inline" aria-hidden />
-            Export PDF
-          </Button>
+              }}
+            >
+              <Download className="h-3.5 w-3.5 mr-1.5 inline" aria-hidden />
+              Export PDF
+            </Button>
+          </Tooltip>
           {isGoogleConnected ? (
+            <Tooltip label="Sync all events to Google Calendar">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                loading={syncing}
+                className={toolbarButtonClass}
+                aria-label="Sync all events to Google Calendar"
+                onClick={handleGlobalSync}
+              >
+                Sync all
+                {unsyncedCount > 0 ? ` (${unsyncedCount})` : ""}
+              </Button>
+            </Tooltip>
+          ) : (
+            <Tooltip label="Connect Google Calendar in settings">
+              <Link
+                href="/dashboard/settings"
+                className={cn("btn-secondary !text-[11px] !min-h-9 !px-3 !py-2", toolbarButtonClass)}
+                aria-label="Connect Google Calendar in settings"
+              >
+                Connect Google
+              </Link>
+            </Tooltip>
+          )}
+          <Tooltip label="Create new calendar event">
             <Button
               type="button"
-              variant="secondary"
               size="sm"
-              loading={syncing}
+              onClick={() => openNewEvent()}
               className={toolbarButtonClass}
-              onClick={handleGlobalSync}
+              aria-label="Create new calendar event"
             >
-              Sync all
-              {unsyncedCount > 0 ? ` (${unsyncedCount})` : ""}
+              New event
             </Button>
-          ) : (
-            <Link
-              href="/dashboard/settings"
-              className={cn("btn-secondary !text-[11px] !min-h-9 !px-3 !py-2", toolbarButtonClass)}
-            >
-              Connect Google
-            </Link>
-          )}
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => openNewEvent()}
-            className={toolbarButtonClass}
-          >
-            New event
-          </Button>
+          </Tooltip>
         </PageToolbarActions>
       </div>
 
@@ -483,7 +495,7 @@ export function CalendarClient({
               <ChevronLeft className="h-5 w-5" />
             </button>
           </Tooltip>
-          <span className="text-[13px] uppercase tracking-label text-text-primary min-w-[140px] text-center">
+          <span className="text-[12px] sm:text-[13px] uppercase tracking-label text-text-primary min-w-0 sm:min-w-[140px] text-center px-1">
             {format(currentMonth, "MMMM yyyy")}
           </span>
           <Tooltip label="Next month">

@@ -49,14 +49,14 @@ function ModalOverlay({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 pb-[max(0px,env(safe-area-inset-bottom))]">
       <button
         type="button"
         className="absolute inset-0 bg-bg-primary/80"
         aria-label="Close"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-md max-h-[90dvh] overflow-y-auto bg-bg-elevated border border-border p-6 sm:rounded-sm">
+      <div className="relative w-full max-w-md max-h-[min(90dvh,calc(100dvh-1rem))] overflow-y-auto bg-bg-elevated border border-border border-b-0 sm:border-b p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] rounded-t-sm sm:rounded-sm">
         {children}
       </div>
     </div>

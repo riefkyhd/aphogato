@@ -160,7 +160,7 @@ export function EventFormModal({
       role="presentation"
     >
       <div
-        className="relative w-full max-w-[540px] sm:my-8 bg-bg-elevated border border-border p-4 sm:p-6 max-h-[92vh] overflow-y-auto"
+        className="relative w-full max-w-[540px] sm:my-8 bg-bg-elevated border border-border border-b-0 sm:border-b p-4 sm:p-6 pb-[max(1rem,env(safe-area-inset-bottom))] max-h-[min(92dvh,calc(100dvh-1rem))] overflow-y-auto rounded-t-sm sm:rounded-sm"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

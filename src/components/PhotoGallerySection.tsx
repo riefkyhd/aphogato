@@ -247,7 +247,7 @@ export function PhotoGallerySection({
         </div>
       </div>
       {showManageActions && (
-        <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-bg-secondary/95 backdrop-blur-md px-4 py-3 flex items-center gap-2 safe-area-inset-bottom">
+        <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-bg-secondary/95 backdrop-blur-md px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex items-center gap-2">
           <span className="text-[11px] uppercase tracking-label text-text-secondary whitespace-nowrap mr-auto">
             {manageCount} selected
           </span>

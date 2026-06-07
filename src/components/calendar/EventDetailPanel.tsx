@@ -9,6 +9,8 @@ import Link from "next/link";
 import { EventStatusDot } from "@/components/calendar/EventStatusDot";
 import { ShootTypeBadge } from "@/components/calendar/ShootTypeBadge";
 import { Button } from "@/components/ui/Button";
+import { IconButton } from "@/components/ui/IconButton";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { formatEventTimeRange } from "@/lib/calendar/calendarHelpers";
 import { LinkedExpensesBlock } from "@/components/finance/LinkedExpensesBlock";
 import { DeliverablesChecklist } from "@/components/DeliverablesChecklist";
@@ -291,14 +293,11 @@ export function EventDetailPanel({
               <h2 className="text-base sm:text-lg font-light tracking-[0.05em] uppercase text-text-primary pr-2 min-w-0">
                 {event.title}
               </h2>
-              <button
-                type="button"
-                onClick={onClose}
-                className="text-text-muted hover:text-text-primary p-1 shrink-0"
-                aria-label="Close panel"
-              >
-                <X className="h-5 w-5" />
-              </button>
+              <Tooltip label="Close panel">
+                <IconButton onClick={onClose} label="Close panel">
+                  <X className="h-5 w-5" aria-hidden />
+                </IconButton>
+              </Tooltip>
             </div>
 
             <div

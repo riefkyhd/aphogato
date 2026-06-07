@@ -3,6 +3,7 @@ import { Navbar } from "@/components/Navbar";
 import { UserPreferencesProvider } from "@/components/preferences/UserPreferencesProvider";
 import { PrivacyLockProvider } from "@/components/privacy/PrivacyLockProvider";
 import { loadTodayEvents } from "@/lib/calendar/loadTodayEvents";
+import { filterActiveTodayEvents } from "@/lib/calendar/todayEvents";
 import { loadDashboardBootstrap } from "@/lib/dashboard/loadDashboardBootstrap";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -16,12 +17,14 @@ export default async function DashboardLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [todayEvents, bootstrap] = user
+  const [allTodayEvents, bootstrap] = user
     ? await Promise.all([
         loadTodayEvents(supabase),
         loadDashboardBootstrap(supabase, user.id),
       ])
     : [[], null];
+
+  const todayEvents = filterActiveTodayEvents(allTodayEvents);
 
   return (
     <UserPreferencesProvider initialPreferences={bootstrap?.preferences}>
@@ -30,7 +33,7 @@ export default async function DashboardLayout({
           isAuthenticated={Boolean(user)}
           shootsToday={todayEvents.length}
         />
-        <div className="pt-14 md:pt-[60px] flex flex-col min-h-[calc(100dvh-3.5rem)] md:min-h-[calc(100vh-60px)]">
+        <div className="pt-14 md:pt-[60px] flex flex-col min-h-[calc(100dvh-3.5rem)] md:min-h-[calc(100dvh-60px)]">
           <DashboardTodayReminder initialEvents={todayEvents} />
           {children}
         </div>

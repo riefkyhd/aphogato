@@ -31,7 +31,7 @@ export function ProjectBoardColumn({
   return (
     <section
       className={cn(
-        "flex w-[calc(100vw-2.5rem)] max-w-[300px] sm:w-[272px] shrink-0 flex-col",
+        "flex w-[min(85vw,300px)] sm:w-[272px] shrink-0 flex-col",
         "snap-center snap-always",
         "max-h-[calc(100dvh-11rem)] sm:max-h-[calc(100dvh-12rem)] md:max-h-[calc(100vh-13rem)]",
         "border border-border bg-bg-primary/40"

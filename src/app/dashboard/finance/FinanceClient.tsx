@@ -238,38 +238,47 @@ export function FinanceClient({
             </div>
           </div>
           <PageToolbarActions>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className={toolbarButtonClass}
-              onClick={handleExportCsv}
-            >
-              Export CSV
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className={toolbarButtonClass}
-              onClick={() => {
-                setEditingIncome(null);
-                setIncomeModal(true);
-              }}
-            >
-              + Income
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              className={toolbarButtonClass}
-              onClick={() => {
-                setEditingExpense(null);
-                setExpenseModal(true);
-              }}
-            >
-              + Expense
-            </Button>
+            <Tooltip label="Export finance data as CSV">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className={toolbarButtonClass}
+                aria-label="Export finance data as CSV"
+                onClick={handleExportCsv}
+              >
+                Export CSV
+              </Button>
+            </Tooltip>
+            <Tooltip label="Add income entry">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className={toolbarButtonClass}
+                aria-label="Add income entry"
+                onClick={() => {
+                  setEditingIncome(null);
+                  setIncomeModal(true);
+                }}
+              >
+                + Income
+              </Button>
+            </Tooltip>
+            <Tooltip label="Add expense entry">
+              <Button
+                type="button"
+                size="sm"
+                className={toolbarButtonClass}
+                aria-label="Add expense entry"
+                onClick={() => {
+                  setEditingExpense(null);
+                  setExpenseModal(true);
+                }}
+              >
+                + Expense
+              </Button>
+            </Tooltip>
           </PageToolbarActions>
         </div>
       </div>

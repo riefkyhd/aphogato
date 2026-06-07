@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/Button";
+import { ModalShell } from "@/components/ui/ModalShell";
 
 export function DeleteProjectDialog({
   open,
@@ -24,60 +25,50 @@ export function DeleteProjectDialog({
     if (!open) return;
     confirmRef.current?.focus();
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape" && !deleting) onClose();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
-
-  if (!open) return null;
+  }, [open, deleting, onClose]);
 
   return (
-    <div
-      className="fixed inset-0 z-[110] flex items-center justify-center p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="delete-project-title"
+    <ModalShell
+      open={open}
+      onClose={() => !deleting && onClose()}
+      titleId="delete-project-title"
     >
-      <button
-        type="button"
-        className="absolute inset-0 bg-bg-primary/80 backdrop-blur-sm"
-        aria-label="Close"
-        onClick={onClose}
-      />
-      <div className="relative w-full max-w-md border border-border bg-bg-elevated p-6 shadow-lg">
-        <h2
-          id="delete-project-title"
-          className="text-lg font-light tracking-[0.05em] uppercase text-text-primary"
+      <h2
+        id="delete-project-title"
+        className="text-lg font-light tracking-[0.05em] uppercase text-text-primary"
+      >
+        Delete project?
+      </h2>
+      <p className="mt-3 text-[14px] text-text-secondary leading-relaxed">
+        <span className="text-text-primary">{projectName}</span> and all{" "}
+        {photoCount} photo{photoCount === 1 ? "" : "s"} will be removed from
+        Aphogato and Cloudinary. This cannot be undone.
+      </p>
+      <div className="mt-6 flex flex-col-reverse sm:flex-row sm:flex-wrap sm:justify-end gap-3">
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={onClose}
+          disabled={deleting}
+          className="w-full sm:w-auto"
         >
-          Delete project?
-        </h2>
-        <p className="mt-3 text-[14px] text-text-secondary leading-relaxed">
-          <span className="text-text-primary">{projectName}</span> and all{" "}
-          {photoCount} photo{photoCount === 1 ? "" : "s"} will be removed from
-          Aphogato and Cloudinary. This cannot be undone.
-        </p>
-        <div className="mt-6 flex flex-wrap justify-end gap-3">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onClose}
-            disabled={deleting}
-          >
-            Cancel
-          </Button>
-          <Button
-            ref={confirmRef}
-            type="button"
-            onClick={onConfirm}
-            loading={deleting}
-            disabled={deleting}
-            className="!bg-status-editing !border-status-editing hover:opacity-90"
-          >
-            {deleting ? "Deleting…" : "Delete project"}
-          </Button>
-        </div>
+          Cancel
+        </Button>
+        <Button
+          ref={confirmRef}
+          type="button"
+          onClick={onConfirm}
+          loading={deleting}
+          disabled={deleting}
+          className="w-full sm:w-auto !bg-status-editing !border-status-editing hover:opacity-90"
+        >
+          {deleting ? "Deleting…" : "Delete project"}
+        </Button>
       </div>
-    </div>
+    </ModalShell>
   );
 }
