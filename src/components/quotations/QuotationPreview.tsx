@@ -50,40 +50,48 @@ export const QuotationPreview = forwardRef<
       className="quotation-document border border-neutral-200 bg-white text-neutral-900"
     >
       <header className="quotation-header border-b border-neutral-200 px-8 py-6">
-        <table className="w-full border-collapse">
-          <tbody>
-            <tr>
-              <td className="w-12 align-middle pr-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/images/logo/MH_logo.png"
-                  alt="Muhammad Hadid"
-                  width={48}
-                  height={48}
-                  className="block h-12 w-12 object-contain"
-                />
-              </td>
-              <td className="align-middle">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-900 leading-tight m-0">
-                  Muhammad Hadid
-                </p>
-                <p className="text-[11px] uppercase tracking-[0.1em] text-neutral-500 leading-tight m-0 mt-0.5">
-                  Photography
-                </p>
-              </td>
-              <td className="align-middle text-right whitespace-nowrap pl-4">
-                <p className="text-[11px] uppercase tracking-[0.1em] text-neutral-500 leading-tight m-0">
-                  Quotation
-                </p>
-                {draft.quoteNumber ? (
-                  <p className="text-[12px] text-neutral-700 mt-1 tabular-nums break-all m-0">
-                    {draft.quoteNumber}
-                  </p>
-                ) : null}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div className="quotation-header-row">
+          <div className="quotation-brand">
+            <table className="quotation-brand-table" role="presentation">
+              <tbody>
+                <tr>
+                  <td className="quotation-logo-cell">
+                    <div className="quotation-logo">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/images/logo/MH_logo.png"
+                        alt="Muhammad Hadid"
+                        width={48}
+                        height={48}
+                        style={{ width: 48, height: 48, display: "block" }}
+                      />
+                    </div>
+                  </td>
+                  <td className="quotation-brand-text-cell">
+                    <div className="quotation-brand-text">
+                      <p className="text-[11px] uppercase tracking-[0.14em] text-neutral-900 leading-tight m-0">
+                        Muhammad Hadid
+                      </p>
+                      <p className="text-[11px] uppercase tracking-[0.1em] text-neutral-500 leading-tight m-0 mt-0.5">
+                        Photography
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div className="quotation-header-meta text-right pl-4">
+            <p className="text-[11px] uppercase tracking-[0.1em] text-neutral-500 leading-tight m-0">
+              Quotation
+            </p>
+            {draft.quoteNumber ? (
+              <p className="text-[12px] text-neutral-700 mt-1 tabular-nums break-all m-0 max-w-full">
+                {draft.quoteNumber}
+              </p>
+            ) : null}
+          </div>
+        </div>
       </header>
 
       <section className="quotation-meta px-8 py-6 border-b border-neutral-200 text-[13px]">
@@ -259,7 +267,7 @@ export const QuotationPreview = forwardRef<
             <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-1 m-0">
               Terms
             </p>
-            <p className="text-[10px] text-neutral-500 leading-[1.45] break-words m-0">
+            <p className="text-[10px] text-neutral-500 leading-[1.45] break-words text-justify m-0">
               {formatTermsParagraph(draft.terms)}
             </p>
           </section>
@@ -269,7 +277,9 @@ export const QuotationPreview = forwardRef<
           <table className="w-full border-collapse">
             <tbody>
               <tr className="text-[10px] uppercase tracking-[0.1em] text-neutral-500">
-                <td className="text-left align-middle">Indonesia · Available worldwide</td>
+                <td className="text-left align-middle">
+                  Indonesia · Available worldwide
+                </td>
                 <td className="text-right align-middle whitespace-nowrap">
                   muhammad-hadid.com
                 </td>

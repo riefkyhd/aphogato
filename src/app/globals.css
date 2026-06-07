@@ -154,7 +154,66 @@ body {
     border-collapse: collapse;
   }
 
-  .quotation-document img {
+  .quotation-document .quotation-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .quotation-document .quotation-brand {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 58%;
+  }
+
+  .quotation-document .quotation-header-meta {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 42%;
+    text-align: right;
+    overflow-wrap: anywhere;
+    word-break: break-all;
+  }
+
+  .quotation-document .quotation-brand-table {
+    border-collapse: collapse;
+    border-spacing: 0;
+    height: 48px;
+  }
+
+  .quotation-document .quotation-logo-cell {
+    vertical-align: middle;
+    padding: 0;
+    width: 48px;
+    padding-right: 12px;
+    height: 48px;
+  }
+
+  .quotation-document .quotation-brand-text-cell {
+    vertical-align: top;
+    padding: 0;
+    height: 48px;
+  }
+
+  .quotation-document .quotation-brand-text {
+    line-height: 1.25;
+    padding-top: 9px;
+  }
+
+  .quotation-document .quotation-logo {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    line-height: 0;
+    overflow: hidden;
+  }
+
+  .quotation-document .quotation-logo img {
+    width: 48px;
+    height: 48px;
     display: block;
   }
 

@@ -401,7 +401,7 @@ export function QuotationClient({
     setExporting(true);
     try {
       await exportQuotationPdf(draft, exportRoot);
-      toast.success("Print dialog opened — choose Save as PDF");
+      toast.success("Quotation PDF downloaded");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Export failed");
     } finally {
@@ -870,7 +870,7 @@ export function QuotationClient({
           </section>
         </div>
 
-        <div className="xl:sticky xl:top-[4.75rem] xl:max-h-[calc(100dvh-6rem)] xl:overflow-y-auto -mx-1 px-1">
+        <div className="xl:sticky xl:top-[4.75rem] xl:max-h-[calc(100dvh-6rem)] xl:overflow-y-auto overflow-x-auto -mx-1 px-1">
           <div className="flex items-baseline justify-between gap-3 mb-3">
             <p className="text-[10px] uppercase tracking-label text-text-muted">
               Preview
