@@ -285,6 +285,91 @@ export async function uploadImageToFolder(
   };
 }
 
+function replaceFolderInPublicId(
+  publicId: string,
+  oldFolder: string,
+  newFolder: string
+): string {
+  const oldNorm = normalizeFolderInput(oldFolder);
+  const newNorm = normalizeFolderInput(newFolder);
+  if (publicId === oldNorm) return newNorm;
+  if (publicId.startsWith(`${oldNorm}/`)) {
+    return `${newNorm}${publicId.slice(oldNorm.length)}`;
+  }
+  return `${newNorm}/${publicId}`;
+}
+
+export function migrateCloudinaryUrlForFolderRename(
+  url: string,
+  oldFolder: string,
+  newFolder: string
+): string {
+  const oldNorm = normalizeFolderInput(oldFolder);
+  const newNorm = normalizeFolderInput(newFolder);
+  const idx = url.indexOf(oldNorm);
+  if (idx === -1) return url;
+  return url.slice(0, idx) + newNorm + url.slice(idx + oldNorm.length);
+}
+
+/** Rename a Media Library folder and all assets inside (including subfolders). */
+export async function renameCloudinaryFolder(
+  oldFolder: string,
+  newFolder: string
+): Promise<void> {
+  const oldNorm = normalizeFolderInput(oldFolder);
+  const newNorm = normalizeFolderInput(newFolder);
+  if (oldNorm === newNorm) return;
+
+  ensureCloudinaryConfigured();
+
+  try {
+    await cloudinary.api.rename_folder(oldNorm, newNorm);
+  } catch (folderErr) {
+    await renameCloudinaryFolderByAssets(oldNorm, newNorm, folderErr);
+  }
+}
+
+async function renameCloudinaryFolderByAssets(
+  oldNorm: string,
+  newNorm: string,
+  folderErr: unknown
+): Promise<void> {
+  const resources = await listFolder(oldNorm);
+  let referenceResources: CloudinaryResource[] = [];
+  try {
+    referenceResources = await listFolder(`${oldNorm}/references`);
+  } catch {
+    // No references folder yet.
+  }
+
+  const all = [...resources, ...referenceResources];
+  if (all.length === 0) {
+    const message =
+      folderErr instanceof Error ? folderErr.message : "Folder rename failed";
+    throw new Error(message);
+  }
+
+  for (const resource of all) {
+    const isReference = resource.public_id.includes("/references/");
+    const targetFolder = isReference ? `${newNorm}/references` : newNorm;
+    const newPublicId = replaceFolderInPublicId(
+      resource.public_id,
+      oldNorm,
+      newNorm
+    );
+
+    await cloudinary.uploader.rename(
+      resource.public_id,
+      newPublicId,
+      {
+        resource_type: "image",
+        overwrite: false,
+        asset_folder: targetFolder,
+      } as unknown as Parameters<typeof cloudinary.uploader.rename>[2]
+    );
+  }
+}
+
 export async function deleteCloudinaryImageByUrl(
   cloudinaryUrl: string
 ): Promise<void> {

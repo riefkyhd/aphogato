@@ -6,6 +6,7 @@ import {
   findDuplicateFilename,
   type ImageHashRow,
 } from "@/lib/images/duplicateDetection";
+import { extractShotAt } from "@/lib/images/extractShotAt";
 import {
   ALLOWED_IMAGE_UPLOAD_TYPES,
   MAX_IMAGE_UPLOAD_BYTES,
@@ -98,6 +99,8 @@ export async function POST(
         file.name
       );
 
+      const shotAt = await extractShotAt(resource.public_id, resource.filename);
+
       const { data: row, error: insertError } = await supabase
         .from("photos")
         .insert({
@@ -106,6 +109,7 @@ export async function POST(
           cloudinary_url: resource.secure_url,
           is_selected: false,
           perceptual_hash: perceptualHash,
+          shot_at: shotAt,
         })
         .select("*")
         .single();

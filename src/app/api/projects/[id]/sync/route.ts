@@ -7,6 +7,7 @@ import {
   findDuplicateFilename,
   type ImageHashRow,
 } from "@/lib/images/duplicateDetection";
+import { extractShotAt } from "@/lib/images/extractShotAt";
 import type { Photo } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -122,13 +123,16 @@ export async function POST(
   }
 
   if (newResources.length > 0) {
-    const rows = newResources.map((r) => ({
-      project_id: project.id,
-      filename: r.filename,
-      cloudinary_url: r.secure_url,
-      is_selected: false,
-      perceptual_hash: r.perceptual_hash,
-    }));
+    const rows = await Promise.all(
+      newResources.map(async (r) => ({
+        project_id: project.id,
+        filename: r.filename,
+        cloudinary_url: r.secure_url,
+        is_selected: false,
+        perceptual_hash: r.perceptual_hash,
+        shot_at: await extractShotAt(r.public_id, r.filename),
+      }))
+    );
 
     const { error: insertError } = await supabase.from("photos").insert(rows);
     if (insertError) {

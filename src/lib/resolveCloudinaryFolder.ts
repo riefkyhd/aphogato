@@ -1,14 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   buildCloudinaryFolderPath,
+  buildRenamedCloudinaryFolderPath,
   nextCloudinaryFolderCandidate,
 } from "@/lib/cloudinaryFolder";
 
-export async function resolveUniqueCloudinaryFolder(
+async function resolveUniqueFolderCandidate(
   supabase: SupabaseClient,
-  projectName: string
+  base: string,
+  excludeProjectId?: string
 ): Promise<string> {
-  const base = buildCloudinaryFolderPath(projectName);
   let attempt = 1;
 
   while (true) {
@@ -19,7 +20,25 @@ export async function resolveUniqueCloudinaryFolder(
       .eq("cloudinary_folder", candidate)
       .maybeSingle();
 
-    if (!data) return candidate;
+    if (!data || data.id === excludeProjectId) return candidate;
     attempt += 1;
   }
+}
+
+export async function resolveUniqueCloudinaryFolder(
+  supabase: SupabaseClient,
+  projectName: string
+): Promise<string> {
+  const base = buildCloudinaryFolderPath(projectName);
+  return resolveUniqueFolderCandidate(supabase, base);
+}
+
+export async function resolveRenamedCloudinaryFolder(
+  supabase: SupabaseClient,
+  projectId: string,
+  currentFolder: string,
+  newProjectName: string
+): Promise<string> {
+  const base = buildRenamedCloudinaryFolderPath(currentFolder, newProjectName);
+  return resolveUniqueFolderCandidate(supabase, base, projectId);
 }

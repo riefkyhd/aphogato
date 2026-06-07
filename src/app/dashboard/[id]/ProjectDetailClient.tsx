@@ -19,11 +19,11 @@ import { useManagePhotoActivation } from "@/hooks/useManagePhotoActivation";
 import { usePhotoManageSelection } from "@/hooks/usePhotoManageSelection";
 import { useProjectPhotoUpload } from "@/hooks/useProjectPhotoUpload";
 import { useSyncServerPhotos } from "@/hooks/useSyncServerPhotos";
-import { sortPhotosNewestFirst } from "@/lib/sortPhotos";
 import { ProjectActions } from "./ProjectActions";
 import { DeliverablesChecklist } from "@/components/DeliverablesChecklist";
 import { ProjectReferencesSection } from "@/components/ProjectReferencesSection";
 import { ProjectMaxSelection } from "./ProjectMaxSelection";
+import { ProjectRename } from "./ProjectRename";
 import {
   isOverSelectionLimit,
   normalizeMaxPhotoSelection,
@@ -41,17 +41,15 @@ export function ProjectDetailClient({
   const router = useRouter();
   const { guardSensitiveAction } = usePrivacyLockContext();
   const [projectState, setProjectState] = useState(project);
-  const [photos, setPhotos] = useState(() =>
-    sortPhotosNewestFirst(initialPhotos)
-  );
+  const [photos, setPhotos] = useState(initialPhotos);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteProjectOpen, setDeleteProjectOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deletingProject, setDeletingProject] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
 
-  const setPhotosSorted = useCallback((next: Photo[]) => {
-    setPhotos(sortPhotosNewestFirst(next));
+  const setPhotosFromServer = useCallback((next: Photo[]) => {
+    setPhotos(next);
   }, []);
 
   const refreshProjectPhotos = useCallback(() => {
@@ -60,17 +58,17 @@ export function ProjectDetailClient({
 
   const applyServerPhotos = useCallback(
     (next: Photo[]) => {
-      setPhotosSorted(next);
+      setPhotosFromServer(next);
       refreshProjectPhotos();
     },
-    [setPhotosSorted, refreshProjectPhotos]
+    [setPhotosFromServer, refreshProjectPhotos]
   );
 
   useSyncServerPhotos(initialPhotos, setPhotos);
 
   const upload = useProjectPhotoUpload(
     projectState.id,
-    setPhotosSorted,
+    setPhotosFromServer,
     refreshProjectPhotos
   );
 
@@ -287,6 +285,18 @@ export function ProjectDetailClient({
             >
               <div className="overflow-hidden">
                 <div className="space-y-[2px] border-t border-border">
+                  <ProjectRename
+                    project={projectState}
+                    onUpdated={(next, options) => {
+                      setProjectState(next);
+                      if (options?.photos) {
+                        setPhotosFromServer(options.photos);
+                      }
+                      if (options?.folderRenamed) {
+                        refreshProjectPhotos();
+                      }
+                    }}
+                  />
                   <ProjectMaxSelection
                     project={projectState}
                     clientSelectedCount={clientSelectedCount}

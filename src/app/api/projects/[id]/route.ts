@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { deleteCloudinaryImageByUrl } from "@/lib/cloudinary";
 import { requireAuth } from "@/lib/api/requireAuth";
 import { parseMaxPhotoSelectionInput } from "@/lib/photoSelectionLimit";
+import { renameProject } from "@/lib/renameProject";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 export async function PATCH(
   request: Request,
@@ -13,18 +15,43 @@ export async function PATCH(
   if (!auth.ok) return auth.response;
   const { supabase } = auth;
 
-  let body: { max_photo_selection?: unknown };
+  let body: { name?: unknown; max_photo_selection?: unknown };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  if (body.max_photo_selection === undefined) {
+  const hasName = body.name !== undefined;
+  const hasMaxSelection = body.max_photo_selection !== undefined;
+
+  if (!hasName && !hasMaxSelection) {
     return NextResponse.json(
-      { error: "max_photo_selection is required" },
+      { error: "name or max_photo_selection is required" },
       { status: 400 }
     );
+  }
+
+  if (hasName) {
+    if (typeof body.name !== "string") {
+      return NextResponse.json({ error: "name must be a string" }, { status: 400 });
+    }
+
+    try {
+      const result = await renameProject(supabase, params.id, body.name);
+      return NextResponse.json({
+        project: result.project,
+        folderRenamed: result.folderRenamed,
+        photosUpdated: result.photosUpdated,
+        referencesUpdated: result.referencesUpdated,
+        photos: result.photos,
+      });
+    } catch (err) {
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : "Failed to rename project" },
+        { status: 500 }
+      );
+    }
   }
 
   const parsed = parseMaxPhotoSelectionInput(body.max_photo_selection);

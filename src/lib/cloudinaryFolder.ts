@@ -27,3 +27,25 @@ export function nextCloudinaryFolderCandidate(
   if (attempt <= 1) return base;
   return `${base}-${attempt}`;
 }
+
+/** Year prefix from an existing folder path (`2026/slug` → 2026). */
+export function yearFromCloudinaryFolder(folder: string): number | null {
+  const segment = folder.trim().replace(/^\/+|\/+$/g, "").split("/")[0];
+  const year = Number(segment);
+  if (!Number.isInteger(year) || year < 2000 || year > 2100) return null;
+  return year;
+}
+
+/** New folder path when renaming a project (keeps the original year prefix). */
+export function buildRenamedCloudinaryFolderPath(
+  currentFolder: string,
+  newProjectName: string
+): string {
+  const year =
+    yearFromCloudinaryFolder(currentFolder) ?? new Date().getFullYear();
+  const slug = slugifyProjectName(newProjectName);
+  if (!slug) {
+    throw new Error("Project name must contain at least one letter or number");
+  }
+  return `${year}/${slug}`;
+}

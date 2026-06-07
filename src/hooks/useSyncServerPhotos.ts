@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, type Dispatch, type SetStateAction } from "react";
-import { sortPhotosNewestFirst } from "@/lib/sortPhotos";
 import type { Photo } from "@/lib/types";
 
 /** Keep client photo state aligned with server props after router.refresh(), without clobbering newer client data while cache is stale. */
@@ -12,13 +11,13 @@ export function useSyncServerPhotos(
   const serverSignature = useMemo(
     () =>
       initialPhotos
-        .map((p) => `${p.id}:${p.created_at}`)
+        .map((p) => `${p.id}:${p.created_at}:${p.shot_at ?? ""}`)
         .join("|"),
     [initialPhotos]
   );
 
   useEffect(() => {
-    const next = sortPhotosNewestFirst(initialPhotos);
+    const next = initialPhotos;
     setPhotos((prev) => {
       if (next.length === 0 && prev.length > 0) {
         return prev;

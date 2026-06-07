@@ -4,7 +4,6 @@ import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { UploadProgressState } from "@/components/PhotoUploadProgress";
 import { filterImageUploadFiles } from "@/lib/imageUploadFiles";
-import { sortPhotosNewestFirst } from "@/lib/sortPhotos";
 import { uploadProjectPhotos } from "@/lib/uploadProjectPhotos";
 import type { Photo } from "@/lib/types";
 
@@ -58,7 +57,7 @@ export function useProjectPhotoUpload(
           (next) => {
             setProgress({ ...next, queuedBatches });
           },
-          (photos) => onPhotosUpdated(sortPhotosNewestFirst(photos)),
+          (photos) => onPhotosUpdated(photos),
           job.controller.signal,
           setUploadedCount
         );

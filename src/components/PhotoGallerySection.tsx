@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useOptionalUserPreferencesContext } from "@/components/preferences/UserPreferencesProvider";
 import { PhotoFilterToggle } from "@/components/PhotoFilterToggle";
+import { PhotoSortSelect } from "@/components/PhotoSortSelect";
 import { PhotoViewToggle } from "@/components/PhotoViewToggle";
 import { PhotoGridView } from "@/components/PhotoGridView";
 import { PhotoListView } from "@/components/PhotoListView";
@@ -10,6 +11,7 @@ import {
   readPhotoFilterPreference,
   writePhotoFilterPreference,
 } from "@/lib/photoFilterStorage";
+import { readPhotoSortPreference } from "@/lib/photoSortStorage";
 import {
   readPhotoViewPreference,
   writePhotoViewPreference,
@@ -20,7 +22,7 @@ import { Button } from "@/components/ui/Button";
 import { useTouchLike } from "@/hooks/useTouchLike";
 import type { ManagePhotoActivateMeta } from "@/lib/managePhotoActivate";
 import { partitionPhotosSelectedFirst } from "@/lib/reorderPhotos";
-import { sortPhotosNewestFirst } from "@/lib/sortPhotos";
+import { sortPhotos, type PhotoSortMode } from "@/lib/sortPhotos";
 import type { Photo } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -59,11 +61,13 @@ export function PhotoGallerySection({
   const prefsCtx = useOptionalUserPreferencesContext();
   const [view, setView] = useState<PhotoViewMode>("grid");
   const [selectedFirst, setSelectedFirst] = useState(false);
+  const [sortMode, setSortMode] = useState<PhotoSortMode>("time-added");
 
   useEffect(() => {
     if (prefsCtx && !prefsCtx.loaded) return;
     setView(readPhotoViewPreference(viewStorageId));
     setSelectedFirst(readPhotoFilterPreference(viewStorageId));
+    setSortMode(readPhotoSortPreference(viewStorageId));
   }, [
     viewStorageId,
     prefsCtx,
@@ -82,7 +86,10 @@ export function PhotoGallerySection({
     writePhotoFilterPreference(viewStorageId, active);
   }
 
-  const sortedPhotos = useMemo(() => sortPhotosNewestFirst(photos), [photos]);
+  const sortedPhotos = useMemo(
+    () => sortPhotos(photos, sortMode),
+    [photos, sortMode]
+  );
 
   // Gallery: sort only by confirmed picks (is_selected), not live in-progress
   // selection — layout stays stable until the client clicks Update selection.
@@ -209,6 +216,11 @@ export function PhotoGallerySection({
           )}
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          <PhotoSortSelect
+            value={sortMode}
+            onChange={setSortMode}
+            viewStorageId={viewStorageId}
+          />
           <PhotoFilterToggle
             active={selectedFirst}
             onChange={handleFilterChange}
