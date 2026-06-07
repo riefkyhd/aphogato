@@ -83,6 +83,34 @@ export function parseShotAtFromFilename(filename: string): string | null {
     );
   }
 
+  const dashedDots = base.match(
+    /(?:^|_)(\d{4})-(\d{2})-(\d{2})[ _](\d{2})\.(\d{2})\.(\d{2})$/
+  );
+  if (dashedDots) {
+    return isoFromParts(
+      Number(dashedDots[1]),
+      Number(dashedDots[2]),
+      Number(dashedDots[3]),
+      Number(dashedDots[4]),
+      Number(dashedDots[5]),
+      Number(dashedDots[6])
+    );
+  }
+
+  const anywhere = base.match(
+    /(\d{4})(\d{2})(\d{2})[_-](\d{2})(\d{2})(\d{2})/
+  );
+  if (anywhere) {
+    return isoFromParts(
+      Number(anywhere[1]),
+      Number(anywhere[2]),
+      Number(anywhere[3]),
+      Number(anywhere[4]),
+      Number(anywhere[5]),
+      Number(anywhere[6])
+    );
+  }
+
   return null;
 }
 

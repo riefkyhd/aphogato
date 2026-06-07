@@ -29,11 +29,17 @@ function syncToastMessage(
   removed: number,
   skippedDuplicates: number,
   newlySelected: number,
-  newlyDeselected: number
+  newlyDeselected: number,
+  shotAtBackfilled: number
 ): string {
   const parts: string[] = [];
   if (added > 0) {
     parts.push(`${added} new photo${added === 1 ? "" : "s"} added`);
+  }
+  if (shotAtBackfilled > 0) {
+    parts.push(
+      `${shotAtBackfilled} shooting time${shotAtBackfilled === 1 ? "" : "s"} updated`
+    );
   }
   if (removed > 0) {
     parts.push(`${removed} photo${removed === 1 ? "" : "s"} removed`);
@@ -116,7 +122,10 @@ export function ProjectActions({
       toast.error("No photos selected yet");
       return;
     }
-    const blob = new Blob([selectedFilenames.join("\n") + "\n"], {
+    const lines = [...selectedFilenames].sort((a, b) =>
+      a.localeCompare(b, undefined, { sensitivity: "base" })
+    );
+    const blob = new Blob([lines.join("\n") + "\n"], {
       type: "text/plain",
     });
     const a = document.createElement("a");
@@ -140,6 +149,7 @@ export function ProjectActions({
       }
       const added = json.added ?? 0;
       const removed = json.removed ?? 0;
+      const shotAtBackfilled = json.shot_at_backfilled ?? 0;
       const skippedDuplicates = json.skipped_duplicates ?? 0;
       const duplicateWarnings = Array.isArray(json.duplicate_warnings)
         ? (json.duplicate_warnings as string[])
@@ -157,7 +167,8 @@ export function ProjectActions({
           removed,
           skippedDuplicates,
           newlySelected,
-          newlyDeselected
+          newlyDeselected,
+          shotAtBackfilled
         )
       );
       if (duplicateWarnings.length > 0) {

@@ -11,7 +11,10 @@ import {
   readPhotoFilterPreference,
   writePhotoFilterPreference,
 } from "@/lib/photoFilterStorage";
-import { readPhotoSortPreference } from "@/lib/photoSortStorage";
+import {
+  readPhotoSortPreference,
+  type PhotoSortPreference,
+} from "@/lib/photoSortStorage";
 import {
   readPhotoViewPreference,
   writePhotoViewPreference,
@@ -22,7 +25,7 @@ import { Button } from "@/components/ui/Button";
 import { useTouchLike } from "@/hooks/useTouchLike";
 import type { ManagePhotoActivateMeta } from "@/lib/managePhotoActivate";
 import { partitionPhotosSelectedFirst } from "@/lib/reorderPhotos";
-import { sortPhotos, type PhotoSortMode } from "@/lib/sortPhotos";
+import { DEFAULT_SORT_DIRECTION, sortPhotos } from "@/lib/sortPhotos";
 import type { Photo } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -61,13 +64,15 @@ export function PhotoGallerySection({
   const prefsCtx = useOptionalUserPreferencesContext();
   const [view, setView] = useState<PhotoViewMode>("grid");
   const [selectedFirst, setSelectedFirst] = useState(false);
-  const [sortMode, setSortMode] = useState<PhotoSortMode>("time-added");
+  const [sortPreference, setSortPreference] = useState<PhotoSortPreference>(() =>
+    readPhotoSortPreference(viewStorageId)
+  );
 
   useEffect(() => {
     if (prefsCtx && !prefsCtx.loaded) return;
     setView(readPhotoViewPreference(viewStorageId));
     setSelectedFirst(readPhotoFilterPreference(viewStorageId));
-    setSortMode(readPhotoSortPreference(viewStorageId));
+    setSortPreference(readPhotoSortPreference(viewStorageId));
   }, [
     viewStorageId,
     prefsCtx,
@@ -86,10 +91,12 @@ export function PhotoGallerySection({
     writePhotoFilterPreference(viewStorageId, active);
   }
 
-  const sortedPhotos = useMemo(
-    () => sortPhotos(photos, sortMode),
-    [photos, sortMode]
-  );
+  const sortedPhotos = useMemo(() => {
+    const direction =
+      sortPreference.directions[sortPreference.mode] ??
+      DEFAULT_SORT_DIRECTION[sortPreference.mode];
+    return sortPhotos(photos, sortPreference.mode, direction);
+  }, [photos, sortPreference]);
 
   // Gallery: sort only by confirmed picks (is_selected), not live in-progress
   // selection — layout stays stable until the client clicks Update selection.
@@ -217,8 +224,8 @@ export function PhotoGallerySection({
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <PhotoSortSelect
-            value={sortMode}
-            onChange={setSortMode}
+            preference={sortPreference}
+            onChange={setSortPreference}
             viewStorageId={viewStorageId}
           />
           <PhotoFilterToggle

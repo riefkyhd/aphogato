@@ -7,10 +7,12 @@ import {
   findDuplicateFilename,
   type ImageHashRow,
 } from "@/lib/images/duplicateDetection";
+import { backfillMissingShotAt } from "@/lib/images/backfillShotAt";
 import { extractShotAt } from "@/lib/images/extractShotAt";
 import type { Photo } from "@/lib/types";
 
 export const runtime = "nodejs";
+export const maxDuration = 300;
 
 export async function POST(
   _request: Request,
@@ -47,7 +49,7 @@ export async function POST(
 
   const { data: existingPhotos, error: existingError } = await supabase
     .from("photos")
-    .select("id, filename, cloudinary_url, perceptual_hash")
+    .select("id, filename, cloudinary_url, perceptual_hash, shot_at")
     .eq("project_id", project.id);
 
   if (existingError) {
@@ -59,6 +61,7 @@ export async function POST(
     filename: string;
     cloudinary_url: string;
     perceptual_hash: string | null;
+    shot_at: string | null;
   };
 
   const existing = await backfillMissingHashes(
@@ -122,6 +125,10 @@ export async function POST(
     }
   }
 
+  const shotAtBackfilled = await backfillMissingShotAt(existing, async (id, shotAt) => {
+    await supabase.from("photos").update({ shot_at: shotAt }).eq("id", id);
+  });
+
   if (newResources.length > 0) {
     const rows = await Promise.all(
       newResources.map(async (r) => ({
@@ -157,6 +164,7 @@ export async function POST(
   return NextResponse.json({
     added,
     removed,
+    shot_at_backfilled: shotAtBackfilled,
     skipped_duplicates: skippedDuplicates.length,
     duplicate_warnings: skippedDuplicates,
     total,
