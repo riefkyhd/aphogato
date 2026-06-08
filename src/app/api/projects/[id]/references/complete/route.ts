@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/api/requireAuth";
 import { deleteCloudinaryImageByUrl } from "@/lib/cloudinary";
 import {
-  cloudinaryResourceFilename,
   isCloudinaryUrlForPublicId,
+  publicIdBelongsToAssetFolder,
+  resolveStoredUploadFilename,
 } from "@/lib/cloudinary/signedDirectUpload";
 import {
   computeHashFromCloudinaryUrl,
@@ -17,6 +18,7 @@ export const runtime = "nodejs";
 type CompleteBody = {
   publicId?: string;
   secureUrl?: string;
+  originalFilename?: string;
   format?: string;
 };
 
@@ -59,11 +61,17 @@ export async function POST(
   }
 
   const refFolder = `${project.cloudinary_folder.replace(/^\/+|\/+$/g, "")}/references`;
-  if (!publicId.startsWith(`${refFolder}/`)) {
+  if (
+    !publicIdBelongsToAssetFolder(publicId, refFolder, body.originalFilename)
+  ) {
     return NextResponse.json({ error: "Upload folder mismatch" }, { status: 400 });
   }
 
-  const filename = cloudinaryResourceFilename(publicId, body.format);
+  const filename = resolveStoredUploadFilename(
+    body.originalFilename,
+    publicId,
+    body.format
+  );
 
   const { data: existingRefs } = await supabase
     .from("project_references")

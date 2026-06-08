@@ -17,6 +17,7 @@ export type SignedCloudinaryUpload = {
   publicId: string;
   assetFolder: string;
   uploadUrl: string;
+  useAssetFolderAsPublicIdPrefix?: boolean;
 };
 
 export type CloudinaryUploadResponse = {
@@ -103,6 +104,9 @@ function uploadFileToCloudinary(
     formData.append("signature", signed.signature);
     formData.append("public_id", signed.publicId);
     formData.append("asset_folder", signed.assetFolder);
+    if (signed.useAssetFolderAsPublicIdPrefix) {
+      formData.append("use_asset_folder_as_public_id_prefix", "true");
+    }
     formData.append("overwrite", "false");
 
     xhr.upload.addEventListener("progress", (event) => {
@@ -166,6 +170,7 @@ function uploadFileToCloudinary(
 async function completeSignedUpload<T>(
   completeUrl: string,
   cloudinaryResult: CloudinaryUploadResponse,
+  originalFilename: string,
   signal?: AbortSignal
 ): Promise<T> {
   throwIfAborted(signal);
@@ -176,6 +181,7 @@ async function completeSignedUpload<T>(
     body: JSON.stringify({
       publicId: cloudinaryResult.public_id,
       secureUrl: cloudinaryResult.secure_url,
+      originalFilename,
       width: cloudinaryResult.width,
       height: cloudinaryResult.height,
       bytes: cloudinaryResult.bytes,
@@ -213,6 +219,7 @@ async function uploadViaSignedCloudinary<T>(
   if (file.size > CLOUDINARY_MAX_UPLOAD_BYTES) {
     onPreparing?.();
   }
+  const originalFilename = file.name;
   const prepared = await prepareImageForUpload(file, signal);
   const signed = await requestUploadSign(signUrl, prepared, signal);
   onProgress(0);
@@ -222,7 +229,12 @@ async function uploadViaSignedCloudinary<T>(
     onProgress,
     signal
   );
-  return completeSignedUpload<T>(completeUrl, cloudinaryResult, signal);
+  return completeSignedUpload<T>(
+    completeUrl,
+    cloudinaryResult,
+    originalFilename,
+    signal
+  );
 }
 
 export async function uploadProjectPhotoViaCloudinary(

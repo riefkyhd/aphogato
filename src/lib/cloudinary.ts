@@ -1,5 +1,9 @@
 import "server-only";
 import { v2 as cloudinary } from "cloudinary";
+import {
+  buildPhotoFilename,
+  sanitizeCloudinaryBasename,
+} from "@/lib/cloudinary/filenames";
 
 /** Safety cap when listing a project folder (Cloudinary paginates 100 per request). */
 export const CLOUDINARY_LIST_MAX_RESOURCES = 10_000;
@@ -213,12 +217,6 @@ export function publicIdFromUrl(url: string): string | null {
   return alt ? alt[1] : null;
 }
 
-function filenameWithoutExtension(filename: string): string {
-  const lastDot = filename.lastIndexOf(".");
-  if (lastDot <= 0) return filename;
-  return filename.slice(0, lastDot);
-}
-
 function ensureCloudinaryConfigured() {
   const { cloud } = getCloudinaryAuth();
   cloudinary.config({
@@ -241,12 +239,11 @@ export async function uploadImageToFolder(
   originalFilename: string
 ): Promise<CloudinaryResource> {
   const normalizedFolder = normalizeFolderInput(folder);
-  const baseName = filenameWithoutExtension(originalFilename);
-  if (!baseName) {
+  const publicId = sanitizeCloudinaryBasename(originalFilename);
+  if (!publicId) {
     throw new Error("Invalid filename");
   }
 
-  const publicId = `${normalizedFolder}/${baseName}`;
   ensureCloudinaryConfigured();
 
   const result = await new Promise<{
@@ -261,6 +258,7 @@ export async function uploadImageToFolder(
       {
         public_id: publicId,
         asset_folder: normalizedFolder,
+        use_asset_folder_as_public_id_prefix: true,
         overwrite: false,
         resource_type: "image",
       },
@@ -277,7 +275,7 @@ export async function uploadImageToFolder(
   return {
     public_id: result.public_id,
     secure_url: result.secure_url,
-    filename: `${baseName}.${format}`,
+    filename: buildPhotoFilename(originalFilename, format),
     width: result.width,
     height: result.height,
     bytes: result.bytes,

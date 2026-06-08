@@ -2,15 +2,19 @@ import "server-only";
 
 import { v2 as cloudinary } from "cloudinary";
 import { publicIdFromUrl } from "@/lib/cloudinary";
+import { sanitizeCloudinaryBasename } from "@/lib/cloudinary/filenames";
+
+export {
+  buildPhotoFilename,
+  cloudinaryResourceFilename,
+  filenameWithoutExtension,
+  publicIdBelongsToAssetFolder,
+  resolveStoredUploadFilename,
+  sanitizeCloudinaryBasename,
+} from "@/lib/cloudinary/filenames";
 
 function normalizeFolderInput(folder: string): string {
   return folder.trim().replace(/^\/+|\/+$/g, "");
-}
-
-function filenameWithoutExtension(filename: string): string {
-  const lastDot = filename.lastIndexOf(".");
-  if (lastDot <= 0) return filename;
-  return filename.slice(0, lastDot);
 }
 
 export function getCloudinaryUploadCredentials() {
@@ -36,15 +40,15 @@ export function buildSignedCloudinaryUpload(
   publicId: string;
   assetFolder: string;
   uploadUrl: string;
+  useAssetFolderAsPublicIdPrefix: true;
 } {
   const { cloudName, apiKey, apiSecret } = getCloudinaryUploadCredentials();
   const normalizedFolder = normalizeFolderInput(folder);
-  const baseName = filenameWithoutExtension(originalFilename);
-  if (!normalizedFolder || !baseName) {
+  const publicId = sanitizeCloudinaryBasename(originalFilename);
+  if (!normalizedFolder || !publicId) {
     throw new Error("Invalid upload folder or filename");
   }
 
-  const publicId = `${normalizedFolder}/${baseName}`;
   const timestamp = Math.round(Date.now() / 1000);
 
   cloudinary.config({
@@ -58,6 +62,7 @@ export function buildSignedCloudinaryUpload(
       timestamp,
       public_id: publicId,
       asset_folder: normalizedFolder,
+      use_asset_folder_as_public_id_prefix: true,
       overwrite: false,
     },
     apiSecret
@@ -71,16 +76,8 @@ export function buildSignedCloudinaryUpload(
     publicId,
     assetFolder: normalizedFolder,
     uploadUrl: `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+    useAssetFolderAsPublicIdPrefix: true,
   };
-}
-
-export function cloudinaryResourceFilename(
-  publicId: string,
-  format?: string | null
-): string {
-  const parts = publicId.split("/");
-  const stem = parts[parts.length - 1] ?? publicId;
-  return `${stem}.${format ?? "jpg"}`;
 }
 
 export function isCloudinaryUrlForPublicId(
