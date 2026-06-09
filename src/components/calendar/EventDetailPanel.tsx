@@ -4,8 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { useTouchLike } from "@/hooks/useTouchLike";
 import { formatSyncedAgo } from "@/lib/calendar/parseSyncedAt";
-import { X } from "lucide-react";
+import { Eye, EyeOff, X } from "lucide-react";
 import Link from "next/link";
+import { MaskedMoneyText } from "@/components/privacy/MaskedMoney";
+import { usePrivacyLockContext } from "@/components/privacy/PrivacyLockProvider";
 import { EventStatusDot } from "@/components/calendar/EventStatusDot";
 import { ShootTypeBadge } from "@/components/calendar/ShootTypeBadge";
 import { Button } from "@/components/ui/Button";
@@ -59,6 +61,14 @@ export function EventDetailPanel({
   onClose: () => void;
 }) {
   const touchLike = useTouchLike();
+  const {
+    isLocked,
+    moneyVisible,
+    pinEnabled,
+    requestUnlock,
+    toggleMoneyVisible,
+  } = usePrivacyLockContext();
+  const showIncome = moneyVisible && !isLocked;
   const scrollRef = useRef<HTMLDivElement>(null);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -378,17 +388,69 @@ export function EventDetailPanel({
               </dl>
 
               <div className="border-t border-border pt-4 mt-4">
-                <p className="text-[11px] uppercase tracking-label text-text-muted mb-1">
-                  Client income
-                </p>
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <p className="text-[11px] uppercase tracking-label text-text-muted">
+                    Client income
+                  </p>
+                  {income && !financeLoading && (
+                    <Tooltip
+                      label={
+                        isLocked
+                          ? "Unlock to view amount"
+                          : moneyVisible
+                            ? "Hide amount"
+                            : "Show amount"
+                      }
+                    >
+                      <button
+                        type="button"
+                        className="inline-flex h-7 w-7 shrink-0 items-center justify-center text-text-muted hover:text-text-primary transition-colors"
+                        aria-label={
+                          isLocked
+                            ? "Unlock to view client income"
+                            : moneyVisible
+                              ? "Hide client income"
+                              : "Show client income"
+                        }
+                        onClick={() => {
+                          if (isLocked) {
+                            requestUnlock({
+                              title: "View client income",
+                              description:
+                                "Enter your privacy PIN to view income on this event.",
+                            });
+                            return;
+                          }
+                          toggleMoneyVisible();
+                        }}
+                      >
+                        {showIncome ? (
+                          <EyeOff className="h-3.5 w-3.5" aria-hidden />
+                        ) : (
+                          <Eye className="h-3.5 w-3.5" aria-hidden />
+                        )}
+                      </button>
+                    </Tooltip>
+                  )}
+                </div>
                 {financeLoading ? (
                   <p className="text-[12px] text-text-muted animate-pulse">
                     Loading…
                   </p>
                 ) : income ? (
-                  <p className="text-[15px] text-status-delivered tabular-nums">
-                    {formatMoney(income.amount, income.currency)}
-                  </p>
+                  <>
+                    <p className="text-[15px] text-status-delivered tabular-nums">
+                      <MaskedMoneyText
+                        text={formatMoney(income.amount, income.currency)}
+                        visible={showIncome}
+                      />
+                    </p>
+                    {pinEnabled && isLocked && (
+                      <p className="mt-1 text-[11px] text-text-muted">
+                        Amount hidden — tap the eye icon to unlock.
+                      </p>
+                    )}
+                  </>
                 ) : (
                   <p className="text-[12px] text-text-secondary">
                     Not recorded yet — add in Edit or{" "}

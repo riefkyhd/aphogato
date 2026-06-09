@@ -1,10 +1,6 @@
 import { redirect } from "next/navigation";
-import { createServerSupabase } from "@/lib/supabase/server";
 
-export default async function Home() {
-  const supabase = createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  redirect(user ? "/dashboard" : "/login");
+/** Auth redirect is handled in middleware; this is a fallback only. */
+export default function Home() {
+  redirect("/login");
 }

@@ -86,8 +86,16 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const url = request.nextUrl;
+  const isHome = url.pathname === "/";
   const isDashboard = url.pathname.startsWith("/dashboard");
   const isLogin = url.pathname === "/login";
+
+  if (isHome) {
+    const redirectUrl = url.clone();
+    redirectUrl.pathname = user ? "/dashboard" : "/login";
+    redirectUrl.search = "";
+    return applySecurityHeaders(NextResponse.redirect(redirectUrl));
+  }
 
   if (isDashboard && !user) {
     const redirectUrl = url.clone();
@@ -108,6 +116,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/",
     "/dashboard/:path*",
     "/login",
     "/api/gallery/confirm",

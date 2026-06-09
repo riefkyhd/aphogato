@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { markProjectsStatusDirty } from "@/lib/projects/invalidateProjectsViews";
 import { DashboardMain } from "@/components/layout/DashboardShell";
 import { ProjectBoardColumn } from "@/components/projects/ProjectBoardColumn";
 import { ProjectsPageHeader } from "@/components/projects/ProjectsPageHeader";
@@ -17,6 +19,7 @@ export function ProjectBoardClient({
 }: {
   initialProjects: BoardProject[];
 }) {
+  const router = useRouter();
   const [projects, setProjects] = useState(initialProjects);
   const [hideDelivered, setHideDelivered] = useState(true);
   const [dragOverColumn, setDragOverColumn] = useState<ProjectStatus | null>(
@@ -61,6 +64,8 @@ export function ProjectBoardClient({
           BOARD_COLUMNS.find((c) => c.status === nextStatus)?.label ??
           nextStatus;
         toast.success(`Moved to ${label}`);
+        markProjectsStatusDirty();
+        router.refresh();
       } catch (err) {
         setProjects((prev) =>
           prev.map((p) =>
@@ -75,7 +80,7 @@ export function ProjectBoardClient({
         setDragOverColumn(null);
       }
     },
-    [projects]
+    [projects, router]
   );
 
   const handleDrop = useCallback(

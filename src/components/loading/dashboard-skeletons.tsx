@@ -24,6 +24,20 @@ function ToolbarSkeleton({ count = 3 }: { count?: number }) {
   );
 }
 
+export function ProjectsGridSkeleton() {
+  return (
+    <div
+      className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 gap-[2px]"
+      aria-busy="true"
+      aria-label="Loading projects"
+    >
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Skeleton key={i} className="aspect-[5/3] min-[480px]:aspect-[3/2]" />
+      ))}
+    </div>
+  );
+}
+
 export function ProjectsSkeleton() {
   return (
     <DashboardPageShell label="Loading projects">
@@ -36,11 +50,7 @@ export function ProjectsSkeleton() {
           <Skeleton className="h-10 w-52" />
         </div>
       </div>
-      <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 gap-[2px]">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="aspect-[5/3] min-[480px]:aspect-[3/2]" />
-        ))}
-      </div>
+      <ProjectsGridSkeleton />
     </DashboardPageShell>
   );
 }

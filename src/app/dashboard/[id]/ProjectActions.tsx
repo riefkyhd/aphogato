@@ -8,6 +8,7 @@ import { PhotoUploadButton } from "@/components/PhotoUploadButton";
 import type { ProjectPhotoUpload } from "@/hooks/useProjectPhotoUpload";
 import type { Photo } from "@/lib/types";
 import type { ProjectStatus } from "@/components/StatusDot";
+import { markProjectsStatusDirty } from "@/lib/projects/invalidateProjectsViews";
 import { cn } from "@/lib/utils";
 
 const NEXT_STATUS: Record<ProjectStatus, ProjectStatus | null> = {
@@ -205,6 +206,7 @@ export function ProjectActions({
         return;
       }
       toast.success(`Status → ${next}`);
+      markProjectsStatusDirty();
       router.refresh();
     } finally {
       setStatusBusy(false);
