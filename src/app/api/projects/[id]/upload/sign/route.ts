@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/api/requireAuth";
+import { buildPhotoFilename } from "@/lib/cloudinary/filenames";
 import { buildSignedCloudinaryUpload } from "@/lib/cloudinary/signedDirectUpload";
 import { validateImageUploadMeta } from "@/lib/imageUploadValidation";
 
@@ -38,16 +39,17 @@ export async function POST(
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
+  const storedFilename = buildPhotoFilename(filename);
   const { data: existing } = await supabase
     .from("photos")
     .select("filename")
     .eq("project_id", project.id)
-    .eq("filename", filename)
+    .eq("filename", storedFilename)
     .maybeSingle();
 
   if (existing) {
     return NextResponse.json(
-      { error: `${filename}: already in this project` },
+      { error: `${storedFilename}: already in this project` },
       { status: 400 }
     );
   }

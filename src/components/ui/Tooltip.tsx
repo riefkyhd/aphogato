@@ -15,6 +15,13 @@ const DEFAULT_DELAY_MS = 500;
 const GAP_PX = 6;
 const VIEWPORT_PADDING = 8;
 
+type TooltipCoords = {
+  top: number;
+  left: number;
+  translateX: string;
+  translateY: string;
+};
+
 /**
  * Hover/focus tooltip with a delay. Renders in a portal so labels are not
  * clipped by overflow-hidden ancestors (e.g. collapsible panels).
@@ -35,8 +42,14 @@ export function Tooltip({
   const touchLike = useTouchLike();
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
-  const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const [coords, setCoords] = useState<TooltipCoords>({
+    top: 0,
+    left: 0,
+    translateX: "-50%",
+    translateY: "-100%",
+  });
   const anchorRef = useRef<HTMLSpanElement>(null);
+  const tooltipRef = useRef<HTMLSpanElement>(null);
   const showTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -56,15 +69,49 @@ export function Tooltip({
 
     const rect = anchor.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
-    const clampedLeft = Math.min(
-      Math.max(centerX, VIEWPORT_PADDING),
-      window.innerWidth - VIEWPORT_PADDING
-    );
+    const tooltipHeight = tooltipRef.current?.offsetHeight ?? 0;
+    let effectiveSide = side;
+    if (
+      side === "top" &&
+      rect.top - GAP_PX - tooltipHeight < VIEWPORT_PADDING
+    ) {
+      effectiveSide = "bottom";
+    } else if (
+      side === "bottom" &&
+      rect.bottom + GAP_PX + tooltipHeight >
+        window.innerHeight - VIEWPORT_PADDING
+    ) {
+      effectiveSide = "top";
+    }
 
-    setCoords({
-      top: side === "top" ? rect.top - GAP_PX : rect.bottom + GAP_PX,
-      left: clampedLeft,
-    });
+    const top =
+      effectiveSide === "top" ? rect.top - GAP_PX : rect.bottom + GAP_PX;
+    const translateY = effectiveSide === "top" ? "-100%" : "0";
+
+    const tooltipWidth = tooltipRef.current?.offsetWidth ?? 0;
+    const halfWidth = tooltipWidth / 2;
+    const minCenter = VIEWPORT_PADDING + halfWidth;
+    const maxCenter = window.innerWidth - VIEWPORT_PADDING - halfWidth;
+
+    let left = centerX;
+    let translateX = "-50%";
+
+    if (tooltipWidth > 0) {
+      if (centerX <= minCenter) {
+        left = VIEWPORT_PADDING;
+        translateX = "0";
+      } else if (centerX >= maxCenter) {
+        left = window.innerWidth - VIEWPORT_PADDING;
+        translateX = "-100%";
+      }
+    } else {
+      left = Math.min(
+        Math.max(centerX, VIEWPORT_PADDING),
+        window.innerWidth - VIEWPORT_PADDING
+      );
+    }
+
+    setCoords({ top, left, translateX, translateY });
   }, [side]);
 
   const hide = useCallback(() => {
@@ -76,15 +123,14 @@ export function Tooltip({
     if (touchLike) return;
     clearShowTimer();
     showTimer.current = setTimeout(() => {
-      updatePosition();
       setVisible(true);
     }, delayMs);
-  }, [touchLike, clearShowTimer, delayMs, updatePosition]);
+  }, [touchLike, clearShowTimer, delayMs]);
 
   useLayoutEffect(() => {
     if (!visible) return;
     updatePosition();
-  }, [visible, updatePosition]);
+  }, [visible, label, updatePosition]);
 
   useEffect(() => {
     if (!visible) return;
@@ -104,12 +150,16 @@ export function Tooltip({
     mounted && visible && !touchLike
       ? createPortal(
           <span
+            ref={tooltipRef}
             role="tooltip"
             className={cn(
-              "pointer-events-none fixed z-[200] max-w-[min(90vw,20rem)] -translate-x-1/2 whitespace-nowrap rounded-sm border border-border bg-bg-elevated px-2 py-1 text-center text-[10px] uppercase tracking-label text-text-primary shadow-md",
-              side === "top" ? "-translate-y-full" : "translate-y-0"
+              "pointer-events-none fixed z-[200] max-w-[min(90vw,20rem)] whitespace-nowrap rounded-sm border border-border bg-bg-elevated px-2 py-1 text-center text-[10px] uppercase tracking-label text-text-primary shadow-md"
             )}
-            style={{ top: coords.top, left: coords.left }}
+            style={{
+              top: coords.top,
+              left: coords.left,
+              transform: `translate(${coords.translateX}, ${coords.translateY})`,
+            }}
           >
             {label}
           </span>,

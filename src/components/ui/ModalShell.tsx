@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
 import { cn } from "@/lib/utils";
 
@@ -26,11 +28,17 @@ export function ModalShell({
   panelClassName?: string;
   maxWidthClassName?: string;
 }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useBodyScrollLock(open);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
       className={cn(overlayClass, zClassName)}
       role="dialog"
@@ -46,6 +54,7 @@ export function ModalShell({
       <div className={cn(panelClass, maxWidthClassName, panelClassName)}>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

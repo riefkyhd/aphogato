@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { useTouchLike } from "@/hooks/useTouchLike";
+import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
 import { formatSyncedAgo } from "@/lib/calendar/parseSyncedAt";
 import { Eye, EyeOff, X } from "lucide-react";
 import Link from "next/link";
@@ -65,10 +66,10 @@ export function EventDetailPanel({
     isLocked,
     moneyVisible,
     pinEnabled,
-    requestUnlock,
-    toggleMoneyVisible,
+    guardSensitiveAction,
   } = usePrivacyLockContext();
-  const showIncome = moneyVisible && !isLocked;
+  const [incomeAmountVisible, setIncomeAmountVisible] = useState(false);
+  const showIncome = !isLocked && incomeAmountVisible;
   const scrollRef = useRef<HTMLDivElement>(null);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -81,11 +82,27 @@ export function EventDetailPanel({
     startY: number;
     pointerId: number | null;
   }>({ mode: "none", startX: 0, startY: 0, pointerId: null });
+  const dismissTimerRef = useRef<number | null>(null);
 
   const useSheet = touchLike;
 
   useEffect(() => {
+    if (!open || !event) return;
+    setIncomeAmountVisible(moneyVisible && !isLocked);
+    // Init visibility when the panel opens for an event — not on unlock toggle.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- moneyVisible/isLocked read at open only
+  }, [open, event?.id]);
+
+  useEffect(() => {
+    if (isLocked) setIncomeAmountVisible(false);
+  }, [isLocked]);
+
+  useEffect(() => {
     if (!open) {
+      if (dismissTimerRef.current) {
+        clearTimeout(dismissTimerRef.current);
+        dismissTimerRef.current = null;
+      }
       setDragOffset(0);
       setIsDragging(false);
       setDismissing(false);
@@ -99,14 +116,7 @@ export function EventDetailPanel({
     }
   }, [open]);
 
-  useEffect(() => {
-    if (!open || !useSheet) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [open, useSheet]);
+  useBodyScrollLock(open && useSheet);
 
   const resetDrag = useCallback(() => {
     dragRef.current = {
@@ -131,7 +141,9 @@ export function EventDetailPanel({
       setIsDragging(false);
       dragOffsetRef.current = distance;
       setDragOffset(distance);
-      window.setTimeout(() => {
+      if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+      dismissTimerRef.current = window.setTimeout(() => {
+        dismissTimerRef.current = null;
         onClose();
         setDismissing(false);
         dragOffsetRef.current = 0;
@@ -144,6 +156,13 @@ export function EventDetailPanel({
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<HTMLElement>) => {
       if (!open || !event || e.button !== 0 || dismissing) return;
+      if (
+        (e.target as HTMLElement).closest(
+          "button, a, input, select, textarea, label, [data-no-panel-drag]"
+        )
+      ) {
+        return;
+      }
 
       const scrollTop = scrollRef.current?.scrollTop ?? 0;
       const onHandle = (e.target as HTMLElement).closest("[data-sheet-handle]");
@@ -397,31 +416,32 @@ export function EventDetailPanel({
                       label={
                         isLocked
                           ? "Unlock to view amount"
-                          : moneyVisible
+                          : showIncome
                             ? "Hide amount"
                             : "Show amount"
                       }
+                      side="bottom"
                     >
                       <button
                         type="button"
-                        className="inline-flex h-7 w-7 shrink-0 items-center justify-center text-text-muted hover:text-text-primary transition-colors"
+                        data-no-panel-drag
+                        className="inline-flex h-10 w-10 shrink-0 items-center justify-center text-text-muted hover:text-text-primary transition-colors"
                         aria-label={
                           isLocked
                             ? "Unlock to view client income"
-                            : moneyVisible
+                            : showIncome
                               ? "Hide client income"
                               : "Show client income"
                         }
                         onClick={() => {
-                          if (isLocked) {
-                            requestUnlock({
+                          guardSensitiveAction(
+                            () => setIncomeAmountVisible((v) => !v),
+                            {
                               title: "View client income",
                               description:
                                 "Enter your privacy PIN to view income on this event.",
-                            });
-                            return;
-                          }
-                          toggleMoneyVisible();
+                            }
+                          );
                         }}
                       >
                         {showIncome ? (

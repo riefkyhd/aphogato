@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { markProjectsStatusDirty } from "@/lib/projects/invalidateProjectsViews";
@@ -21,6 +21,10 @@ export function ProjectBoardClient({
 }) {
   const router = useRouter();
   const [projects, setProjects] = useState(initialProjects);
+
+  useEffect(() => {
+    setProjects(initialProjects);
+  }, [initialProjects]);
   const [hideDelivered, setHideDelivered] = useState(true);
   const [dragOverColumn, setDragOverColumn] = useState<ProjectStatus | null>(
     null

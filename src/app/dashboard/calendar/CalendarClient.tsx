@@ -11,7 +11,7 @@ import {
 import { ChevronLeft, ChevronRight, Download, Info } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useUserPreferencesContext } from "@/components/preferences/UserPreferencesProvider";
 import { toast } from "sonner";
 import { DashboardMain } from "@/components/layout/DashboardShell";
@@ -92,13 +92,19 @@ export function CalendarClient({
     );
   }, [events, view, currentMonth]);
 
+  const panelFinanceRequestId = useRef(0);
+
   const loadPanelFinance = useCallback(async (eventId: string) => {
+    const requestId = ++panelFinanceRequestId.current;
     setPanelFinanceLoading(true);
+    setPanelExpenses([]);
     try {
       const [incomeRes, expensesRes] = await Promise.all([
         fetch(`/api/finance/income?event_id=${encodeURIComponent(eventId)}`),
         fetch(`/api/finance/expenses?event_id=${encodeURIComponent(eventId)}`),
       ]);
+      if (requestId !== panelFinanceRequestId.current) return;
+
       const incomeJson = (await incomeRes.json()) as IncomeEntry[];
       const expensesJson = (await expensesRes.json()) as ExpenseEntry[];
       if (incomeRes.ok && Array.isArray(incomeJson) && incomeJson[0]) {
@@ -109,13 +115,15 @@ export function CalendarClient({
       }
       if (expensesRes.ok && Array.isArray(expensesJson)) {
         setPanelExpenses(expensesJson.map((row) => normalizeExpense(row)));
-      } else {
-        setPanelExpenses([]);
       }
     } catch {
-      setPanelExpenses([]);
+      if (requestId === panelFinanceRequestId.current) {
+        setPanelExpenses([]);
+      }
     } finally {
-      setPanelFinanceLoading(false);
+      if (requestId === panelFinanceRequestId.current) {
+        setPanelFinanceLoading(false);
+      }
     }
   }, []);
 

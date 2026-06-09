@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useUserPreferencesContext } from "@/components/preferences/UserPreferencesProvider";
 import {
   clearSessionUnlock,
@@ -18,6 +18,8 @@ export function usePrivacyLock(initialPinEnabled?: boolean) {
   const [settingsLoaded, setSettingsLoaded] = useState(hasInitialPin);
   const [sessionUnlocked, setSessionUnlocked] = useState(false);
   const [moneyVisible, setMoneyVisible] = useState(false);
+  const moneyVisibleHydrated = useRef(false);
+  const moneyVisibleSaveId = useRef(0);
   const [pinModalOpen, setPinModalOpen] = useState(false);
   const [pinError, setPinError] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
@@ -48,9 +50,9 @@ export function usePrivacyLock(initialPinEnabled?: boolean) {
   }, [hasInitialPin, refreshSettings]);
 
   useEffect(() => {
-    if (prefsLoaded) {
-      setMoneyVisible(preferences.moneyVisibleByDefault);
-    }
+    if (!prefsLoaded || moneyVisibleHydrated.current) return;
+    moneyVisibleHydrated.current = true;
+    setMoneyVisible(preferences.moneyVisibleByDefault);
   }, [prefsLoaded, preferences.moneyVisibleByDefault]);
 
   useEffect(() => {
@@ -145,9 +147,15 @@ export function usePrivacyLock(initialPinEnabled?: boolean) {
   );
 
   const toggleMoneyVisible = useCallback(() => {
+    moneyVisibleHydrated.current = true;
     setMoneyVisible((prev) => {
       const next = !prev;
-      void updatePreferences({ moneyVisibleByDefault: next });
+      const saveId = ++moneyVisibleSaveId.current;
+      void updatePreferences({ moneyVisibleByDefault: next }).catch(() => {
+        if (saveId === moneyVisibleSaveId.current) {
+          setMoneyVisible(prev);
+        }
+      });
       return next;
     });
   }, [updatePreferences]);

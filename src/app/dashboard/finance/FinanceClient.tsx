@@ -2,7 +2,7 @@
 
 import { format, parseISO } from "date-fns";
 import { Eye, EyeOff, Loader2, Lock } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DashboardMain } from "@/components/layout/DashboardShell";
 import { MaskedMoney } from "@/components/privacy/MaskedMoney";
@@ -41,6 +41,7 @@ import type {
   FinanceSummary,
   IncomeEntry,
 } from "@/lib/types";
+import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
 import { cn } from "@/lib/utils";
 
 const MONTH_LABELS = [
@@ -87,7 +88,12 @@ export function FinanceClient({
     requestUnlock,
   } = usePrivacyLockContext();
 
+  useBodyScrollLock(isLocked);
+
+  const reloadSeq = useRef(0);
+
   const reload = useCallback(async (y: number) => {
+    const seq = ++reloadSeq.current;
     setLoading(true);
     try {
       const [sumRes, incRes, expRes] = await Promise.all([
@@ -95,23 +101,38 @@ export function FinanceClient({
         fetch(`/api/finance/income?year=${y}`),
         fetch(`/api/finance/expenses?year=${y}`),
       ]);
+      if (seq !== reloadSeq.current) return;
+
       const sumJson = await sumRes.json();
       const incJson = await incRes.json();
       const expJson = await expRes.json();
       if (!sumRes.ok) throw new Error(sumJson.error ?? "Failed to load summary");
+      if (!incRes.ok) {
+        throw new Error(
+          (incJson as { error?: string }).error ?? "Failed to load income"
+        );
+      }
+      if (!expRes.ok) {
+        throw new Error(
+          (expJson as { error?: string }).error ?? "Failed to load expenses"
+        );
+      }
       setSummary(sumJson as FinanceSummary);
       setIncome(Array.isArray(incJson) ? incJson : []);
       setExpenses(Array.isArray(expJson) ? expJson : []);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to load");
+      if (seq === reloadSeq.current) {
+        toast.error(err instanceof Error ? err.message : "Failed to load");
+      }
     } finally {
-      setLoading(false);
+      if (seq === reloadSeq.current) {
+        setLoading(false);
+      }
     }
   }, []);
 
   const onYearChange = (y: number) => {
-    if (y === year) return;
-    setLoading(true);
+    if (y === year || loading) return;
     setYear(y);
     void reload(y);
   };
@@ -198,14 +219,38 @@ export function FinanceClient({
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
           <div className="flex items-center gap-2">
-            <Tooltip label={moneyVisible ? "Hide amounts" : "Show amounts"}>
+            <Tooltip
+              label={
+                isLocked
+                  ? "Unlock to view amounts"
+                  : moneyVisible
+                    ? "Hide amounts"
+                    : "Show amounts"
+              }
+            >
               <button
                 type="button"
                 className="inline-flex h-10 w-10 items-center justify-center border border-border text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition-colors"
-                aria-label={moneyVisible ? "Hide amounts" : "Show amounts"}
-                onClick={toggleMoneyVisible}
+                aria-label={
+                  isLocked
+                    ? "Unlock to view amounts"
+                    : moneyVisible
+                      ? "Hide amounts"
+                      : "Show amounts"
+                }
+                onClick={() => {
+                  if (isLocked) {
+                    requestUnlock({
+                      title: "Show amounts",
+                      description:
+                        "Enter your privacy PIN to view finance amounts.",
+                    });
+                    return;
+                  }
+                  toggleMoneyVisible();
+                }}
               >
-                {moneyVisible ? (
+                {moneyVisible && !isLocked ? (
                   <EyeOff className="h-4 w-4" aria-hidden />
                 ) : (
                   <Eye className="h-4 w-4" aria-hidden />
@@ -215,27 +260,18 @@ export function FinanceClient({
             <Label htmlFor="finance-year" className="sr-only">
               Year
             </Label>
-            <div className="relative inline-flex items-center">
-              <select
-                id="finance-year"
-                className="input-dark select-compact w-[100px] pr-8"
-                value={year}
-                disabled={loading}
-                onChange={(e) => onYearChange(Number(e.target.value))}
-              >
-                {[year - 1, year, year + 1].map((y) => (
-                  <option key={y} value={y}>
-                    {y}
-                  </option>
-                ))}
-              </select>
-              {loading && (
-                <Loader2
-                  className="pointer-events-none absolute right-2 h-3.5 w-3.5 animate-spin text-text-muted"
-                  aria-hidden
-                />
-              )}
-            </div>
+            <select
+              id="finance-year"
+              className="input-dark select-compact w-[100px]"
+              value={year}
+              onChange={(e) => onYearChange(Number(e.target.value))}
+            >
+              {[year - 1, year, year + 1].map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
           </div>
           <PageToolbarActions>
             <Tooltip label="Export finance data as CSV">
@@ -528,10 +564,22 @@ export function FinanceClient({
       </div>
 
       {isLocked ? (
-        <div className="absolute inset-0 z-10 flex items-center justify-center p-6">
-          <div className="max-w-sm w-full border border-border bg-bg-elevated p-6 text-center shadow-lg">
+        <div
+          className="fixed inset-0 z-[115] flex items-center justify-center p-6 pt-[max(4rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="finance-lock-title"
+        >
+          <div
+            className="absolute inset-0 bg-bg-primary/80 backdrop-blur-sm"
+            aria-hidden
+          />
+          <div className="relative max-w-sm w-full border border-border bg-bg-elevated p-6 text-center shadow-lg">
             <Lock className="h-8 w-8 mx-auto text-text-muted mb-4" aria-hidden />
-            <h2 className="text-lg font-light tracking-[0.05em] uppercase">
+            <h2
+              id="finance-lock-title"
+              className="text-lg font-light tracking-[0.05em] uppercase"
+            >
               Finance locked
             </h2>
             <p className="mt-2 text-[13px] text-text-secondary">

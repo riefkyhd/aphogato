@@ -16,7 +16,8 @@ import {
   hasLinkedExpenseContext,
   type SaveExpenseAction,
 } from "@/lib/finance/financeOptions";
-import { formatMoney } from "@/lib/finance/formatMoney";
+import { MaskedMoney } from "@/components/privacy/MaskedMoney";
+import { usePrivacyLockContext } from "@/components/privacy/PrivacyLockProvider";
 import { saveExpenseApi } from "@/lib/finance/saveExpenseApi";
 import { sumExpenseAmounts } from "@/lib/finance/projectExpenses";
 import type { ExpenseEntry } from "@/lib/types";
@@ -40,6 +41,8 @@ export function LinkedExpensesBlock({
   onChanged: () => void;
   compact?: boolean;
 }) {
+  const { moneyVisible, isLocked } = usePrivacyLockContext();
+  const showAmounts = moneyVisible && !isLocked;
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<ExpenseEntry | null>(null);
   const [saving, setSaving] = useState(false);
@@ -87,7 +90,7 @@ export function LinkedExpensesBlock({
             Expenses
           </p>
           <p className="text-[15px] text-status-editing tabular-nums mt-0.5">
-            {formatMoney(total)}
+            <MaskedMoney amount={total} visible={showAmounts} />
             {expenses.length > 0 && (
               <span className="text-[11px] text-text-muted ml-2 normal-case tracking-normal">
                 ({expenses.length} item{expenses.length === 1 ? "" : "s"})
@@ -145,7 +148,7 @@ export function LinkedExpensesBlock({
               </div>
               <div className="shrink-0 text-right">
                 <p className="tabular-nums text-text-primary">
-                  {formatMoney(row.amount)}
+                  <MaskedMoney amount={row.amount} visible={showAmounts} />
                 </p>
                 <button
                   type="button"

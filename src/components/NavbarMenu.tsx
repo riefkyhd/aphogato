@@ -4,6 +4,7 @@ import { Bell, ExternalLink, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
 import { PrivacyFinanceLink } from "@/components/privacy/PrivacyFinanceLink";
 import { SignOutButton } from "@/components/SignOutButton";
 import { Tooltip } from "@/components/ui/Tooltip";
@@ -58,14 +59,7 @@ export function NavbarMenu({ shootsToday }: { shootsToday: number }) {
     setOpen(false);
   }, [pathname]);
 
-  useEffect(() => {
-    if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [open]);
+  useBodyScrollLock(open);
 
   return (
     <div className="ml-auto md:hidden">
@@ -102,7 +96,7 @@ export function NavbarMenu({ shootsToday }: { shootsToday: number }) {
               Projects
             </NavLink>
             <PrivacyFinanceLink
-              className={linkClass}
+              className={cn(linkClass, "flex items-center gap-2")}
               onActiveTap={() => setOpen(false)}
             />
             <NavLink
