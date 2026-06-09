@@ -33,7 +33,7 @@ export function ManagePhotoLightbox({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col bg-bg-primary/95 backdrop-blur-sm lg:hidden"
+      className="fixed inset-0 z-[60] flex flex-col bg-bg-primary/95 backdrop-blur-sm lg:hidden"
       role="dialog"
       aria-modal="true"
       aria-label={`Preview ${photo.filename}`}

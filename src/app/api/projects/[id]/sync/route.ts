@@ -7,6 +7,7 @@ import {
   findDuplicateFilename,
   type ImageHashRow,
 } from "@/lib/images/duplicateDetection";
+import { backfillDerivedFilenames } from "@/lib/images/backfillFilenames";
 import { backfillMissingShotAt } from "@/lib/images/backfillShotAt";
 import { extractShotAt } from "@/lib/images/extractShotAt";
 import type { Photo } from "@/lib/types";
@@ -129,6 +130,13 @@ export async function POST(
     await supabase.from("photos").update({ shot_at: shotAt }).eq("id", id);
   });
 
+  const filenamesBackfilled = await backfillDerivedFilenames(
+    existing,
+    async (id, filename) => {
+      await supabase.from("photos").update({ filename }).eq("id", id);
+    }
+  );
+
   if (newResources.length > 0) {
     const rows = await Promise.all(
       newResources.map(async (r) => ({
@@ -165,6 +173,7 @@ export async function POST(
     added,
     removed,
     shot_at_backfilled: shotAtBackfilled,
+    filenames_backfilled: filenamesBackfilled,
     skipped_duplicates: skippedDuplicates.length,
     duplicate_warnings: skippedDuplicates,
     total,

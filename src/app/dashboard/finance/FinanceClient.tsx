@@ -17,6 +17,7 @@ import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { ModalShell } from "@/components/ui/ModalShell";
 import { ExpenseFormModal } from "@/components/finance/ExpenseFormModal";
 import { ExpenseQuickAdd } from "@/components/finance/ExpenseQuickAdd";
 import type {
@@ -821,11 +822,14 @@ function IncomeFormModal({
     }
   }, [open, entry, defaultDate]);
 
-  if (!open) return null;
+  const titleId = "income-form-title";
 
   return (
-    <ModalOverlay onClose={onClose}>
-      <h2 className="text-lg font-light tracking-[0.05em] uppercase mb-4">
+    <ModalShell open={open} onClose={onClose} titleId={titleId}>
+      <h2
+        id={titleId}
+        className="text-lg font-light tracking-[0.05em] uppercase mb-4"
+      >
         {entry ? "Edit income" : "Add income"}
       </h2>
       <form
@@ -879,7 +883,7 @@ function IncomeFormModal({
           </Button>
         </FormActions>
       </form>
-    </ModalOverlay>
+    </ModalShell>
   );
 }
 
@@ -902,24 +906,3 @@ function Field({
   );
 }
 
-function ModalOverlay({
-  children,
-  onClose,
-}: {
-  children: React.ReactNode;
-  onClose: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <button
-        type="button"
-        className="absolute inset-0 bg-bg-primary/80"
-        aria-label="Close"
-        onClick={onClose}
-      />
-      <div className="relative w-full max-w-md max-h-[90dvh] overflow-y-auto bg-bg-elevated border border-border p-6 sm:rounded-sm">
-        {children}
-      </div>
-    </div>
-  );
-}

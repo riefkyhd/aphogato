@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
+import { useFocusTrap } from "@/lib/hooks/useFocusTrap";
 import { cn } from "@/lib/utils";
 
 const overlayClass =
@@ -29,12 +30,14 @@ export function ModalShell({
   maxWidthClassName?: string;
 }) {
   const [mounted, setMounted] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useBodyScrollLock(open);
+  useFocusTrap(panelRef, open, onClose);
 
   if (!open || !mounted) return null;
 
@@ -50,8 +53,12 @@ export function ModalShell({
         className="absolute inset-0 bg-bg-primary/80 backdrop-blur-sm"
         aria-label="Close"
         onClick={onClose}
+        tabIndex={-1}
       />
-      <div className={cn(panelClass, maxWidthClassName, panelClassName)}>
+      <div
+        ref={panelRef}
+        className={cn(panelClass, maxWidthClassName, panelClassName)}
+      >
         {children}
       </div>
     </div>,

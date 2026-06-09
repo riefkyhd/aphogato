@@ -119,6 +119,25 @@ export async function POST(
     }
   }
 
+  const { data: lateDuplicate } = await supabase
+    .from("photos")
+    .select("filename")
+    .eq("project_id", project.id)
+    .eq("filename", filename)
+    .maybeSingle();
+
+  if (lateDuplicate) {
+    try {
+      await deleteCloudinaryImageByUrl(secureUrl);
+    } catch {
+      // Best-effort cleanup for duplicate filename race.
+    }
+    return NextResponse.json(
+      { error: `${filename}: already in this project` },
+      { status: 400 }
+    );
+  }
+
   const shotAt = await extractShotAt(publicId, filename);
 
   const { data: row, error: insertError } = await supabase
@@ -139,6 +158,12 @@ export async function POST(
       await deleteCloudinaryImageByUrl(secureUrl);
     } catch {
       // Best-effort cleanup when DB insert fails.
+    }
+    if (insertError?.code === "23505") {
+      return NextResponse.json(
+        { error: `${filename}: already in this project` },
+        { status: 400 }
+      );
     }
     return NextResponse.json(
       { error: insertError?.message ?? "DB insert failed" },

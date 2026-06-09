@@ -84,8 +84,6 @@ export function EventDetailPanel({
   }>({ mode: "none", startX: 0, startY: 0, pointerId: null });
   const dismissTimerRef = useRef<number | null>(null);
 
-  const useSheet = touchLike;
-
   useEffect(() => {
     if (!open || !event) return;
     setIncomeAmountVisible(moneyVisible && !isLocked);
@@ -116,7 +114,7 @@ export function EventDetailPanel({
     }
   }, [open]);
 
-  useBodyScrollLock(open && useSheet);
+  useBodyScrollLock(open && touchLike);
 
   const resetDrag = useCallback(() => {
     dragRef.current = {
@@ -166,7 +164,7 @@ export function EventDetailPanel({
 
       const scrollTop = scrollRef.current?.scrollTop ?? 0;
       const onHandle = (e.target as HTMLElement).closest("[data-sheet-handle]");
-      if (useSheet && scrollTop > 0 && !onHandle) return;
+      if (touchLike && scrollTop > 0 && !onHandle) return;
 
       dragRef.current = {
         mode: "pending",
@@ -176,7 +174,7 @@ export function EventDetailPanel({
       };
       e.currentTarget.setPointerCapture(e.pointerId);
     },
-    [open, event, dismissing, useSheet]
+    [open, event, dismissing, touchLike]
   );
 
   const handlePointerMove = useCallback(
@@ -190,7 +188,7 @@ export function EventDetailPanel({
       if (drag.mode === "pending") {
         if (Math.abs(dx) < AXIS_LOCK_PX && Math.abs(dy) < AXIS_LOCK_PX) return;
 
-        if (useSheet) {
+        if (touchLike) {
           if (Math.abs(dy) <= Math.abs(dx) || dy < 0) {
             resetDrag();
             if (e.currentTarget.hasPointerCapture(e.pointerId)) {
@@ -222,7 +220,7 @@ export function EventDetailPanel({
         setDragOffset(dx);
       }
     },
-    [resetDrag, useSheet]
+    [resetDrag, touchLike]
   );
 
   const handlePointerEnd = useCallback(
@@ -263,24 +261,19 @@ export function EventDetailPanel({
     ? formatEventTimeRange(event.shoot_time, event.shoot_end_time)
     : "";
 
-  const panelTransform = (() => {
-    if (dragOffset > 0) {
-      return useSheet
-        ? `translateY(${dragOffset}px)`
-        : `translateX(${dragOffset}px)`;
-    }
-    if (!open || !event) {
-      return useSheet ? "translateY(100%)" : "translateX(100%)";
-    }
-    return useSheet ? "translateY(0)" : "translateX(0)";
-  })();
+  const useInlineTransform = dragOffset > 0 || dismissing;
+  const panelTransform = useInlineTransform
+    ? touchLike
+      ? `translateY(${dragOffset}px)`
+      : `translateX(${dragOffset}px)`
+    : undefined;
 
   return (
     <>
       <div
         className={cn(
           "fixed inset-0 z-30 bg-bg-primary/70 backdrop-blur-[2px]",
-          useSheet ? "top-0" : "top-[60px]",
+          "max-md:top-0 md:top-[60px]",
           "transition-opacity duration-300 ease-out",
           open && event ? "opacity-100" : "opacity-0 pointer-events-none"
         )}
@@ -291,15 +284,18 @@ export function EventDetailPanel({
         ref={panelRef}
         className={cn(
           "fixed z-40 bg-bg-secondary border-border shadow-xl flex flex-col",
-          useSheet
-            ? "inset-x-0 bottom-0 top-auto max-h-[min(92dvh,calc(100dvh-3.5rem))] rounded-t-xl border-t"
-            : "right-0 top-[60px] bottom-0 w-full sm:max-w-[380px] border-l",
+          "max-md:inset-x-0 max-md:bottom-0 max-md:top-auto max-md:max-h-[min(92dvh,calc(100dvh-3.5rem))] max-md:rounded-t-xl max-md:border-t",
+          "md:right-0 md:top-[60px] md:bottom-0 md:w-full md:max-w-[380px] md:border-l",
           isDragging || dismissing
             ? "transition-none touch-none"
             : "transition-transform duration-300 ease-out touch-pan-y",
-          useSheet && "overscroll-y-contain"
+          "max-md:overscroll-y-contain",
+          !useInlineTransform &&
+            (open && event
+              ? "max-md:translate-y-0 md:translate-x-0"
+              : "max-md:translate-y-full md:translate-x-full")
         )}
-        style={{ transform: panelTransform }}
+        style={panelTransform ? { transform: panelTransform } : undefined}
         aria-hidden={!open || !event}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -308,15 +304,13 @@ export function EventDetailPanel({
       >
         {event && (
           <>
-            {useSheet && (
-              <div
-                data-sheet-handle
-                className="flex shrink-0 justify-center pt-2 pb-1 cursor-grab active:cursor-grabbing"
-                aria-hidden
-              >
-                <div className="h-1 w-10 rounded-full bg-border/80" />
-              </div>
-            )}
+            <div
+              data-sheet-handle
+              className="flex shrink-0 justify-center pt-2 pb-1 cursor-grab active:cursor-grabbing max-md:flex md:hidden"
+              aria-hidden
+            >
+              <div className="h-1 w-10 rounded-full bg-border/80" />
+            </div>
 
             <div className="sticky top-0 z-10 shrink-0 flex items-start justify-between gap-4 border-b border-border bg-bg-secondary px-4 py-3 sm:px-6 sm:py-4">
               <h2 className="text-base sm:text-lg font-light tracking-[0.05em] uppercase text-text-primary pr-2 min-w-0">

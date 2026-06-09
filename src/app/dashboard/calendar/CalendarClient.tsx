@@ -53,6 +53,11 @@ export function CalendarClient({
   const { guardSensitiveAction } = usePrivacyLockContext();
   const { preferences, loaded: prefsLoaded } = useUserPreferencesContext();
   const [events, setEvents] = useState<CalendarEvent[]>(initialEvents);
+
+  useEffect(() => {
+    setEvents(initialEvents);
+  }, [initialEvents]);
+
   const [incomeByEventId, setIncomeByEventId] = useState<
     Record<string, IncomeEntry>
   >({});

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { FormActions } from "@/components/ui/FormActions";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { ModalShell } from "@/components/ui/ModalShell";
 import {
   EXPENSE_CATEGORIES,
   EXPENSE_CATEGORY_LABELS,
@@ -37,28 +38,6 @@ function Field({
     <div>
       <Label>{label}</Label>
       <Input type={type} value={value} onChange={(e) => onChange(e.target.value)} />
-    </div>
-  );
-}
-
-function ModalOverlay({
-  children,
-  onClose,
-}: {
-  children: React.ReactNode;
-  onClose: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 pb-[max(0px,env(safe-area-inset-bottom))]">
-      <button
-        type="button"
-        className="absolute inset-0 bg-bg-primary/80"
-        aria-label="Close"
-        onClick={onClose}
-      />
-      <div className="relative w-full max-w-md max-h-[min(90dvh,calc(100dvh-1rem))] overflow-y-auto bg-bg-elevated border border-border border-b-0 sm:border-b p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] rounded-t-sm sm:rounded-sm">
-        {children}
-      </div>
     </div>
   );
 }
@@ -144,7 +123,7 @@ export function ExpenseFormModal({
     }
   }, [open, entry, defaultDate, defaultEventId, defaultProjectId]);
 
-  if (!open) return null;
+  const titleId = "expense-form-title";
 
   function buildPayload(): Record<string, unknown> | null {
     const parsed = parseMoneyInput(amount);
@@ -186,8 +165,11 @@ export function ExpenseFormModal({
   }
 
   return (
-    <ModalOverlay onClose={onClose}>
-      <h2 className="text-lg font-light tracking-[0.05em] uppercase mb-4">
+    <ModalShell open={open} onClose={onClose} titleId={titleId}>
+      <h2
+        id={titleId}
+        className="text-lg font-light tracking-[0.05em] uppercase mb-4"
+      >
         {isEdit ? "Edit expense" : "Add expense"}
       </h2>
       <form
@@ -284,6 +266,6 @@ export function ExpenseFormModal({
           </Button>
         </FormActions>
       </form>
-    </ModalOverlay>
+    </ModalShell>
   );
 }

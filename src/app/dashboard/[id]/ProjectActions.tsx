@@ -31,7 +31,8 @@ function syncToastMessage(
   skippedDuplicates: number,
   newlySelected: number,
   newlyDeselected: number,
-  shotAtBackfilled: number
+  shotAtBackfilled: number,
+  filenamesBackfilled: number
 ): string {
   const parts: string[] = [];
   if (added > 0) {
@@ -40,6 +41,11 @@ function syncToastMessage(
   if (shotAtBackfilled > 0) {
     parts.push(
       `${shotAtBackfilled} shooting time${shotAtBackfilled === 1 ? "" : "s"} updated`
+    );
+  }
+  if (filenamesBackfilled > 0) {
+    parts.push(
+      `${filenamesBackfilled} filename${filenamesBackfilled === 1 ? "" : "s"} updated`
     );
   }
   if (removed > 0) {
@@ -151,6 +157,7 @@ export function ProjectActions({
       const added = json.added ?? 0;
       const removed = json.removed ?? 0;
       const shotAtBackfilled = json.shot_at_backfilled ?? 0;
+      const filenamesBackfilled = json.filenames_backfilled ?? 0;
       const skippedDuplicates = json.skipped_duplicates ?? 0;
       const duplicateWarnings = Array.isArray(json.duplicate_warnings)
         ? (json.duplicate_warnings as string[])
@@ -169,7 +176,8 @@ export function ProjectActions({
           skippedDuplicates,
           newlySelected,
           newlyDeselected,
-          shotAtBackfilled
+          shotAtBackfilled,
+          filenamesBackfilled
         )
       );
       if (duplicateWarnings.length > 0) {

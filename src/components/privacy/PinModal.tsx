@@ -34,12 +34,7 @@ export function PinModal({
       return;
     }
     inputRef.current?.focus();
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape" && !loading) onClose();
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, loading, onClose]);
+  }, [open]);
 
   return (
     <ModalShell
