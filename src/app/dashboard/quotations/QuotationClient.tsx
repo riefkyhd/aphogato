@@ -27,11 +27,13 @@ import {
   createEmptyLineItem,
   QUOTATION_STORAGE_KEY,
 } from "@/lib/quotations/defaults";
+import { peekNextBaseQuoteNumber, peekNextRevisionQuoteNumber } from "@/lib/quotations/quoteNumber";
 import {
-  isRevisionQuoteNumber,
-  peekNextBaseQuoteNumber,
-  peekNextRevisionQuoteNumber,
-} from "@/lib/quotations/quoteNumber";
+  blankQuotationSession,
+  parseStoredQuotationSession,
+  resolveRestoredQuotationSession,
+  serializeQuotationSession,
+} from "@/lib/quotations/sessionStorage";
 import {
   type SavedQuotation,
   savedQuotationToDraft,
@@ -113,44 +115,23 @@ export function QuotationClient({
   useEffect(() => {
     try {
       const raw = localStorage.getItem(QUOTATION_STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as QuotationDraft & {
-          clientEmail?: string;
-        };
-        if (parsed?.lineItems?.length) {
-          const restored = {
-            ...parsed,
-            clientPhone: parsed.clientPhone ?? "",
-            clientSocial:
-              parsed.clientSocial ?? parsed.clientEmail ?? "",
-            eventDate: parsed.eventDate ?? "",
-            eventLocation: parsed.eventLocation ?? "",
-            eventDuration: parsed.eventDuration ?? "",
-            deliverables:
-              parsed.deliverables?.length > 0
-                ? parsed.deliverables
-                : [createEmptyDeliverable()],
-          };
-          const existsInArchive = initialSavedQuotations.some(
-            (item) => item.quote_number === restored.quoteNumber
-          );
-          if (
-            existsInArchive &&
-            !isRevisionQuoteNumber(restored.quoteNumber)
-          ) {
-            restored.quoteNumber = peekNextBaseQuoteNumber(
-              initialSavedQuotations
-            );
-          }
-          setDraft(restored);
-          return;
-        }
-      }
-      setDraft(
-        createBlankQuotation(peekNextBaseQuoteNumber(initialSavedQuotations))
-      );
+      const snapshot = raw
+        ? parseStoredQuotationSession(raw)
+        : null;
+      const resolved = snapshot
+        ? resolveRestoredQuotationSession(snapshot, initialSavedQuotations)
+        : blankQuotationSession(initialSavedQuotations);
+
+      setSavedId(resolved.savedId);
+      setRevisionParentId(resolved.revisionParentId);
+      setDraftRevision(resolved.draftRevision);
+      setDraft(resolved.draft);
     } catch {
-      // ignore corrupt draft
+      const blank = blankQuotationSession(initialSavedQuotations);
+      setSavedId(blank.savedId);
+      setRevisionParentId(blank.revisionParentId);
+      setDraftRevision(blank.draftRevision);
+      setDraft(blank.draft);
     } finally {
       setHydrated(true);
     }
@@ -158,8 +139,16 @@ export function QuotationClient({
 
   useEffect(() => {
     if (!hydrated) return;
-    localStorage.setItem(QUOTATION_STORAGE_KEY, JSON.stringify(draft));
-  }, [draft, hydrated]);
+    localStorage.setItem(
+      QUOTATION_STORAGE_KEY,
+      serializeQuotationSession({
+        draft,
+        savedId,
+        revisionParentId,
+        draftRevision,
+      })
+    );
+  }, [draft, draftRevision, hydrated, revisionParentId, savedId]);
 
   const updateDraft = useCallback(
     (patch: Partial<QuotationDraft>) => {
