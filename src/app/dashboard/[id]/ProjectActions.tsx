@@ -227,25 +227,14 @@ export function ProjectActions({
   function openInBridge() {
     const host = window.location.host;
     const deepLink = `aphogato://import?project_id=${encodeURIComponent(projectId)}&token=${encodeURIComponent(galleryToken)}&host=${encodeURIComponent(host)}`;
-    window.location.href = deepLink;
-  }
 
-  const bridgeAction = showBridgeButton ? (
-    <div className="flex flex-col items-stretch">
-      <Button
-        size="sm"
-        variant="secondary"
-        onClick={openInBridge}
-        disabled={selectedFilenames.length === 0}
-        className={actionBtn}
-      >
-        Open in Bridge
-      </Button>
-      <p className="mt-1 text-[11px] text-text-secondary">
-        Requires Aphogato Bridge installed on this computer
-      </p>
-    </div>
-  ) : null;
+    toast.message("Opening Aphogato Bridge…", {
+      description:
+        "If nothing happens, install the latest Bridge app on this computer — the aphogato:// link only works after Bridge is installed.",
+    });
+
+    window.location.assign(deepLink);
+  }
 
   const secondaryActions = (
     <>
@@ -268,7 +257,6 @@ export function ProjectActions({
       >
         Download list
       </Button>
-      {bridgeAction}
       <Button
         type="button"
         size="sm"
@@ -283,6 +271,23 @@ export function ProjectActions({
       </Button>
     </>
   );
+
+  const bridgeSection = showBridgeButton ? (
+    <div className="mt-2.5 border-t border-border/80 pt-2.5">
+      <Button
+        size="sm"
+        variant="secondary"
+        onClick={openInBridge}
+        disabled={selectedFilenames.length === 0}
+        className="w-full"
+      >
+        Open in Bridge
+      </Button>
+      <p className="mt-1.5 text-center text-[11px] leading-snug text-text-secondary">
+        Requires Aphogato Bridge installed on this computer
+      </p>
+    </div>
+  ) : null;
 
   return (
     <div className="w-full shrink-0 lg:w-auto">
@@ -317,6 +322,7 @@ export function ProjectActions({
         >
           {secondaryActions}
         </div>
+        {bridgeSection}
       </div>
 
       {/* Mobile / tablet */}
@@ -383,22 +389,6 @@ export function ProjectActions({
                 >
                   Download list
                 </Button>
-                {showBridgeButton ? (
-                  <div className="col-span-2">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={openInBridge}
-                      disabled={selectedFilenames.length === 0}
-                      className="w-full"
-                    >
-                      Open in Bridge
-                    </Button>
-                    <p className="mt-1 text-[11px] text-text-secondary">
-                      Requires Aphogato Bridge installed on this computer
-                    </p>
-                  </div>
-                ) : null}
                 <Button
                   type="button"
                   size="sm"
@@ -411,6 +401,22 @@ export function ProjectActions({
                 >
                   Delete project
                 </Button>
+              </div>
+            )}
+            {showBridgeButton && moreOpen && (
+              <div className="border-t border-border/80 pt-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={openInBridge}
+                  disabled={selectedFilenames.length === 0}
+                  className="w-full"
+                >
+                  Open in Bridge
+                </Button>
+                <p className="mt-1.5 text-center text-[11px] leading-snug text-text-secondary">
+                  Requires Aphogato Bridge installed on this computer
+                </p>
               </div>
             )}
           </>

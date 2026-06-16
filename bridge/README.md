@@ -59,3 +59,23 @@ Extensions are optional. Matching is case-insensitive on base filenames.
 Default output folder: `[source folder]/to-edit/`
 
 Source files are never modified or deleted — copy only.
+
+## Deep links (Open in Bridge)
+
+The dashboard **Open in Bridge** button uses the `aphogato://` URL scheme. macOS and Windows only register this scheme when **Bridge is installed** from a built `.app` / `.exe` — not from `npm run dev` alone.
+
+```bash
+cd bridge
+npm run build
+```
+
+- **macOS:** open the `.dmg` from `src-tauri/target/release/bundle/dmg/` and drag **Aphogato Bridge** to Applications
+- **Windows:** run the NSIS installer from `src-tauri/target/release/bundle/nsis/`
+
+Or download the latest artifact from GitHub Actions → **Bridge build**.
+
+Test manually:
+
+```bash
+open "aphogato://import?project_id=YOUR_ID&token=YOUR_TOKEN&host=localhost:3000"
+```
