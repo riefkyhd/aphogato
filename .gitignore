@@ -34,3 +34,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# aphogato bridge (tauri)
+/bridge/node_modules
+/bridge/dist
+/bridge/src-tauri/target
+/bridge/src-tauri/gen

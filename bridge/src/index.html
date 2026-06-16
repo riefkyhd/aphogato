@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>APHOGATO BRIDGE</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <h1 class="header__title">APHOGATO BRIDGE</h1>
+        <span class="header__version">v1.0.0</span>
+      </header>
+
+      <main id="form-view" class="main">
+        <!-- Step 1 -->
+        <section class="card">
+          <p class="label">Selection file</p>
+          <div id="drop-zone" class="drop-zone" tabindex="0" role="button">
+            Drop your selection.txt here or click to browse
+          </div>
+          <div id="selection-loaded" class="selection-loaded hidden">
+            <div class="selection-loaded__row">
+              <span id="selection-filename" class="selection-loaded__name"></span>
+              <button type="button" id="clear-selection" class="link-btn">✕ clear</button>
+            </div>
+            <p id="selection-count" class="selection-loaded__count"></p>
+            <ul id="selection-preview" class="selection-preview"></ul>
+          </div>
+        </section>
+
+        <!-- Step 2 -->
+        <section class="card">
+          <p class="label">Source folder</p>
+          <div class="field-row">
+            <input
+              id="source-folder"
+              class="input"
+              type="text"
+              readonly
+              placeholder="No folder selected"
+            />
+            <button type="button" id="browse-source" class="btn btn-secondary">
+              Browse
+            </button>
+          </div>
+          <p class="helper">Folder containing your RAW and/or JPEG files</p>
+        </section>
+
+        <!-- Step 3 -->
+        <section class="card">
+          <p class="label">Copy as</p>
+          <div class="toggle-group" role="radiogroup" aria-label="File type">
+            <button
+              type="button"
+              class="toggle active"
+              data-type="raw"
+              aria-pressed="true"
+            >
+              RAW
+            </button>
+            <button type="button" class="toggle" data-type="jpeg" aria-pressed="false">
+              JPEG
+            </button>
+            <button type="button" class="toggle" data-type="both" aria-pressed="false">
+              Both
+            </button>
+          </div>
+          <p class="helper">
+            RAW and JPEG must share the same base filename<br />
+            e.g. DSC_0042.ARW and DSC_0042.jpg
+          </p>
+        </section>
+
+        <!-- Step 4 -->
+        <section class="card">
+          <p class="label">Output folder (optional)</p>
+          <div class="field-row">
+            <input
+              id="output-folder"
+              class="input"
+              type="text"
+              readonly
+              placeholder="Default: [source folder]/to-edit/"
+            />
+            <button type="button" id="browse-output" class="btn btn-secondary">
+              Browse
+            </button>
+          </div>
+          <p id="output-helper" class="helper">
+            Default: [source folder]/to-edit/
+          </p>
+        </section>
+
+        <button type="button" id="copy-btn" class="btn btn-primary" disabled>
+          Find &amp; copy photos
+        </button>
+      </main>
+
+      <!-- Progress -->
+      <section id="progress-view" class="main hidden" aria-live="polite">
+        <div class="card progress-card">
+          <div class="progress-track">
+            <div id="progress-fill" class="progress-fill"></div>
+          </div>
+          <p id="progress-status" class="progress-status">Preparing…</p>
+        </div>
+      </section>
+
+      <!-- Results -->
+      <section id="results-view" class="main hidden">
+        <h2 class="results-heading">Done</h2>
+        <div class="card results-card">
+          <p class="results-line">
+            <span class="dot dot-green" aria-hidden="true"></span>
+            <span id="results-copied"></span>
+          </p>
+          <p id="results-missing-row" class="results-line hidden">
+            <span class="dot dot-amber" aria-hidden="true"></span>
+            <span id="results-missing"></span>
+          </p>
+          <p id="results-path" class="results-path"></p>
+
+          <button type="button" id="toggle-missing" class="link-btn hidden">
+            ▸ Show missing files
+          </button>
+          <ul id="missing-list" class="missing-list hidden"></ul>
+        </div>
+
+        <div class="results-actions">
+          <button type="button" id="open-output" class="btn btn-secondary">
+            Open output folder
+          </button>
+          <button type="button" id="start-over" class="btn btn-secondary">
+            Start over
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <script type="module" src="main.js"></script>
+  </body>
+</html>

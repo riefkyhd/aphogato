@@ -1,0 +1,22 @@
+{
+  "name": "aphogato-bridge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Aphogato Bridge — copy client-selected photos from a local folder",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "vite:dev": "vite",
+    "vite:build": "vite build",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.4.0",
+    "@tauri-apps/plugin-dialog": "^2.2.0",
+    "@tauri-apps/plugin-opener": "^2.2.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.4.0",
+    "vite": "^6.3.5"
+  }
+}
