@@ -17,9 +17,48 @@
         <!-- Step 1 -->
         <section class="card">
           <p class="label">Selection file</p>
+
           <div id="drop-zone" class="drop-zone" tabindex="0" role="button">
             Drop your selection.txt here or click to browse
           </div>
+
+          <div id="selection-loading" class="selection-loading hidden" aria-live="polite">
+            <div class="spinner" aria-hidden="true"></div>
+            <p class="selection-loading__text">Fetching selection from Aphogato…</p>
+          </div>
+
+          <div id="selection-api-loaded" class="selection-api hidden">
+            <div class="selection-api__header">
+              <span class="dot dot-green" aria-hidden="true"></span>
+              <span class="selection-api__badge">Loaded from Aphogato</span>
+            </div>
+            <p id="selection-project-name" class="selection-api__project"></p>
+            <p id="selection-client-name" class="selection-api__client"></p>
+            <p id="selection-api-count" class="selection-api__count"></p>
+            <ul id="selection-api-preview" class="selection-api__preview"></ul>
+            <div class="selection-api__footer">
+              <button type="button" id="clear-api-selection" class="link-btn">
+                Load different file
+              </button>
+            </div>
+          </div>
+
+          <div id="selection-error" class="selection-error hidden">
+            <div class="selection-error__header">
+              <span class="dot dot-amber" aria-hidden="true"></span>
+              <span class="selection-error__title">Could not load project</span>
+            </div>
+            <p id="selection-error-message" class="selection-error__message"></p>
+            <div class="selection-error__actions">
+              <button type="button" id="retry-api-fetch" class="btn btn-secondary">
+                Try again
+              </button>
+              <button type="button" id="load-txt-manually" class="btn btn-secondary">
+                Load TXT manually
+              </button>
+            </div>
+          </div>
+
           <div id="selection-loaded" class="selection-loaded hidden">
             <div class="selection-loaded__row">
               <span id="selection-filename" class="selection-loaded__name"></span>

@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
+import { getCurrent, onOpenUrl } from "@tauri-apps/plugin-deep-link";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 
 const state = {
@@ -12,6 +13,8 @@ const state = {
   outputFolderCustom: false,
   fileType: "raw",
   lastResult: null,
+  apiContext: null,
+  lastErrorMessage: "",
 };
 
 const els = {
@@ -19,6 +22,17 @@ const els = {
   progressView: document.getElementById("progress-view"),
   resultsView: document.getElementById("results-view"),
   dropZone: document.getElementById("drop-zone"),
+  selectionLoading: document.getElementById("selection-loading"),
+  selectionApiLoaded: document.getElementById("selection-api-loaded"),
+  selectionProjectName: document.getElementById("selection-project-name"),
+  selectionClientName: document.getElementById("selection-client-name"),
+  selectionApiCount: document.getElementById("selection-api-count"),
+  selectionApiPreview: document.getElementById("selection-api-preview"),
+  clearApiSelection: document.getElementById("clear-api-selection"),
+  selectionError: document.getElementById("selection-error"),
+  selectionErrorMessage: document.getElementById("selection-error-message"),
+  retryApiFetch: document.getElementById("retry-api-fetch"),
+  loadTxtManually: document.getElementById("load-txt-manually"),
   selectionLoaded: document.getElementById("selection-loaded"),
   selectionFilename: document.getElementById("selection-filename"),
   selectionCount: document.getElementById("selection-count"),
@@ -43,6 +57,14 @@ const els = {
   toggles: document.querySelectorAll(".toggle"),
 };
 
+const step1Panels = [
+  els.dropZone,
+  els.selectionLoading,
+  els.selectionApiLoaded,
+  els.selectionError,
+  els.selectionLoaded,
+];
+
 function showError(message) {
   const existing = document.querySelector(".error-toast");
   if (existing) existing.remove();
@@ -58,6 +80,12 @@ function setView(view) {
   els.formView.classList.toggle("hidden", view !== "form");
   els.progressView.classList.toggle("hidden", view !== "progress");
   els.resultsView.classList.toggle("hidden", view !== "results");
+}
+
+function setStep1State(active) {
+  for (const panel of step1Panels) {
+    panel.classList.toggle("hidden", panel !== active);
+  }
 }
 
 function updateCopyButton() {
@@ -79,29 +107,66 @@ function renderSelectionPreview() {
   }
 }
 
+function renderApiPreview(filenames) {
+  els.selectionApiPreview.innerHTML = "";
+  const preview = filenames.slice(0, 3);
+  for (const name of preview) {
+    const li = document.createElement("li");
+    li.textContent = name;
+    els.selectionApiPreview.appendChild(li);
+  }
+  const remaining = filenames.length - preview.length;
+  if (remaining > 0) {
+    const li = document.createElement("li");
+    li.textContent = `… and ${remaining} more`;
+    els.selectionApiPreview.appendChild(li);
+  }
+}
+
+function applyProjectSelection(selection) {
+  state.basenames = selection.filenames ?? [];
+  state.selectionPath = "";
+  state.selectionFilename = selection.project_name ?? "Aphogato project";
+  state.apiContext = null;
+
+  els.selectionProjectName.textContent = selection.project_name ?? "Untitled project";
+  els.selectionClientName.textContent = selection.client_name || "Client";
+  els.selectionApiCount.textContent = `${selection.selected_count ?? state.basenames.length} photo${
+    (selection.selected_count ?? state.basenames.length) === 1 ? "" : "s"
+  } selected`;
+  renderApiPreview(state.basenames);
+  setStep1State(els.selectionApiLoaded);
+  updateCopyButton();
+}
+
+function resetStep1ToDefault() {
+  state.selectionPath = "";
+  state.selectionFilename = "";
+  state.basenames = [];
+  state.apiContext = null;
+  state.lastErrorMessage = "";
+  setStep1State(els.dropZone);
+  updateCopyButton();
+}
+
 async function loadSelectionFile(path) {
   const basenames = await invoke("parse_txt_file", { path });
   state.selectionPath = path;
   state.selectionFilename = path.split(/[/\\]/).pop() ?? path;
   state.basenames = basenames;
+  state.apiContext = null;
 
-  els.dropZone.classList.add("hidden");
-  els.selectionLoaded.classList.remove("hidden");
   els.selectionFilename.textContent = state.selectionFilename;
   els.selectionCount.textContent = `${state.basenames.length} photo${
     state.basenames.length === 1 ? "" : "s"
   } in selection`;
   renderSelectionPreview();
+  setStep1State(els.selectionLoaded);
   updateCopyButton();
 }
 
 function clearSelection() {
-  state.selectionPath = "";
-  state.selectionFilename = "";
-  state.basenames = [];
-  els.selectionLoaded.classList.add("hidden");
-  els.dropZone.classList.remove("hidden");
-  updateCopyButton();
+  resetStep1ToDefault();
 }
 
 async function pickTxtFile() {
@@ -113,6 +178,71 @@ async function pickTxtFile() {
   if (typeof selected === "string") {
     await loadSelectionFile(selected);
   }
+}
+
+function parseDeepLink(url) {
+  const normalized = url.replace(/^aphogato:/i, "http:");
+  const parsed = new URL(normalized);
+  return {
+    projectId: parsed.searchParams.get("project_id"),
+    token: parsed.searchParams.get("token"),
+    host: parsed.searchParams.get("host"),
+  };
+}
+
+async function fetchProjectFromAPI(host, projectId, token) {
+  if (!host || !projectId || !token) {
+    showApiError("Invalid deep link — missing project_id, token, or host.");
+    return;
+  }
+
+  state.apiContext = { host, projectId, token };
+  setStep1State(els.selectionLoading);
+
+  try {
+    const selection = await invoke("fetch_project_selection", {
+      host,
+      projectId,
+      token,
+    });
+    applyProjectSelection(selection);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    showApiError(message);
+  }
+}
+
+function showApiError(message) {
+  state.lastErrorMessage = message;
+  els.selectionErrorMessage.textContent = message;
+  setStep1State(els.selectionError);
+  updateCopyButton();
+}
+
+function handleDeepLinkUrl(url) {
+  const { projectId, token, host } = parseDeepLink(url);
+  fetchProjectFromAPI(host, projectId, token).catch((err) =>
+    showApiError(err instanceof Error ? err.message : String(err))
+  );
+}
+
+async function setupDeepLinks() {
+  const startUrls = await getCurrent();
+  if (startUrls?.length) {
+    handleDeepLinkUrl(startUrls[startUrls.length - 1]);
+  }
+
+  await onOpenUrl((urls) => {
+    if (urls?.length) {
+      handleDeepLinkUrl(urls[urls.length - 1]);
+    }
+  });
+
+  await listen("deep-link-received", (event) => {
+    if (typeof event.payload === "string") {
+      handleDeepLinkUrl(event.payload);
+    }
+  });
 }
 
 async function setSourceFolder(folder) {
@@ -227,6 +357,12 @@ function showResults(result) {
   }
 
   els.resultsPath.textContent = result.output_folder;
+
+  setTimeout(() => {
+    invoke("open_folder", { path: result.output_folder }).catch((err) =>
+      console.warn("Could not auto-open output folder:", err)
+    );
+  }, 500);
 }
 
 function resetForm() {
@@ -283,6 +419,22 @@ function bindEvents() {
   });
 
   els.clearSelection.addEventListener("click", clearSelection);
+  els.clearApiSelection.addEventListener("click", clearSelection);
+  els.loadTxtManually.addEventListener("click", clearSelection);
+  els.retryApiFetch.addEventListener("click", () => {
+    if (!state.apiContext) {
+      resetStep1ToDefault();
+      return;
+    }
+    fetchProjectFromAPI(
+      state.apiContext.host,
+      state.apiContext.projectId,
+      state.apiContext.token
+    ).catch((err) =>
+      showApiError(err instanceof Error ? err.message : String(err))
+    );
+  });
+
   els.browseSource.addEventListener("click", () => {
     browseSourceFolder().catch((err) =>
       showError(err instanceof Error ? err.message : String(err))
@@ -329,3 +481,7 @@ try {
 
 bindEvents();
 updateCopyButton();
+
+setupDeepLinks().catch((err) => {
+  console.warn("Deep link setup unavailable:", err);
+});

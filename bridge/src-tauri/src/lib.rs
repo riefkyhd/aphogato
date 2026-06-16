@@ -3,10 +3,19 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
+use tauri_plugin_deep_link::DeepLinkExt;
 
 const RAW_EXTENSIONS: &[&str] = &["arw", "cr2", "cr3", "nef", "orf", "rw2", "dng"];
 const JPEG_EXTENSIONS: &[&str] = &["jpg", "jpeg"];
+
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+pub struct ProjectSelection {
+    project_name: String,
+    client_name: String,
+    selected_count: usize,
+    filenames: Vec<String>,
+}
 
 #[derive(serde::Serialize, Clone)]
 struct CopyProgressPayload {
@@ -246,17 +255,113 @@ fn open_folder(path: String) -> Result<(), String> {
     Ok(())
 }
 
+fn focus_main_window(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.unminimize();
+        let _ = window.set_focus();
+    }
+}
+
+fn emit_deep_link(app: &tauri::AppHandle, url: &str) {
+    if !url.starts_with("aphogato://") {
+        return;
+    }
+    focus_main_window(app);
+    let _ = app.emit("deep-link-received", url.to_string());
+}
+
+fn api_base_url(host: &str) -> String {
+    let trimmed = host.trim().trim_end_matches('/');
+    if trimmed.starts_with("http://") || trimmed.starts_with("https://") {
+        trimmed.to_string()
+    } else if trimmed.starts_with("localhost") || trimmed.starts_with("127.0.0.1") {
+        format!("http://{trimmed}")
+    } else {
+        format!("https://{trimmed}")
+    }
+}
+
+#[tauri::command]
+async fn fetch_project_selection(
+    host: String,
+    project_id: String,
+    token: String,
+) -> Result<ProjectSelection, String> {
+    let base = api_base_url(&host);
+    let url = format!("{base}/api/bridge/selection");
+
+    let response = reqwest::Client::new()
+        .get(url)
+        .query(&[("project_id", project_id.as_str()), ("token", token.as_str())])
+        .send()
+        .await
+        .map_err(|e| format!("Network error: {e}"))?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        if let Ok(json) = serde_json::from_str::<serde_json::Value>(&body) {
+            if let Some(err) = json.get("error").and_then(|value| value.as_str()) {
+                return Err(err.to_string());
+            }
+        }
+        let message = if body.is_empty() {
+            format!("Request failed ({status})")
+        } else {
+            body
+        };
+        return Err(message);
+    }
+
+    response
+        .json::<ProjectSelection>()
+        .await
+        .map_err(|e| format!("Invalid response from server: {e}"))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_deep_link::init());
+
+    #[cfg(desktop)]
+    {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+            for arg in argv {
+                emit_deep_link(app, &arg);
+            }
+        }));
+    }
+
+    builder
+        .setup(|app| {
+            #[cfg(desktop)]
+            {
+                app.deep_link().register("aphogato")?;
+
+                let handle = app.handle().clone();
+                app.deep_link().on_open_url(move |event| {
+                    for url in event.urls() {
+                        emit_deep_link(&handle, url.as_ref());
+                    }
+                });
+
+                for arg in std::env::args().skip(1) {
+                    emit_deep_link(app.handle(), &arg);
+                }
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             parse_txt_file,
             scan_source_folder,
             get_default_output_folder,
             copy_selected_files,
             open_folder,
+            fetch_project_selection,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Aphogato Bridge");

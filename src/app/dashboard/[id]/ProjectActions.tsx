@@ -222,6 +222,30 @@ export function ProjectActions({
   }
 
   const nextStatus = NEXT_STATUS[status];
+  const showBridgeButton = status !== "pending";
+
+  function openInBridge() {
+    const host = window.location.host;
+    const deepLink = `aphogato://import?project_id=${encodeURIComponent(projectId)}&token=${encodeURIComponent(galleryToken)}&host=${encodeURIComponent(host)}`;
+    window.location.href = deepLink;
+  }
+
+  const bridgeAction = showBridgeButton ? (
+    <div className="flex flex-col items-stretch">
+      <Button
+        size="sm"
+        variant="secondary"
+        onClick={openInBridge}
+        disabled={selectedFilenames.length === 0}
+        className={actionBtn}
+      >
+        Open in Bridge
+      </Button>
+      <p className="mt-1 text-[11px] text-text-secondary">
+        Requires Aphogato Bridge installed on this computer
+      </p>
+    </div>
+  ) : null;
 
   const secondaryActions = (
     <>
@@ -244,6 +268,7 @@ export function ProjectActions({
       >
         Download list
       </Button>
+      {bridgeAction}
       <Button
         type="button"
         size="sm"
@@ -358,6 +383,22 @@ export function ProjectActions({
                 >
                   Download list
                 </Button>
+                {showBridgeButton ? (
+                  <div className="col-span-2">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={openInBridge}
+                      disabled={selectedFilenames.length === 0}
+                      className="w-full"
+                    >
+                      Open in Bridge
+                    </Button>
+                    <p className="mt-1 text-[11px] text-text-secondary">
+                      Requires Aphogato Bridge installed on this computer
+                    </p>
+                  </div>
+                ) : null}
                 <Button
                   type="button"
                   size="sm"
