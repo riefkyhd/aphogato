@@ -5,6 +5,12 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig({
   root: "src",
   clearScreen: false,
+  css: {
+    // Plain CSS only — don't inherit root postcss.config.mjs (Tailwind / Next.js).
+    postcss: {
+      plugins: [],
+    },
+  },
   server: {
     port: 1420,
     strictPort: true,
