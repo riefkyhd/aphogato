@@ -6,12 +6,16 @@ import { GoogleCalendarSettings } from "@/app/dashboard/settings/GoogleCalendarS
 import { PreferencesSettings } from "@/app/dashboard/settings/PreferencesSettings";
 import { PrivacySettings } from "@/app/dashboard/settings/PrivacySettings";
 import { TodayReminderSettings } from "@/app/dashboard/settings/TodayReminderSettings";
+import { isGoogleOAuthConfigured } from "@/lib/calendar/googleOAuthConfig";
 import { isGoogleCalendarConnected } from "@/lib/calendar/googleSettings";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const isConnected = await isGoogleCalendarConnected();
+  const [isConnected, isOAuthConfigured] = await Promise.all([
+    isGoogleCalendarConnected(),
+    Promise.resolve(isGoogleOAuthConfigured()),
+  ]);
 
   return (
     <DashboardMain>
@@ -20,7 +24,10 @@ export default async function SettingsPage() {
           Settings
         </h1>
         <Suspense fallback={null}>
-          <GoogleCalendarSettings isConnected={isConnected} />
+          <GoogleCalendarSettings
+            isConnected={isConnected}
+            isOAuthConfigured={isOAuthConfigured}
+          />
         </Suspense>
         <PreferencesSettings />
         <TodayReminderSettings />

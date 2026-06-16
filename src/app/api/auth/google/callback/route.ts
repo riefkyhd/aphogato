@@ -3,19 +3,18 @@ import {
   exchangeCodeForRefreshToken,
   storeRefreshToken,
 } from "@/lib/calendar/googleCalendar";
+import {
+  getGoogleOAuthOrigin,
+  getGoogleOAuthRedirectUri,
+} from "@/lib/calendar/googleOAuthConfig";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
 const STATE_COOKIE = "google_oauth_state";
 
-function siteOrigin(request: Request): string {
-  const url = new URL(request.url);
-  return process.env.NEXT_PUBLIC_SITE_URL ?? url.origin;
-}
-
 export async function GET(request: Request) {
-  const origin = siteOrigin(request);
+  const origin = getGoogleOAuthOrigin(request);
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
@@ -49,7 +48,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const redirectUri = `${origin}/api/auth/google/callback`;
+    const redirectUri = getGoogleOAuthRedirectUri(request);
     const refreshToken = await exchangeCodeForRefreshToken(code, redirectUri);
     await storeRefreshToken(refreshToken);
     const response = NextResponse.redirect(

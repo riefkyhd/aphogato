@@ -1,47 +1,67 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
+import { ConnectGoogleCalendarButton } from "@/components/calendar/ConnectGoogleCalendarButton";
+import { consumeGoogleOAuthReturnPath } from "@/lib/calendar/openGoogleOAuthConnect";
 
 export function GoogleCalendarSettings({
   isConnected: initialConnected,
+  isOAuthConfigured,
 }: {
   isConnected: boolean;
+  isOAuthConfigured: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isConnected = initialConnected;
 
-  useEffect(() => {
-    if (searchParams.get("connected") === "true") {
-      toast.success("Google Calendar connected");
-      router.replace("/dashboard/settings");
-    }
-    const err = searchParams.get("error");
-    if (err) {
-      toast.error(decodeURIComponent(err));
-      router.replace("/dashboard/settings");
-    }
-  }, [searchParams, router]);
+  const finishOAuthFlow = useCallback(
+    (message: { type: "success" } | { type: "error"; text: string }) => {
+      if (message.type === "success") {
+        toast.success("Google Calendar connected");
+      } else {
+        toast.error(message.text);
+      }
 
-  async function handleDisconnect() {
-    try {
-      const res = await fetch("/api/calendar/settings", { method: "DELETE" });
-      const json = await res.json();
-      if (!res.ok) {
-        toast.error(json.error ?? "Failed to disconnect");
+      if (window.opener && !window.opener.closed) {
+        if (message.type === "success") {
+          window.opener.location.reload();
+        } else {
+          window.opener.focus();
+        }
+        window.close();
         return;
       }
-      toast.success("Google Calendar disconnected");
-      router.refresh();
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to disconnect"
-      );
+
+      const returnTo = consumeGoogleOAuthReturnPath();
+      if (message.type === "success" && returnTo && returnTo !== "/dashboard/settings") {
+        router.replace(returnTo);
+        router.refresh();
+        return;
+      }
+
+      router.replace("/dashboard/settings");
+      if (message.type === "success") {
+        router.refresh();
+      }
+    },
+    [router]
+  );
+
+  useEffect(() => {
+    if (searchParams.get("connected") === "true") {
+      finishOAuthFlow({ type: "success" });
+      return;
     }
-  }
+
+    const err = searchParams.get("error");
+    if (err) {
+      finishOAuthFlow({ type: "error", text: decodeURIComponent(err) });
+    }
+  }, [finishOAuthFlow, searchParams]);
 
   return (
     <section className="border border-border bg-bg-secondary p-6">
@@ -69,11 +89,42 @@ export function GoogleCalendarSettings({
             Connect your Google account to sync shoot events to your primary
             calendar.
           </p>
-          <a href="/api/auth/google" className="btn-primary w-full sm:w-auto inline-flex justify-center">
+          {!isOAuthConfigured ? (
+            <p className="text-[13px] text-status-cancelled">
+              Google OAuth is not configured on this deployment. Add{" "}
+              <code className="text-[12px]">GOOGLE_CLIENT_ID</code> and{" "}
+              <code className="text-[12px]">GOOGLE_CLIENT_SECRET</code> to your
+              environment (and on Vercel for production), then restart the app.
+            </p>
+          ) : null}
+          <ConnectGoogleCalendarButton
+            isOAuthConfigured={isOAuthConfigured}
+            variant="primary"
+            size="default"
+            fullWidth
+            className="sm:w-auto"
+          >
             Connect Google Calendar
-          </a>
+          </ConnectGoogleCalendarButton>
         </div>
       )}
     </section>
   );
+
+  async function handleDisconnect() {
+    try {
+      const res = await fetch("/api/calendar/settings", { method: "DELETE" });
+      const json = await res.json();
+      if (!res.ok) {
+        toast.error(json.error ?? "Failed to disconnect");
+        return;
+      }
+      toast.success("Google Calendar disconnected");
+      router.refresh();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to disconnect"
+      );
+    }
+  }
 }

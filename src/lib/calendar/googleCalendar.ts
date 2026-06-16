@@ -7,24 +7,29 @@ import {
   getGoogleRefreshToken,
   storeGoogleRefreshToken,
 } from "@/lib/calendar/googleSettings";
+import { isGoogleOAuthConfigured } from "@/lib/calendar/googleOAuthConfig";
 import type { CalendarEvent } from "@/lib/types";
 
 const CALENDAR_TIMEZONE = "Asia/Jakarta";
 const DEFAULT_DURATION_MINUTES = 120;
 
+const OAUTH_NOT_CONFIGURED_MESSAGE =
+  "Google OAuth is not configured. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to your environment.";
+
 function getGoogleClientCredentials() {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  if (!clientId || !clientSecret) {
-    throw new Error("Google OAuth is not configured");
+  if (!isGoogleOAuthConfigured()) {
+    throw new Error(OAUTH_NOT_CONFIGURED_MESSAGE);
   }
-  return { clientId, clientSecret };
+  return {
+    clientId: process.env.GOOGLE_CLIENT_ID!.trim(),
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET!.trim(),
+  };
 }
 
 function resolveRedirectUri(override?: string): string {
-  const redirectUri = override ?? process.env.GOOGLE_REDIRECT_URI;
+  const redirectUri = override?.trim() || process.env.GOOGLE_REDIRECT_URI?.trim();
   if (!redirectUri) {
-    throw new Error("Google OAuth is not configured");
+    throw new Error(OAUTH_NOT_CONFIGURED_MESSAGE);
   }
   return redirectUri;
 }

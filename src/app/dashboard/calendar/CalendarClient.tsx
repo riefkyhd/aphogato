@@ -9,7 +9,6 @@ import {
   subMonths,
 } from "date-fns";
 import { ChevronLeft, ChevronRight, Download, Info } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useUserPreferencesContext } from "@/components/preferences/UserPreferencesProvider";
@@ -17,6 +16,7 @@ import { toast } from "sonner";
 import { DashboardMain } from "@/components/layout/DashboardShell";
 import { CalendarListView } from "@/components/calendar/CalendarListView";
 import { CalendarMonthGrid } from "@/components/calendar/CalendarMonthGrid";
+import { ConnectGoogleCalendarButton } from "@/components/calendar/ConnectGoogleCalendarButton";
 import { DeleteEventDialog } from "@/components/calendar/DeleteEventDialog";
 import { usePrivacyLockContext } from "@/components/privacy/PrivacyLockProvider";
 import {
@@ -44,10 +44,12 @@ export function CalendarClient({
   initialEvents,
   projects,
   isGoogleConnected,
+  isOAuthConfigured,
 }: {
   initialEvents: CalendarEvent[];
   projects: CalendarProject[];
   isGoogleConnected: boolean;
+  isOAuthConfigured: boolean;
 }) {
   const router = useRouter();
   const { guardSensitiveAction } = usePrivacyLockContext();
@@ -344,7 +346,7 @@ export function CalendarClient({
 
   const handleGlobalSync = useCallback(async () => {
     if (!isGoogleConnected) {
-      toast.error("Connect Google Calendar in Settings first");
+      toast.error("Connect Google Calendar first");
       return;
     }
     setSyncing(true);
@@ -451,14 +453,11 @@ export function CalendarClient({
               </Button>
             </Tooltip>
           ) : (
-            <Tooltip label="Connect Google Calendar in settings">
-              <Link
-                href="/dashboard/settings"
-                className={cn("btn-secondary !text-[11px] !min-h-9 !px-3 !py-2", toolbarButtonClass)}
-                aria-label="Connect Google Calendar in settings"
-              >
-                Connect Google
-              </Link>
+            <Tooltip label="Connect Google Calendar">
+              <ConnectGoogleCalendarButton
+                isOAuthConfigured={isOAuthConfigured}
+                className={toolbarButtonClass}
+              />
             </Tooltip>
           )}
           <Tooltip label="Create new calendar event">
@@ -489,7 +488,7 @@ export function CalendarClient({
               </>
             ) : (
               <>
-                Connect Google in Settings to sync shoots to your phone calendar.
+                Use Connect Google to sync shoots to your phone calendar.
               </>
             )}
           </p>
@@ -574,6 +573,7 @@ export function CalendarClient({
           event={panelEvent}
           projects={projects}
           isGoogleConnected={isGoogleConnected}
+          isOAuthConfigured={isOAuthConfigured}
           income={panelIncome}
           eventExpenses={panelExpenses}
           financeLoading={panelFinanceLoading}

@@ -1,4 +1,5 @@
 import { CalendarClient } from "@/app/dashboard/calendar/CalendarClient";
+import { isGoogleOAuthConfigured } from "@/lib/calendar/googleOAuthConfig";
 import { isGoogleCalendarConnected } from "@/lib/calendar/googleSettings";
 import { createServerSupabase } from "@/lib/supabase/server";
 import type { CalendarEvent } from "@/lib/types";
@@ -8,7 +9,8 @@ export const dynamic = "force-dynamic";
 export default async function CalendarPage() {
   const supabase = createServerSupabase();
 
-  const [eventsRes, projectsRes, isGoogleConnected] = await Promise.all([
+  const [eventsRes, projectsRes, isGoogleConnected, isOAuthConfigured] =
+    await Promise.all([
     supabase
       .from("events")
       .select("*")
@@ -18,6 +20,7 @@ export default async function CalendarPage() {
       .select("id, name")
       .order("name", { ascending: true }),
     isGoogleCalendarConnected(),
+    Promise.resolve(isGoogleOAuthConfigured()),
   ]);
 
   const initialEvents = (eventsRes.data ?? []) as CalendarEvent[];
@@ -28,6 +31,7 @@ export default async function CalendarPage() {
       initialEvents={initialEvents}
       projects={projects}
       isGoogleConnected={isGoogleConnected}
+      isOAuthConfigured={isOAuthConfigured}
     />
   );
 }

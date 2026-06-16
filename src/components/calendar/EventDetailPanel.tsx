@@ -9,6 +9,7 @@ import { Eye, EyeOff, X } from "lucide-react";
 import Link from "next/link";
 import { MaskedMoneyText } from "@/components/privacy/MaskedMoney";
 import { usePrivacyLockContext } from "@/components/privacy/PrivacyLockProvider";
+import { ConnectGoogleCalendarButton } from "@/components/calendar/ConnectGoogleCalendarButton";
 import { EventStatusDot } from "@/components/calendar/EventStatusDot";
 import { ShootTypeBadge } from "@/components/calendar/ShootTypeBadge";
 import { Button } from "@/components/ui/Button";
@@ -36,6 +37,7 @@ export function EventDetailPanel({
   event,
   projects,
   isGoogleConnected,
+  isOAuthConfigured,
   income,
   eventExpenses,
   financeLoading = false,
@@ -50,6 +52,7 @@ export function EventDetailPanel({
   event: CalendarEvent | null;
   projects: CalendarProject[];
   isGoogleConnected: boolean;
+  isOAuthConfigured: boolean;
   income: IncomeEntry | null;
   eventExpenses: ExpenseEntry[];
   financeLoading?: boolean;
@@ -497,17 +500,20 @@ export function EventDetailPanel({
                   Google Calendar
                 </p>
                 {!isGoogleConnected ? (
-                  <p className="text-[12px] text-text-secondary">
-                    Connect in{" "}
-                    <Link
-                      href="/dashboard/settings"
-                      className="text-text-primary hover:underline"
+                  <div className="space-y-3">
+                    <p className="text-[12px] text-text-secondary">
+                      Connect Google, then use{" "}
+                      <strong className="font-normal">Sync all</strong> in the
+                      toolbar to add shoots to your phone calendar.
+                    </p>
+                    <ConnectGoogleCalendarButton
+                      isOAuthConfigured={isOAuthConfigured}
+                      size="sm"
+                      fullWidth
                     >
-                      Settings
-                    </Link>
-                    , then use <strong className="font-normal">Sync all</strong>{" "}
-                    in the toolbar.
-                  </p>
+                      Connect Google Calendar
+                    </ConnectGoogleCalendarButton>
+                  </div>
                 ) : event.google_event_id ? (
                   <p className="text-[11px] uppercase tracking-label text-status-delivered">
                     ● Synced
