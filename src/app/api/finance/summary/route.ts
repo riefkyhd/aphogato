@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/api/requireAuth";
+import { buildFinanceBreakdown } from "@/lib/finance/breakdown";
 import { buildFinanceSummary } from "@/lib/finance/summary";
 import type { ExpenseEntry, IncomeEntry } from "@/lib/types";
 
@@ -12,13 +13,24 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const yearParam = url.searchParams.get("year");
+  const monthParam = url.searchParams.get("month");
   const year = yearParam ? Number(yearParam) : new Date().getFullYear();
+  const month =
+    monthParam && monthParam !== "all"
+      ? Number(monthParam)
+      : null;
 
   if (!Number.isFinite(year) || year < 2000 || year > 2100) {
     return NextResponse.json({ error: "Invalid year" }, { status: 400 });
   }
+  if (
+    month !== null &&
+    (!Number.isFinite(month) || month < 1 || month > 12)
+  ) {
+    return NextResponse.json({ error: "Invalid month" }, { status: 400 });
+  }
 
-  const [incomeRes, expenseRes] = await Promise.all([
+  const [incomeRes, expenseRes, eventsRes] = await Promise.all([
     supabase
       .from("income_entries")
       .select("*")
@@ -29,6 +41,10 @@ export async function GET(request: Request) {
       .select("*")
       .gte("entry_date", `${year}-01-01`)
       .lte("entry_date", `${year}-12-31`),
+    supabase
+      .from("events")
+      .select("id, title, shoot_date")
+      .order("shoot_date", { ascending: false }),
   ]);
 
   if (incomeRes.error) {
@@ -40,6 +56,9 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
+  if (eventsRes.error) {
+    return NextResponse.json({ error: eventsRes.error.message }, { status: 500 });
+  }
 
   const income = (incomeRes.data ?? []).map((r) => ({
     ...(r as IncomeEntry),
@@ -49,6 +68,16 @@ export async function GET(request: Request) {
     ...(r as ExpenseEntry),
     amount: Number(r.amount),
   }));
+  const events = eventsRes.data ?? [];
 
-  return NextResponse.json(buildFinanceSummary(year, income, expenses));
+  const summary = buildFinanceSummary(year, income, expenses);
+  const breakdown = buildFinanceBreakdown(
+    year,
+    month,
+    income,
+    expenses,
+    events
+  );
+
+  return NextResponse.json({ ...summary, breakdown });
 }

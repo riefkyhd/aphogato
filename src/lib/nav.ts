@@ -4,6 +4,7 @@ const DASHBOARD_SECTION_PREFIXES = [
   "/dashboard/clients",
   "/dashboard/pricing",
   "/dashboard/quotations",
+  "/dashboard/invoices",
   "/dashboard/settings",
   "/dashboard/new",
 ];

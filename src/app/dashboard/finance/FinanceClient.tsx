@@ -2,9 +2,18 @@
 
 import { format, parseISO } from "date-fns";
 import { Eye, EyeOff, Loader2, Lock } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DashboardMain } from "@/components/layout/DashboardShell";
+import { EventFinanceDetail } from "@/components/finance/EventFinanceDetail";
+import {
+  EventFinanceFilter,
+  getEventsWithFinanceInPeriod,
+} from "@/components/finance/EventFinanceFilter";
+import { FinanceCharts } from "@/components/finance/FinanceCharts";
+import { FinanceInsightCards } from "@/components/finance/FinanceInsightCards";
+import { ShootProfitabilityTable } from "@/components/finance/ShootProfitabilityTable";
 import { MaskedMoney } from "@/components/privacy/MaskedMoney";
 import { usePrivacyLockContext } from "@/components/privacy/PrivacyLockProvider";
 import { Button } from "@/components/ui/Button";
@@ -25,6 +34,12 @@ import type {
   FinanceProjectOption,
 } from "@/lib/finance/financeOptions";
 import { saveExpenseApi } from "@/lib/finance/saveExpenseApi";
+import { buildFinanceBreakdown } from "@/lib/finance/breakdown";
+import {
+  EXPENSE_CATEGORIES,
+  EXPENSE_CATEGORY_LABELS,
+  type ExpenseCategory,
+} from "@/lib/finance/constants";
 import {
   formatExpensePrimary,
   formatExpenseSecondary,
@@ -80,6 +95,13 @@ export function FinanceClient({
   const [expenseScope, setExpenseScope] = useState<"all" | "linked" | "general">(
     "all"
   );
+  const [expenseCategory, setExpenseCategory] = useState<ExpenseCategory | "all">(
+    "all"
+  );
+  const [selectedEventId, setSelectedEventId] = useState("");
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   const {
     isLocked,
@@ -93,12 +115,32 @@ export function FinanceClient({
 
   const reloadSeq = useRef(0);
 
-  const reload = useCallback(async (y: number) => {
+  useEffect(() => {
+    const fromUrl = searchParams.get("event")?.trim() ?? "";
+    if (fromUrl) setSelectedEventId(fromUrl);
+  }, [searchParams]);
+
+  const setEventFilter = useCallback(
+    (eventId: string) => {
+      setSelectedEventId(eventId);
+      const params = new URLSearchParams(searchParams.toString());
+      if (eventId) params.set("event", eventId);
+      else params.delete("event");
+      const query = params.toString();
+      router.replace(query ? `/dashboard/finance?${query}` : "/dashboard/finance", {
+        scroll: false,
+      });
+    },
+    [router, searchParams]
+  );
+
+  const reload = useCallback(async (y: number, m: number | null) => {
     const seq = ++reloadSeq.current;
     setLoading(true);
     try {
+      const monthQuery = m ? `&month=${m}` : "";
       const [sumRes, incRes, expRes] = await Promise.all([
-        fetch(`/api/finance/summary?year=${y}`),
+        fetch(`/api/finance/summary?year=${y}${monthQuery}`),
         fetch(`/api/finance/income?year=${y}`),
         fetch(`/api/finance/expenses?year=${y}`),
       ]);
@@ -135,13 +177,34 @@ export function FinanceClient({
   const onYearChange = (y: number) => {
     if (y === year || loading) return;
     setYear(y);
-    void reload(y);
+    void reload(y, month);
   };
 
+  const breakdown = useMemo(
+    () => buildFinanceBreakdown(year, month, income, expenses, events),
+    [year, month, income, expenses, events]
+  );
+
+  const eventsInPeriod = useMemo(
+    () => {
+      const periodIncome = month
+        ? filterEntriesByMonth(income, year, month)
+        : income;
+      const periodExpenses = month
+        ? filterEntriesByMonth(expenses, year, month)
+        : expenses;
+      return getEventsWithFinanceInPeriod(periodIncome, periodExpenses, events);
+    },
+    [income, expenses, events, year, month]
+  );
+
   const filteredIncome = useMemo(() => {
-    if (!month) return income;
-    return filterEntriesByMonth(income, year, month);
-  }, [income, year, month]);
+    let rows = month ? filterEntriesByMonth(income, year, month) : income;
+    if (selectedEventId) {
+      rows = rows.filter((row) => row.event_id === selectedEventId);
+    }
+    return rows;
+  }, [income, year, month, selectedEventId]);
 
   const filteredExpenses = useMemo(() => {
     let rows = month ? filterEntriesByMonth(expenses, year, month) : expenses;
@@ -150,8 +213,14 @@ export function FinanceClient({
     } else if (expenseScope === "general") {
       rows = rows.filter((row) => isGeneralExpense(row));
     }
+    if (expenseCategory !== "all") {
+      rows = rows.filter((row) => row.category === expenseCategory);
+    }
+    if (selectedEventId) {
+      rows = rows.filter((row) => row.event_id === selectedEventId);
+    }
     return rows;
-  }, [expenses, year, month, expenseScope]);
+  }, [expenses, year, month, expenseScope, expenseCategory, selectedEventId]);
 
   const generalExpenseDefaultDate = month
     ? `${year}-${String(month).padStart(2, "0")}-01`
@@ -273,6 +342,11 @@ export function FinanceClient({
                 </option>
               ))}
             </select>
+            <EventFinanceFilter
+              events={eventsInPeriod}
+              value={selectedEventId}
+              onChange={setEventFilter}
+            />
           </div>
           <PageToolbarActions>
             <Tooltip label="Export finance data as CSV">
@@ -336,6 +410,35 @@ export function FinanceClient({
         />
       </div>
 
+      <FinanceInsightCards breakdown={breakdown} showAmounts={showAmounts} />
+      <FinanceCharts
+        summary={summary}
+        breakdown={breakdown}
+        showAmounts={showAmounts}
+      />
+      <ShootProfitabilityTable
+        rollups={breakdown.eventRollups}
+        showAmounts={showAmounts}
+        selectedEventId={selectedEventId}
+        onSelectEvent={setEventFilter}
+      />
+
+      {selectedEventId ? (
+        <EventFinanceDetail
+          eventId={selectedEventId}
+          events={events}
+          income={month ? filterEntriesByMonth(income, year, month) : income}
+          expenses={
+            month ? filterEntriesByMonth(expenses, year, month) : expenses
+          }
+          showAmounts={showAmounts}
+          onEditExpense={(row) => {
+            setEditingExpense(row);
+            setExpenseModal(true);
+          }}
+        />
+      ) : null}
+
       <div className="mb-6">
         <p className="text-[11px] uppercase tracking-label text-text-muted mb-2">
           {year} overview
@@ -348,11 +451,11 @@ export function FinanceClient({
               onClick={() => setMonth(m.month)}
               title={
                 showAmounts
-                  ? `${MONTH_LABELS[m.month - 1]} ${year}: ${formatMoney(m.net)}`
+                  ? `${MONTH_LABELS[m.month - 1]} ${year}: income ${formatMoney(m.income)}, expenses ${formatMoney(m.expenses)}, net ${formatMoney(m.net)}`
                   : undefined
               }
               className={cn(
-                "border border-border p-2 sm:p-3 text-left transition-colors min-h-[72px] min-w-0",
+                "border border-border p-2 sm:p-3 text-left transition-colors min-h-[88px] min-w-0",
                 month === m.month
                   ? "bg-bg-elevated border-text-primary"
                   : "bg-bg-secondary hover:bg-bg-elevated"
@@ -369,6 +472,17 @@ export function FinanceClient({
               >
                 <MaskedMoney amount={m.net} visible={showAmounts} />
               </p>
+              {showAmounts ? (
+                <p className="mt-1 text-[9px] text-text-muted leading-snug">
+                  <span className="text-status-delivered/80">
+                    {formatMoney(m.income)}
+                  </span>
+                  {" · "}
+                  <span className="text-status-editing/80">
+                    {formatMoney(m.expenses)}
+                  </span>
+                </p>
+              ) : null}
             </button>
           ))}
         </div>
@@ -407,7 +521,7 @@ export function FinanceClient({
                   return;
                 }
                 toast.success("Income removed");
-                void reload(year);
+                void reload(year, month);
               },
             }))}
           />
@@ -431,6 +545,26 @@ export function FinanceClient({
                 onChange={setExpenseScope}
               />
             </div>
+            <div className="px-4 py-3 border-b border-border">
+              <Label htmlFor="expense-category-filter" className="sr-only">
+                Expense category
+              </Label>
+              <select
+                id="expense-category-filter"
+                value={expenseCategory}
+                onChange={(event) =>
+                  setExpenseCategory(event.target.value as ExpenseCategory | "all")
+                }
+                className="input-dark select-compact w-full sm:w-auto"
+              >
+                <option value="all">All categories</option>
+                {EXPENSE_CATEGORIES.map((category) => (
+                  <option key={category} value={category}>
+                    {EXPENSE_CATEGORY_LABELS[category]}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="px-4 py-3 border-b border-border bg-bg-primary/40">
               <p className="text-[11px] uppercase tracking-label text-text-muted mb-2">
                 Quick add overhead
@@ -439,7 +573,7 @@ export function FinanceClient({
                 entryDate={generalExpenseDefaultDate}
                 saving={saving}
                 onSavingChange={setSaving}
-                onSaved={() => void reload(year)}
+                onSaved={() => void reload(year, month)}
                 onOpenFullForm={() => {
                   setEditingExpense(null);
                   setExpenseModal(true);
@@ -472,7 +606,7 @@ export function FinanceClient({
                     return;
                   }
                   toast.success("Expense removed");
-                  void reload(year);
+                  void reload(year, month);
                 },
               }))}
             />
@@ -514,7 +648,7 @@ export function FinanceClient({
             toast.success(editingIncome ? "Income updated" : "Income added");
             setIncomeModal(false);
             setEditingIncome(null);
-            void reload(year);
+            void reload(year, month);
           } finally {
             setSaving(false);
           }
@@ -552,7 +686,7 @@ export function FinanceClient({
           toast.success(
             editingExpense ? "Expense updated" : "Expense added"
           );
-          void reload(year);
+          void reload(year, month);
 
           if (editingExpense || action === "close") {
             setExpenseModal(false);

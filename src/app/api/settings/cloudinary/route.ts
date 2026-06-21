@@ -9,12 +9,16 @@ import {
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(request: Request) {
   const auth = await requireAuth();
   if (!auth.ok) return auth.response;
 
+  const refreshUsage =
+    new URL(request.url).searchParams.get("refresh") === "1" ||
+    new URL(request.url).searchParams.get("refresh") === "true";
+
   try {
-    const settings = await getCloudinarySettings();
+    const settings = await getCloudinarySettings({ refreshUsage });
     return NextResponse.json(settings);
   } catch (err) {
     return NextResponse.json(

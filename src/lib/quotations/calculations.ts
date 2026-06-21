@@ -1,5 +1,7 @@
 import type { QuotationLineItem } from "@/lib/quotations/types";
 
+export const QUOTATION_DEPOSIT_RATE = 0.5;
+
 export function lineItemTotal(item: QuotationLineItem): number {
   const qty = Number.isFinite(item.qty) && item.qty > 0 ? item.qty : 0;
   const price =
@@ -12,5 +14,17 @@ export function quotationSubtotal(items: QuotationLineItem[]): number {
 }
 
 export function quotationDownPayment(items: QuotationLineItem[]): number {
-  return Math.round(quotationSubtotal(items) * 0.5);
+  return Math.round(quotationSubtotal(items) * QUOTATION_DEPOSIT_RATE);
+}
+
+export function quotationFinalBalance(
+  items: QuotationLineItem[],
+  depositPaid?: number
+): number {
+  const total = quotationSubtotal(items);
+  const deposit =
+    depositPaid !== undefined && Number.isFinite(depositPaid) && depositPaid >= 0
+      ? Math.round(depositPaid)
+      : quotationDownPayment(items);
+  return Math.max(0, total - deposit);
 }

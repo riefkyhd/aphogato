@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { FinanceClient } from "@/app/dashboard/finance/FinanceClient";
 import { createServerSupabase } from "@/lib/supabase/server";
 import type { CalendarEvent } from "@/lib/types";
@@ -30,27 +31,37 @@ export default async function FinancePage() {
 
   // Server-side load via supabase directly (avoid self-fetch without URL)
   const { buildFinanceSummary } = await import("@/lib/finance/summary");
+  const { buildFinanceBreakdown } = await import("@/lib/finance/breakdown");
   const { normalizeIncome, normalizeExpense } = await import(
     "@/lib/finance/normalize"
   );
 
   const income = (incomeRes.data ?? []).map((r) => normalizeIncome(r));
   const expenses = (expenseRes.data ?? []).map((r) => normalizeExpense(r));
-  const summary = buildFinanceSummary(year, income, expenses);
   const events = (eventsRes.data ?? []) as Pick<
     CalendarEvent,
     "id" | "title" | "shoot_date" | "client_name" | "project_id"
   >[];
   const projects = projectsRes.data ?? [];
+  const summary = buildFinanceSummary(year, income, expenses);
+  const breakdown = buildFinanceBreakdown(
+    year,
+    new Date().getMonth() + 1,
+    income,
+    expenses,
+    events
+  );
 
   return (
-    <FinanceClient
-      initialYear={year}
-      initialSummary={summary}
-      initialIncome={income}
-      initialExpenses={expenses}
-      events={events}
-      projects={projects}
-    />
+    <Suspense fallback={null}>
+      <FinanceClient
+        initialYear={year}
+        initialSummary={{ ...summary, breakdown }}
+        initialIncome={income}
+        initialExpenses={expenses}
+        events={events}
+        projects={projects}
+      />
+    </Suspense>
   );
 }

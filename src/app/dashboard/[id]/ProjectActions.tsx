@@ -229,8 +229,7 @@ export function ProjectActions({
     const deepLink = `aphogato://import?project_id=${encodeURIComponent(projectId)}&token=${encodeURIComponent(galleryToken)}&host=${encodeURIComponent(host)}`;
 
     toast.message("Opening Aphogato Bridge…", {
-      description:
-        "If nothing happens, install the latest Bridge app on this computer — the aphogato:// link only works after Bridge is installed.",
+      description: "Launching the desktop app with this project's selection.",
     });
 
     window.location.assign(deepLink);

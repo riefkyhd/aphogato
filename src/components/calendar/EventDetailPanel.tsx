@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { useTouchLike } from "@/hooks/useTouchLike";
 import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
@@ -23,6 +23,7 @@ import type {
   FinanceProjectOption,
 } from "@/lib/finance/financeOptions";
 import { formatMoney } from "@/lib/finance/formatMoney";
+import { sumExpenseAmounts } from "@/lib/finance/projectExpenses";
 import type { CalendarEvent, ExpenseEntry, IncomeEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -73,6 +74,12 @@ export function EventDetailPanel({
   } = usePrivacyLockContext();
   const [incomeAmountVisible, setIncomeAmountVisible] = useState(false);
   const showIncome = !isLocked && incomeAmountVisible;
+  const expenseTotal = useMemo(
+    () => sumExpenseAmounts(eventExpenses),
+    [eventExpenses]
+  );
+  const eventNet = (income?.amount ?? 0) - expenseTotal;
+  const showFinanceAmounts = moneyVisible && !isLocked;
   const scrollRef = useRef<HTMLDivElement>(null);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -480,6 +487,37 @@ export function EventDetailPanel({
                   </p>
                 )}
               </div>
+
+              {!financeLoading && (income || eventExpenses.length > 0) ? (
+                <div className="border-t border-border pt-4 mt-4">
+                  <p className="text-[11px] uppercase tracking-label text-text-muted mb-1">
+                    Net margin
+                  </p>
+                  <p
+                    className={cn(
+                      "text-[15px] tabular-nums",
+                      eventNet >= 0 ? "text-status-delivered" : "text-status-editing"
+                    )}
+                  >
+                    <MaskedMoneyText
+                      text={formatMoney(eventNet, income?.currency ?? "IDR")}
+                      visible={showFinanceAmounts}
+                    />
+                  </p>
+                  {income && income.amount > 0 && showFinanceAmounts ? (
+                    <p className="mt-1 text-[11px] text-text-muted">
+                      {Math.round((eventNet / income.amount) * 100)}% after{" "}
+                      {formatMoney(expenseTotal, income.currency)} expenses
+                    </p>
+                  ) : null}
+                  <Link
+                    href={`/dashboard/finance?event=${encodeURIComponent(event.id)}`}
+                    className="mt-2 inline-block text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary"
+                  >
+                    View in Finance →
+                  </Link>
+                </div>
+              ) : null}
 
               <LinkedExpensesBlock
                 expenses={financeLoading ? [] : eventExpenses}

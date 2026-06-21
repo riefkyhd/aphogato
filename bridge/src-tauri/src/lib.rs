@@ -322,10 +322,7 @@ async fn fetch_project_selection(
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let mut builder = tauri::Builder::default()
-        .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_deep_link::init());
+    let mut builder = tauri::Builder::default();
 
     #[cfg(desktop)]
     {
@@ -337,10 +334,16 @@ pub fn run() {
     }
 
     builder
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_deep_link::init())
         .setup(|app| {
             #[cfg(desktop)]
             {
-                app.deep_link().register("aphogato")?;
+                #[cfg(any(windows, target_os = "linux"))]
+                {
+                    app.deep_link().register("aphogato")?;
+                }
 
                 let handle = app.handle().clone();
                 app.deep_link().on_open_url(move |event| {

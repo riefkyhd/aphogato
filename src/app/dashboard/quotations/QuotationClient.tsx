@@ -525,6 +525,11 @@ export function QuotationClient({
               activeId={savedId}
               onLoad={handleLoadSaved}
               onRevision={requestRevision}
+              onFinalInvoice={(item) => {
+                window.location.assign(
+                  `/dashboard/invoices?from=${encodeURIComponent(item.id)}`
+                );
+              }}
               onRequestDelete={setDeleteTarget}
               deletingId={deletingId}
             />

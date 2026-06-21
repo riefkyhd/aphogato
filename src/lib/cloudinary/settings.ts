@@ -7,6 +7,11 @@ import {
   resolveConfiguredDefaultAccountId,
   type CloudinaryAccountPublic,
 } from "@/lib/cloudinary/accounts";
+import type { CloudinaryAccountUsagePublic } from "@/lib/cloudinary/types";
+import {
+  buildNewProjectUsageHint,
+  getCloudinaryUsageForAllAccounts,
+} from "@/lib/cloudinary/usage";
 
 const DEFAULT_ACCOUNT_KEY = "cloudinary_default_account";
 
@@ -41,12 +46,27 @@ export async function setDefaultCloudinaryAccountId(
   if (error) throw new Error(error.message);
 }
 
-export async function getCloudinarySettings(): Promise<{
+export async function getCloudinarySettings(options?: {
+  refreshUsage?: boolean;
+}): Promise<{
   accounts: CloudinaryAccountPublic[];
   defaultAccountId: string;
+  usage: CloudinaryAccountUsagePublic[];
+  newProjectHint: {
+    defaultUsage: CloudinaryAccountUsagePublic | null;
+    suggestedAccountId: string | null;
+    message: string | null;
+  };
 }> {
+  const defaultAccountId = await getDefaultCloudinaryAccountId();
+  const usage = await getCloudinaryUsageForAllAccounts({
+    refresh: options?.refreshUsage,
+  });
+
   return {
     accounts: listCloudinaryAccountsPublic(),
-    defaultAccountId: await getDefaultCloudinaryAccountId(),
+    defaultAccountId,
+    usage,
+    newProjectHint: buildNewProjectUsageHint({ defaultAccountId, usage }),
   };
 }

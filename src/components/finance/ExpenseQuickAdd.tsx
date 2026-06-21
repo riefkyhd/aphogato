@@ -16,7 +16,7 @@ import {
   saveExpenseApi,
 } from "@/lib/finance/saveExpenseApi";
 
-const selectClass = "input-dark w-full h-9";
+const fieldCompactClass = "input-dark field-compact w-full";
 
 export function ExpenseQuickAdd({
   entryDate,
@@ -80,7 +80,7 @@ export function ExpenseQuickAdd({
           </Label>
           <select
             id="quick-expense-category"
-            className={selectClass}
+            className={fieldCompactClass}
             value={category}
             disabled={saving}
             onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
@@ -104,7 +104,7 @@ export function ExpenseQuickAdd({
             value={amount}
             disabled={saving}
             onChange={(e) => setAmount(e.target.value)}
-            className="h-9 tabular-nums"
+            className="field-compact tabular-nums"
           />
         </div>
         <Button

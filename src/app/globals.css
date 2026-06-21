@@ -136,12 +136,28 @@ body {
     border-color: var(--accent);
   }
 
-  /* Fixed-height selects: input-dark padding alone overflows h-10 */
-  .select-compact {
+  /* Fixed-height fields: input-dark padding alone overflows compact heights */
+  .select-compact,
+  .input-compact,
+  .field-compact {
     height: 2.5rem;
     padding: 0 0.75rem;
     font-size: 13px;
     line-height: 2.5rem;
+  }
+
+  /* Safety net when height utilities are used without compact padding */
+  select.input-dark.h-8,
+  select.input-dark.h-9,
+  select.input-dark.h-10,
+  select.input-dark.h-11,
+  input.input-dark.h-8,
+  input.input-dark.h-9,
+  input.input-dark.h-10,
+  input.input-dark.h-11 {
+    padding-top: 0;
+    padding-bottom: 0;
+    line-height: 1.25;
   }
 }
 

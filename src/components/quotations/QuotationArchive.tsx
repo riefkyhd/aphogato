@@ -1,7 +1,7 @@
 "use client";
 
 import { format, parseISO } from "date-fns";
-import { GitBranchPlus, Trash2 } from "lucide-react";
+import { GitBranchPlus, Receipt, Trash2 } from "lucide-react";
 import { IconButton } from "@/components/ui/IconButton";
 import { Tooltip } from "@/components/ui/Tooltip";
 import type { SavedQuotation } from "@/lib/quotations/db";
@@ -22,6 +22,7 @@ export function QuotationArchive({
   activeId,
   onLoad,
   onRevision,
+  onFinalInvoice,
   onRequestDelete,
   deletingId,
 }: {
@@ -29,6 +30,7 @@ export function QuotationArchive({
   activeId: string | null;
   onLoad: (item: SavedQuotation) => void;
   onRevision: (item: SavedQuotation) => void;
+  onFinalInvoice: (item: SavedQuotation) => void;
   onRequestDelete: (item: SavedQuotation) => void;
   deletingId: string | null;
 }) {
@@ -72,6 +74,14 @@ export function QuotationArchive({
               </p>
             </button>
             <div className="flex items-center shrink-0 pr-1 py-1">
+              <Tooltip label="Final invoice">
+                <IconButton
+                  onClick={() => onFinalInvoice(item)}
+                  label={`Create final invoice for ${item.quote_number}`}
+                >
+                  <Receipt className="h-4 w-4" aria-hidden />
+                </IconButton>
+              </Tooltip>
               <Tooltip label="Create revision">
                 <IconButton
                   onClick={() => onRevision(item)}

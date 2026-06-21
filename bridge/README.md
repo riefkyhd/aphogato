@@ -74,6 +74,8 @@ npm run build
 
 Or download the latest artifact from GitHub Actions → **Bridge build**.
 
+Signed builds install normally on macOS. If Gatekeeper still blocks the app, the CI build was unsigned — complete the one-time setup in [SIGNING.md](./SIGNING.md) (Apple Developer certificate + GitHub secrets).
+
 Test manually:
 
 ```bash

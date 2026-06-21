@@ -80,12 +80,31 @@ export interface FinanceMonthSummary {
   net: number;
 }
 
+export interface EventFinanceRollup {
+  eventId: string;
+  title: string;
+  date: string;
+  income: number;
+  expenses: number;
+  net: number;
+  marginPercent: number | null;
+  expenseCount: number;
+}
+
+export type FinanceBreakdown = {
+  byCategory: Partial<Record<string, number>>;
+  linkedExpenses: number;
+  generalExpenses: number;
+  eventRollups: EventFinanceRollup[];
+};
+
 export interface FinanceSummary {
   year: number;
   totalIncome: number;
   totalExpenses: number;
   net: number;
   months: FinanceMonthSummary[];
+  breakdown?: FinanceBreakdown;
 }
 
 export interface DeliverableItem {

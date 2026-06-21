@@ -1,0 +1,102 @@
+"use client";
+
+import { format, parseISO } from "date-fns";
+import { MaskedMoney } from "@/components/privacy/MaskedMoney";
+import type { EventFinanceRollup } from "@/lib/types";
+import { cn } from "@/lib/utils";
+
+export function ShootProfitabilityTable({
+  rollups,
+  showAmounts,
+  selectedEventId,
+  onSelectEvent,
+}: {
+  rollups: EventFinanceRollup[];
+  showAmounts: boolean;
+  selectedEventId: string;
+  onSelectEvent: (eventId: string) => void;
+}) {
+  if (rollups.length === 0) {
+    return (
+      <section className="mb-6 border border-border bg-bg-secondary p-4 sm:p-5">
+        <h2 className="text-[11px] uppercase tracking-label text-text-muted">
+          Shoot profitability
+        </h2>
+        <p className="mt-3 text-[13px] text-text-muted">
+          No event-linked income or expenses in this period.
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="mb-6 border border-border bg-bg-secondary">
+      <div className="px-4 py-3 border-b border-border">
+        <h2 className="text-[11px] uppercase tracking-label text-text-muted">
+          Shoot profitability
+        </h2>
+        <p className="mt-1 text-[12px] text-text-secondary">
+          Click a row to drill into that event.
+        </p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-[12px] border-collapse min-w-[640px]">
+          <thead>
+            <tr className="text-[10px] uppercase tracking-label text-text-muted border-b border-border">
+              <th className="text-left font-normal px-4 py-2">Event</th>
+              <th className="text-left font-normal px-4 py-2">Date</th>
+              <th className="text-right font-normal px-4 py-2">Income</th>
+              <th className="text-right font-normal px-4 py-2">Expenses</th>
+              <th className="text-right font-normal px-4 py-2">Net</th>
+              <th className="text-right font-normal px-4 py-2">Margin</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rollups.map((row) => (
+              <tr
+                key={row.eventId}
+                className={cn(
+                  "border-b border-border/60 cursor-pointer hover:bg-bg-primary/40",
+                  selectedEventId === row.eventId && "bg-bg-primary/50"
+                )}
+                onClick={() => onSelectEvent(row.eventId)}
+              >
+                <td className="px-4 py-3 text-text-primary">{row.title}</td>
+                <td className="px-4 py-3 text-text-secondary whitespace-nowrap">
+                  {row.date
+                    ? format(parseISO(row.date), "d MMM yyyy")
+                    : "—"}
+                </td>
+                <td className="px-4 py-3 text-right tabular-nums text-status-delivered">
+                  {row.income > 0 ? (
+                    <MaskedMoney amount={row.income} visible={showAmounts} />
+                  ) : (
+                    "—"
+                  )}
+                </td>
+                <td className="px-4 py-3 text-right tabular-nums text-status-editing">
+                  <MaskedMoney amount={row.expenses} visible={showAmounts} />
+                </td>
+                <td
+                  className={cn(
+                    "px-4 py-3 text-right tabular-nums",
+                    row.net >= 0 ? "text-status-delivered" : "text-status-editing"
+                  )}
+                >
+                  <MaskedMoney amount={row.net} visible={showAmounts} />
+                </td>
+                <td className="px-4 py-3 text-right tabular-nums text-text-secondary">
+                  {row.marginPercent !== null && showAmounts
+                    ? `${Math.round(row.marginPercent)}%`
+                    : row.income > 0
+                      ? "—"
+                      : "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}

@@ -8,6 +8,7 @@ import {
   FileText,
   Pencil,
   Plus,
+  Receipt,
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
@@ -227,6 +228,18 @@ export function PricingClient({
               >
                 <FileText className="h-3.5 w-3.5 shrink-0" aria-hidden />
                 Quotation
+              </Link>
+            </Tooltip>
+            <Tooltip label="Final payment invoice">
+              <Link
+                href="/dashboard/invoices"
+                className={cn(
+                  "btn-secondary !text-[11px] !min-h-9 !px-3 !py-2 inline-flex items-center justify-center gap-1.5",
+                  toolbarButtonClass
+                )}
+              >
+                <Receipt className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                Invoice
               </Link>
             </Tooltip>
             <Tooltip label="Export as CSV">
