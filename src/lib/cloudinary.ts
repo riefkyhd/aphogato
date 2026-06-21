@@ -1,6 +1,11 @@
 import "server-only";
 import { v2 as cloudinary } from "cloudinary";
 import {
+  getCloudinaryAccount,
+  getCloudinaryAuth,
+  resolveAccountIdForUrl,
+} from "@/lib/cloudinary/accounts";
+import {
   buildPhotoFilename,
   sanitizeCloudinaryBasename,
 } from "@/lib/cloudinary/filenames";
@@ -44,18 +49,6 @@ interface CloudinarySearchResponse {
   total_count?: number;
 }
 
-function getCloudinaryAuth() {
-  const cloud = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-  const key = process.env.CLOUDINARY_API_KEY;
-  const secret = process.env.CLOUDINARY_API_SECRET;
-  if (!cloud || !key || !secret) {
-    throw new Error(
-      "Missing Cloudinary env vars (NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET)"
-    );
-  }
-  return { cloud, auth: Buffer.from(`${key}:${secret}`).toString("base64") };
-}
-
 function normalizeFolderInput(folder: string): string {
   return folder.trim().replace(/^\/+|\/+$/g, "");
 }
@@ -76,12 +69,22 @@ function toResource(
   };
 }
 
+function ensureCloudinaryConfigured(accountId: string) {
+  const account = getCloudinaryAccount(accountId);
+  cloudinary.config({
+    cloud_name: account.cloudName,
+    api_key: account.apiKey,
+    api_secret: account.apiSecret,
+  });
+}
+
 /** Legacy: public_id starts with folder path (e.g. weddings/client/photo). */
 async function listByPublicIdPrefix(
   prefix: string,
+  accountId: string,
   maxResources: number
 ): Promise<CloudinaryResource[]> {
-  const { cloud, auth } = getCloudinaryAuth();
+  const { cloud, auth } = getCloudinaryAuth(accountId);
   const out: CloudinaryResource[] = [];
   let cursor: string | undefined;
 
@@ -123,9 +126,10 @@ async function listByPublicIdPrefix(
  */
 async function listByAssetFolder(
   folder: string,
+  accountId: string,
   maxResources: number
 ): Promise<CloudinaryResource[]> {
-  const { cloud, auth } = getCloudinaryAuth();
+  const { cloud, auth } = getCloudinaryAuth(accountId);
   const escaped = folder.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
   const expression = `asset_folder:"${escaped}"`;
   const out: CloudinaryResource[] = [];
@@ -174,6 +178,7 @@ async function listByAssetFolder(
  */
 export async function listFolder(
   folder: string,
+  accountId: string,
   { maxResources = CLOUDINARY_LIST_MAX_RESOURCES }: { maxResources?: number } = {}
 ): Promise<CloudinaryResource[]> {
   const normalized = normalizeFolderInput(folder);
@@ -181,11 +186,9 @@ export async function listFolder(
     throw new Error("Folder path is required");
   }
 
-  // Merge prefix + asset_folder results. Using only one source misses assets when
-  // uploads mix public_id paths with Media Library asset_folder layout.
   const [byPrefix, byFolder] = await Promise.all([
-    listByPublicIdPrefix(normalized, maxResources),
-    listByAssetFolder(normalized, maxResources),
+    listByPublicIdPrefix(normalized, accountId, maxResources),
+    listByAssetFolder(normalized, accountId, maxResources),
   ]);
 
   const merged = new Map<string, CloudinaryResource>();
@@ -200,13 +203,18 @@ export async function listFolder(
   return all;
 }
 
-export function previewUrl(publicId: string, width = 600, quality = 70) {
-  const cloud = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+export function previewUrl(
+  publicId: string,
+  accountId: string,
+  width = 600,
+  quality = 70
+) {
+  const { cloud } = getCloudinaryAuth(accountId);
   return `https://res.cloudinary.com/${cloud}/image/upload/w_${width},q_${quality},f_auto/${publicId}`;
 }
 
-export function thumbUrl(publicId: string) {
-  const cloud = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+export function thumbUrl(publicId: string, accountId: string) {
+  const { cloud } = getCloudinaryAuth(accountId);
   return `https://res.cloudinary.com/${cloud}/image/upload/w_300,q_60,f_auto/${publicId}`;
 }
 
@@ -217,26 +225,15 @@ export function publicIdFromUrl(url: string): string | null {
   return alt ? alt[1] : null;
 }
 
-function ensureCloudinaryConfigured() {
-  const { cloud } = getCloudinaryAuth();
-  cloudinary.config({
-    cloud_name: cloud,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-  });
-}
-
 /**
  * Upload an image into the project's Cloudinary folder.
  * public_id: `[folder]/[filename-without-extension]`
- *
- * Sets `asset_folder` so assets appear in the Media Library folder tree
- * (required when the product environment uses dynamic folder mode).
  */
 export async function uploadImageToFolder(
   folder: string,
   fileBuffer: Buffer,
-  originalFilename: string
+  originalFilename: string,
+  accountId: string
 ): Promise<CloudinaryResource> {
   const normalizedFolder = normalizeFolderInput(folder);
   const publicId = sanitizeCloudinaryBasename(originalFilename);
@@ -244,7 +241,7 @@ export async function uploadImageToFolder(
     throw new Error("Invalid filename");
   }
 
-  ensureCloudinaryConfigured();
+  ensureCloudinaryConfigured(accountId);
 
   const result = await new Promise<{
     public_id: string;
@@ -312,30 +309,32 @@ export function migrateCloudinaryUrlForFolderRename(
 /** Rename a Media Library folder and all assets inside (including subfolders). */
 export async function renameCloudinaryFolder(
   oldFolder: string,
-  newFolder: string
+  newFolder: string,
+  accountId: string
 ): Promise<void> {
   const oldNorm = normalizeFolderInput(oldFolder);
   const newNorm = normalizeFolderInput(newFolder);
   if (oldNorm === newNorm) return;
 
-  ensureCloudinaryConfigured();
+  ensureCloudinaryConfigured(accountId);
 
   try {
     await cloudinary.api.rename_folder(oldNorm, newNorm);
   } catch (folderErr) {
-    await renameCloudinaryFolderByAssets(oldNorm, newNorm, folderErr);
+    await renameCloudinaryFolderByAssets(oldNorm, newNorm, folderErr, accountId);
   }
 }
 
 async function renameCloudinaryFolderByAssets(
   oldNorm: string,
   newNorm: string,
-  folderErr: unknown
+  folderErr: unknown,
+  accountId: string
 ): Promise<void> {
-  const resources = await listFolder(oldNorm);
+  const resources = await listFolder(oldNorm, accountId);
   let referenceResources: CloudinaryResource[] = [];
   try {
-    referenceResources = await listFolder(`${oldNorm}/references`);
+    referenceResources = await listFolder(`${oldNorm}/references`, accountId);
   } catch {
     // No references folder yet.
   }
@@ -375,7 +374,8 @@ export async function deleteCloudinaryImageByUrl(
   if (!publicId) {
     throw new Error("Could not determine Cloudinary public ID from URL");
   }
-  ensureCloudinaryConfigured();
+  const accountId = resolveAccountIdForUrl(cloudinaryUrl);
+  ensureCloudinaryConfigured(accountId);
   const result = await cloudinary.uploader.destroy(publicId, {
     resource_type: "image",
   });

@@ -5,6 +5,7 @@ import {
   migrateCloudinaryUrlForFolderRename,
   renameCloudinaryFolder,
 } from "@/lib/cloudinary";
+import { getProjectCloudinaryAccountId } from "@/lib/cloudinary/accounts";
 import { resolveRenamedCloudinaryFolder } from "@/lib/resolveCloudinaryFolder";
 import type { Photo, Project } from "@/lib/types";
 
@@ -67,7 +68,11 @@ export async function renameProject(
 
   const folderChanged = oldFolder !== newFolder;
   if (folderChanged) {
-    await renameCloudinaryFolder(oldFolder, newFolder);
+    await renameCloudinaryFolder(
+      oldFolder,
+      newFolder,
+      getProjectCloudinaryAccountId(current)
+    );
   }
 
   const { data: updatedProject, error: updateError } = await supabase

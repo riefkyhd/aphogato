@@ -2,6 +2,7 @@ import "server-only";
 
 import { v2 as cloudinary } from "cloudinary";
 import { publicIdFromUrl } from "@/lib/cloudinary";
+import { getCloudinaryAccount } from "@/lib/cloudinary/accounts";
 import { sanitizeCloudinaryBasename } from "@/lib/cloudinary/filenames";
 
 export {
@@ -17,21 +18,10 @@ function normalizeFolderInput(folder: string): string {
   return folder.trim().replace(/^\/+|\/+$/g, "");
 }
 
-export function getCloudinaryUploadCredentials() {
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-  const apiKey = process.env.CLOUDINARY_API_KEY;
-  const apiSecret = process.env.CLOUDINARY_API_SECRET;
-  if (!cloudName || !apiKey || !apiSecret) {
-    throw new Error(
-      "Missing Cloudinary env vars (NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET)"
-    );
-  }
-  return { cloudName, apiKey, apiSecret };
-}
-
 export function buildSignedCloudinaryUpload(
   folder: string,
-  originalFilename: string
+  originalFilename: string,
+  accountId: string
 ): {
   cloudName: string;
   apiKey: string;
@@ -42,7 +32,7 @@ export function buildSignedCloudinaryUpload(
   uploadUrl: string;
   useAssetFolderAsPublicIdPrefix: true;
 } {
-  const { cloudName, apiKey, apiSecret } = getCloudinaryUploadCredentials();
+  const account = getCloudinaryAccount(accountId);
   const normalizedFolder = normalizeFolderInput(folder);
   const publicId = sanitizeCloudinaryBasename(originalFilename);
   if (!normalizedFolder || !publicId) {
@@ -52,9 +42,9 @@ export function buildSignedCloudinaryUpload(
   const timestamp = Math.round(Date.now() / 1000);
 
   cloudinary.config({
-    cloud_name: cloudName,
-    api_key: apiKey,
-    api_secret: apiSecret,
+    cloud_name: account.cloudName,
+    api_key: account.apiKey,
+    api_secret: account.apiSecret,
   });
 
   const signature = cloudinary.utils.api_sign_request(
@@ -65,27 +55,28 @@ export function buildSignedCloudinaryUpload(
       use_asset_folder_as_public_id_prefix: true,
       overwrite: false,
     },
-    apiSecret
+    account.apiSecret
   );
 
   return {
-    cloudName,
-    apiKey,
+    cloudName: account.cloudName,
+    apiKey: account.apiKey,
     timestamp,
     signature,
     publicId,
     assetFolder: normalizedFolder,
-    uploadUrl: `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+    uploadUrl: `https://api.cloudinary.com/v1_1/${account.cloudName}/image/upload`,
     useAssetFolderAsPublicIdPrefix: true,
   };
 }
 
 export function isCloudinaryUrlForPublicId(
   secureUrl: string,
-  publicId: string
+  publicId: string,
+  accountId: string
 ): boolean {
-  const { cloudName } = getCloudinaryUploadCredentials();
-  if (!secureUrl.startsWith(`https://res.cloudinary.com/${cloudName}/`)) {
+  const account = getCloudinaryAccount(accountId);
+  if (!secureUrl.startsWith(`https://res.cloudinary.com/${account.cloudName}/`)) {
     return false;
   }
   return publicIdFromUrl(secureUrl) === publicId;

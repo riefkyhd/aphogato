@@ -1,6 +1,6 @@
 import "server-only";
 import { v2 as cloudinary } from "cloudinary";
-import { publicIdFromUrl } from "@/lib/cloudinary";
+import { getCloudinaryAccount } from "@/lib/cloudinary/accounts";
 import {
   buildPhotoFilename,
   cloudinaryResourceFilename,
@@ -14,14 +14,13 @@ type PhotoRow = {
 
 const BATCH_SIZE = 8;
 
-function ensureCloudinaryConfigured(): void {
-  const cloud = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-  const key = process.env.CLOUDINARY_API_KEY;
-  const secret = process.env.CLOUDINARY_API_SECRET;
-  if (!cloud || !key || !secret) {
-    throw new Error("Missing Cloudinary env vars");
-  }
-  cloudinary.config({ cloud_name: cloud, api_key: key, api_secret: secret });
+function ensureCloudinaryConfigured(accountId: string): void {
+  const account = getCloudinaryAccount(accountId);
+  cloudinary.config({
+    cloud_name: account.cloudName,
+    api_key: account.apiKey,
+    api_secret: account.apiSecret,
+  });
 }
 
 function looksLikeDerivedFilename(
@@ -30,28 +29,30 @@ function looksLikeDerivedFilename(
   format?: string | null
 ): boolean {
   const derived = cloudinaryResourceFilename(publicId, format);
-  return (
-    filename === derived ||
-    filename.toLowerCase() === derived.toLowerCase()
-  );
+  return filename === derived || filename.toLowerCase() === derived.toLowerCase();
 }
 
 async function fetchOriginalFilename(
-  publicId: string
-): Promise<{ originalFilename: string; format?: string } | null> {
+  publicId: string,
+  accountId: string
+): Promise<{ originalFilename: string; format?: string | null } | null> {
   try {
-    ensureCloudinaryConfigured();
+    ensureCloudinaryConfigured(accountId);
     const resource = (await cloudinary.api.resource(publicId, {
-      resource_type: "image",
+      metadata: true,
+      context: true,
     })) as {
-      original_filename?: string;
+      context?: { custom?: Record<string, string> };
+      metadata?: Record<string, string>;
       format?: string;
     };
-    if (!resource.original_filename?.trim()) return null;
-    return {
-      originalFilename: resource.original_filename.trim(),
-      format: resource.format,
-    };
+
+    const fromContext = resource.context?.custom?.original_filename;
+    const fromMetadata = resource.metadata?.original_filename;
+    const originalFilename = fromContext || fromMetadata;
+    if (!originalFilename) return null;
+
+    return { originalFilename, format: resource.format };
   } catch {
     return null;
   }
@@ -59,6 +60,7 @@ async function fetchOriginalFilename(
 
 export async function backfillDerivedFilenames(
   photos: PhotoRow[],
+  accountId: string,
   update: (id: string, filename: string) => Promise<void>
 ): Promise<number> {
   const usedFilenames = new Set(photos.map((photo) => photo.filename));
@@ -79,7 +81,7 @@ export async function backfillDerivedFilenames(
           return false;
         }
 
-        const original = await fetchOriginalFilename(publicId);
+        const original = await fetchOriginalFilename(publicId, accountId);
         if (!original) return false;
 
         const candidate = buildPhotoFilename(
@@ -112,4 +114,11 @@ export async function backfillDerivedFilenames(
   }
 
   return updated;
+}
+
+function publicIdFromUrl(url: string): string | null {
+  const match = url.match(/\/image\/upload\/(?:[^/]+\/)*v\d+\/(.+)\.[a-z0-9]+$/i);
+  if (match) return match[1];
+  const alt = url.match(/\/image\/upload\/(?:[^/]+\/)*(.+)\.[a-z0-9]+$/i);
+  return alt ? alt[1] : null;
 }

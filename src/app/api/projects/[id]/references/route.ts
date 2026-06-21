@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/api/requireAuth";
 import { uploadImageToFolder } from "@/lib/cloudinary";
+import { getProjectCloudinaryAccountId } from "@/lib/cloudinary/accounts";
 import {
   computeHashFromBuffer,
   findDuplicateFilename,
@@ -64,13 +65,15 @@ export async function POST(
 
   const { data: project, error: projectError } = await supabase
     .from("projects")
-    .select("id, cloudinary_folder")
+    .select("id, cloudinary_folder, cloudinary_account")
     .eq("id", params.id)
     .single();
 
   if (projectError || !project) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
+
+  const accountId = getProjectCloudinaryAccountId(project);
 
   const formData = await request.formData();
   const entries = formData.getAll("files").filter((f) => f instanceof File);
@@ -140,7 +143,8 @@ export async function POST(
       const resource = await uploadImageToFolder(
         refFolder,
         buffer,
-        file.name
+        file.name,
+        accountId
       );
 
       const { data: row, error: insertError } = await supabase

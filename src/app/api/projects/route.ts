@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/api/requireAuth";
 import { ensureClientByName } from "@/lib/clients/ensureClientByName";
 import { parseMaxPhotoSelectionInput } from "@/lib/photoSelectionLimit";
 import { resolveUniqueCloudinaryFolder } from "@/lib/resolveCloudinaryFolder";
+import { getDefaultCloudinaryAccountId } from "@/lib/cloudinary/settings";
 
 export const runtime = "nodejs";
 
@@ -44,6 +45,7 @@ export async function POST(request: Request) {
 
   const gallery_token = nanoid();
   const clientName = body.client_name?.trim() || null;
+  const cloudinary_account = await getDefaultCloudinaryAccountId();
 
   try {
     await ensureClientByName(supabase, clientName);
@@ -63,6 +65,7 @@ export async function POST(request: Request) {
       name,
       client_name: clientName,
       cloudinary_folder,
+      cloudinary_account,
       gallery_token,
       status: "pending",
       max_photo_selection: maxParsed.value,

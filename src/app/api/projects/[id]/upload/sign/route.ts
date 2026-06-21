@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/api/requireAuth";
 import { buildPhotoFilename } from "@/lib/cloudinary/filenames";
 import { buildSignedCloudinaryUpload } from "@/lib/cloudinary/signedDirectUpload";
+import { getProjectCloudinaryAccountId } from "@/lib/cloudinary/accounts";
 import { validateImageUploadMeta } from "@/lib/imageUploadValidation";
 
 export const runtime = "nodejs";
@@ -31,7 +32,7 @@ export async function POST(
 
   const { data: project, error: projectError } = await supabase
     .from("projects")
-    .select("id, cloudinary_folder")
+    .select("id, cloudinary_folder, cloudinary_account")
     .eq("id", params.id)
     .single();
 
@@ -57,7 +58,8 @@ export async function POST(
   try {
     const signed = buildSignedCloudinaryUpload(
       project.cloudinary_folder,
-      filename
+      filename,
+      getProjectCloudinaryAccountId(project)
     );
     return NextResponse.json(signed);
   } catch (err) {

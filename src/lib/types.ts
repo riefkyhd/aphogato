@@ -5,6 +5,7 @@ export interface Project {
   name: string;
   client_name: string | null;
   cloudinary_folder: string;
+  cloudinary_account: string;
   gallery_token: string;
   created_at: string;
   status: ProjectStatus;

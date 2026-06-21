@@ -13,6 +13,7 @@ const BATCH_SIZE = 8;
 
 export async function backfillMissingShotAt(
   photos: PhotoRow[],
+  accountId: string,
   update: (id: string, shotAt: string) => Promise<void>
 ): Promise<number> {
   const missing = photos.filter((photo) => !photo.shot_at);
@@ -25,7 +26,7 @@ export async function backfillMissingShotAt(
         const publicId = publicIdFromUrl(photo.cloudinary_url);
         if (!publicId) return false;
 
-        const shotAt = await extractShotAt(publicId, photo.filename);
+        const shotAt = await extractShotAt(publicId, photo.filename, accountId);
         if (!shotAt) return false;
 
         await update(photo.id, shotAt);

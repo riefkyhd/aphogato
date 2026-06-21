@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/api/requireAuth";
 import { deleteCloudinaryImageByUrl } from "@/lib/cloudinary";
+import { getProjectCloudinaryAccountId } from "@/lib/cloudinary/accounts";
 import {
   isCloudinaryUrlForPublicId,
   publicIdBelongsToAssetFolder,
@@ -50,18 +51,20 @@ export async function POST(
     );
   }
 
-  if (!isCloudinaryUrlForPublicId(secureUrl, publicId)) {
-    return NextResponse.json({ error: "Invalid Cloudinary upload" }, { status: 400 });
-  }
-
   const { data: project, error: projectError } = await supabase
     .from("projects")
-    .select("id, cloudinary_folder")
+    .select("id, cloudinary_folder, cloudinary_account")
     .eq("id", params.id)
     .single();
 
   if (projectError || !project) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  }
+
+  const accountId = getProjectCloudinaryAccountId(project);
+
+  if (!isCloudinaryUrlForPublicId(secureUrl, publicId, accountId)) {
+    return NextResponse.json({ error: "Invalid Cloudinary upload" }, { status: 400 });
   }
 
   const normalizedFolder = project.cloudinary_folder.replace(/^\/+|\/+$/g, "");
@@ -138,7 +141,7 @@ export async function POST(
     );
   }
 
-  const shotAt = await extractShotAt(publicId, filename);
+  const shotAt = await extractShotAt(publicId, filename, accountId);
 
   const { data: row, error: insertError } = await supabase
     .from("photos")

@@ -18,11 +18,31 @@ Copy `.env.example` to `.env.local` and fill in:
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable/anon key (or legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY`) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role (gallery API, bypasses RLS) |
-| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name |
+| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | Primary Cloudinary cloud name (`default` account) |
 | `CLOUDINARY_API_KEY` | Server-side Cloudinary API |
 | `CLOUDINARY_API_SECRET` | Server-side Cloudinary API |
+| `CLOUDINARY_DEFAULT_ACCOUNT` | Optional — account id for new projects (overridden by Settings) |
+| `CLOUDINARY_ACCOUNT_*` | Optional — additional accounts (see below) |
 
 On Vercel, set the same variables for Production (and Preview if needed), then redeploy.
+
+### Multiple Cloudinary accounts
+
+The app supports more than one Cloudinary account. Each **project** is bound to one account at creation time; existing projects keep their account when you add a new one.
+
+1. Keep your current env vars as the **`default`** account.
+2. Add a second account with prefixed env vars (example id: `studio`):
+
+```env
+CLOUDINARY_ACCOUNT_STUDIO_CLOUD_NAME=your-new-cloud
+CLOUDINARY_ACCOUNT_STUDIO_API_KEY=...
+CLOUDINARY_ACCOUNT_STUDIO_API_SECRET=...
+CLOUDINARY_ACCOUNT_STUDIO_LABEL=Studio account
+```
+
+3. In **Settings → Cloudinary**, choose which account new projects should use (or set `CLOUDINARY_DEFAULT_ACCOUNT=studio` in env).
+
+Run migration `0017_cloudinary_account.sql` so projects store `cloudinary_account`.
 
 ## Database
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/api/requireAuth";
 import { listFolder, publicIdFromUrl } from "@/lib/cloudinary";
+import { getProjectCloudinaryAccountId } from "@/lib/cloudinary/accounts";
 import {
   backfillMissingHashes,
   computeHashFromCloudinaryUrl,
@@ -25,7 +26,7 @@ export async function POST(
 
   const { data: project, error: projectError } = await supabase
     .from("projects")
-    .select("id, cloudinary_folder")
+    .select("id, cloudinary_folder, cloudinary_account")
     .eq("id", params.id)
     .single();
 
@@ -33,9 +34,11 @@ export async function POST(
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
+  const accountId = getProjectCloudinaryAccountId(project);
+
   let resources;
   try {
-    resources = await listFolder(project.cloudinary_folder);
+    resources = await listFolder(project.cloudinary_folder, accountId);
   } catch (err) {
     return NextResponse.json(
       {
@@ -126,12 +129,16 @@ export async function POST(
     }
   }
 
-  const shotAtBackfilled = await backfillMissingShotAt(existing, async (id, shotAt) => {
+  const shotAtBackfilled = await backfillMissingShotAt(
+    existing,
+    accountId,
+    async (id, shotAt) => {
     await supabase.from("photos").update({ shot_at: shotAt }).eq("id", id);
   });
 
   const filenamesBackfilled = await backfillDerivedFilenames(
     existing,
+    accountId,
     async (id, filename) => {
       await supabase.from("photos").update({ filename }).eq("id", id);
     }
@@ -145,7 +152,7 @@ export async function POST(
         cloudinary_url: r.secure_url,
         is_selected: false,
         perceptual_hash: r.perceptual_hash,
-        shot_at: await extractShotAt(r.public_id, r.filename),
+        shot_at: await extractShotAt(r.public_id, r.filename, accountId),
       }))
     );
 

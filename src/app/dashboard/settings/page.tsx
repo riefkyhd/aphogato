@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { ContentColumn } from "@/components/layout/ContentColumn";
 import { DashboardMain } from "@/components/layout/DashboardShell";
+import { CloudinarySettings } from "@/app/dashboard/settings/CloudinarySettings";
 import { DomainSecurityInfo } from "@/app/dashboard/settings/DomainSecurityInfo";
 import { GoogleCalendarSettings } from "@/app/dashboard/settings/GoogleCalendarSettings";
 import { PreferencesSettings } from "@/app/dashboard/settings/PreferencesSettings";
@@ -30,6 +31,7 @@ export default async function SettingsPage() {
           />
         </Suspense>
         <PreferencesSettings />
+        <CloudinarySettings />
         <TodayReminderSettings />
         <PrivacySettings />
         <DomainSecurityInfo />
