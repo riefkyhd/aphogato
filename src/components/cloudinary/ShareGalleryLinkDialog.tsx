@@ -15,6 +15,7 @@ import {
 } from "@/lib/cloudinary/display";
 import { cn } from "@/lib/utils";
 import { FEATURES } from "@/lib/features";
+import { masonryImageUrl } from "@/lib/cloudinaryUrls";
 import type { FaceSearchStatus } from "@/lib/faces/types";
 
 function faceSearchShareLine(faceSearch: FaceSearchStatus): string | null {
@@ -41,6 +42,7 @@ function usageCalloutClass(level: CloudinaryAccountUsagePublic["level"]): string
 export function ShareGalleryLinkDialog({
   open,
   photoCount,
+  coverImageUrl,
   account,
   usage,
   loading,
@@ -51,6 +53,7 @@ export function ShareGalleryLinkDialog({
 }: {
   open: boolean;
   photoCount: number;
+  coverImageUrl?: string | null;
   account: CloudinaryAccountPublic | null;
   usage: CloudinaryAccountUsagePublic | null;
   loading?: boolean;
@@ -98,6 +101,21 @@ export function ShareGalleryLinkDialog({
       >
         Share gallery link
       </h2>
+
+      {coverImageUrl ? (
+        <div className="mt-4 overflow-hidden border border-border bg-bg-primary/40">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={masonryImageUrl(coverImageUrl, 640, 75)}
+            alt=""
+            className="block w-full max-h-40 object-cover"
+          />
+          <p className="px-4 py-2 text-[11px] text-text-muted leading-relaxed border-t border-border">
+            This cover appears in link previews when you share the gallery with
+            your client.
+          </p>
+        </div>
+      ) : null}
 
       <p className="mt-3 text-[14px] text-text-secondary leading-relaxed">
         {photoCount.toLocaleString()} photo{photoCount === 1 ? "" : "s"} will

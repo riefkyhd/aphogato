@@ -29,10 +29,12 @@ import { useProjectCloudinaryUsage } from "@/hooks/useProjectCloudinaryUsage";
 import { ProjectMaxSelection } from "./ProjectMaxSelection";
 import { ProjectFaceSearchSettings } from "./ProjectFaceSearchSettings";
 import { ProjectRename } from "./ProjectRename";
+import { normalizeProject } from "@/lib/normalizeProject";
 import {
   isOverSelectionLimit,
   normalizeMaxPhotoSelection,
 } from "@/lib/photoSelectionLimit";
+import { resolveProjectCoverUrl } from "@/lib/projectCover";
 import type { Photo, Project } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -206,6 +208,50 @@ export function ProjectDetailClient({
     });
   }
 
+  async function setCoverFromSelection() {
+    const selectedIds = [...manage.manageSelected];
+    if (selectedIds.length !== 1) {
+      toast.error("Select exactly one photo to set as cover");
+      return;
+    }
+
+    const photoId = selectedIds[0]!;
+    try {
+      const res = await fetch(`/api/projects/${projectState.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cover_photo_id: photoId }),
+      });
+      const json = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        project?: Project;
+      };
+      if (!res.ok) {
+        toast.error(json.error ?? "Failed to set cover photo");
+        return;
+      }
+
+      if (json.project) {
+        setProjectState(normalizeProject(json.project));
+      } else {
+        setProjectState((prev) => ({ ...prev, cover_photo_id: photoId }));
+      }
+
+      manageActivation.clearAll();
+      toast.success(
+        "Cover updated — used on project cards and client link previews"
+      );
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to set cover");
+    }
+  }
+
+  const coverImageUrl = useMemo(
+    () => resolveProjectCoverUrl(projectState, photos),
+    [projectState, photos]
+  );
+
   return (
     <>
       {isDragging && (
@@ -307,6 +353,7 @@ export function ProjectDetailClient({
                 setProjectState((prev) => ({ ...prev, status }))
               }
               faceSearchEnabled={faceSearchActive}
+              coverImageUrl={coverImageUrl}
               upload={upload}
             />
           </div>
@@ -388,7 +435,8 @@ export function ProjectDetailClient({
               </span>
               <span className="hidden md:inline">
                 Click to select · drag to box-select · Ctrl+click or long-press
-                for multi-select · Esc to clear.
+                for multi-select · select one photo and use Set cover for link
+                previews · Esc to clear.
               </span>
             </p>
           )}
@@ -411,6 +459,8 @@ export function ProjectDetailClient({
               onClearManageSelection={manageActivation.clearAll}
               onCloseManagePreview={manageActivation.closePreview}
               onDeletePhotos={() => setDeleteDialogOpen(true)}
+              coverPhotoId={projectState.cover_photo_id}
+              onSetCover={() => void setCoverFromSelection()}
             />
           </div>
 

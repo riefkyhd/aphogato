@@ -231,6 +231,7 @@ export function PhotoListView({
   showSelectedDivider = false,
   selectedGroupCount = 0,
   className,
+  coverPhotoId,
 }: {
   photos: Photo[];
   mode: "gallery" | "dashboard";
@@ -243,6 +244,7 @@ export function PhotoListView({
   showSelectedDivider?: boolean;
   selectedGroupCount?: number;
   className?: string;
+  coverPhotoId?: string | null;
 }) {
   const galleryInteractive = mode === "gallery" && Boolean(onToggleSelect);
 
@@ -444,6 +446,11 @@ export function PhotoListView({
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[14px] text-text-primary">
                       {ph.filename}
+                      {ph.id === coverPhotoId ? (
+                        <span className="ml-2 text-[10px] uppercase tracking-label text-text-muted">
+                          Cover
+                        </span>
+                      ) : null}
                     </p>
                     <p className="text-[12px] text-text-muted">
                       {formatIndex(index, photos.length)}

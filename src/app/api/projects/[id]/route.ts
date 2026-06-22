@@ -22,6 +22,7 @@ export async function PATCH(
     name?: unknown;
     max_photo_selection?: unknown;
     face_search_enabled?: unknown;
+    cover_photo_id?: unknown;
   };
   try {
     body = await request.json();
@@ -32,12 +33,13 @@ export async function PATCH(
   const hasName = body.name !== undefined;
   const hasMaxSelection = body.max_photo_selection !== undefined;
   const hasFaceSearchEnabled = body.face_search_enabled !== undefined;
+  const hasCoverPhotoId = body.cover_photo_id !== undefined;
 
-  if (!hasName && !hasMaxSelection && !hasFaceSearchEnabled) {
+  if (!hasName && !hasMaxSelection && !hasFaceSearchEnabled && !hasCoverPhotoId) {
     return NextResponse.json(
       {
         error:
-          "name, max_photo_selection, or face_search_enabled is required",
+          "name, max_photo_selection, face_search_enabled, or cover_photo_id is required",
       },
       { status: 400 }
     );
@@ -81,6 +83,44 @@ export async function PATCH(
       return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
     updatePayload.face_search_enabled = parsed.value;
+  }
+
+  if (hasCoverPhotoId) {
+    if (body.cover_photo_id === null) {
+      updatePayload.cover_photo_id = null;
+    } else if (typeof body.cover_photo_id === "string") {
+      const trimmed = body.cover_photo_id.trim();
+      if (!trimmed) {
+        return NextResponse.json(
+          { error: "cover_photo_id must be a photo id or null" },
+          { status: 400 }
+        );
+      }
+
+      const { data: photo, error: photoError } = await supabase
+        .from("photos")
+        .select("id")
+        .eq("id", trimmed)
+        .eq("project_id", params.id)
+        .maybeSingle();
+
+      if (photoError) {
+        return NextResponse.json({ error: photoError.message }, { status: 500 });
+      }
+      if (!photo) {
+        return NextResponse.json(
+          { error: "Photo not found in this project" },
+          { status: 400 }
+        );
+      }
+
+      updatePayload.cover_photo_id = trimmed;
+    } else {
+      return NextResponse.json(
+        { error: "cover_photo_id must be a string or null" },
+        { status: 400 }
+      );
+    }
   }
 
   if (Object.keys(updatePayload).length === 0) {

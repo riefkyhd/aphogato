@@ -11,6 +11,7 @@ export interface Project {
   status: ProjectStatus;
   max_photo_selection: number;
   face_search_enabled: boolean;
+  cover_photo_id: string | null;
 }
 
 export interface Photo {

@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { AppToaster } from "@/components/AppToaster";
+import { getSiteUrl } from "@/lib/siteUrl";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteUrl()),
   title: "Gallery of Muhammad Hadid",
   description: "Gallery of Muhammad Hadid — client photo selection",
   icons: {

@@ -1,12 +1,22 @@
 import { notFound } from "next/navigation";
 import { unstable_noStore as noStore } from "next/cache";
+import type { Metadata } from "next";
 import { FEATURES } from "@/lib/features";
 import { loadGalleryByToken } from "@/lib/gallery";
+import { buildGalleryMetadata } from "@/lib/galleryMetadata";
 import { GallerySelector } from "./GallerySelector";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { token: string };
+}): Promise<Metadata> {
+  return buildGalleryMetadata(params.token);
+}
 
 export default async function GalleryPage({
   params,

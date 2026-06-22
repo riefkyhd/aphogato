@@ -64,3 +64,8 @@ export function listThumbUrl(src: string) {
 export function previewLargeUrl(src: string) {
   return cloudinaryTransformUrl(src, "w_1400,q_85,f_auto");
 }
+
+/** Open Graph / link preview — 1.91:1 crop for WhatsApp, iMessage, etc. */
+export function socialShareImageUrl(src: string) {
+  return cloudinaryTransformUrl(src, "w_1200,h_630,c_fill,q_auto,f_auto");
+}

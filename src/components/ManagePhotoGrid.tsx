@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState, useEffect } from "react";
 import { MasonryColumnGrid } from "@/components/MasonryColumnGrid";
 import { ClientPickIndicator } from "@/components/ClientPickIndicator";
+import { ProjectCoverIndicator } from "@/components/ProjectCoverIndicator";
 import { MasonryPhoto } from "@/components/MasonryPhoto";
 import { ManagePhotoCell } from "@/components/ManagePhotoCell";
 import { ManageSelectionOverlay } from "@/components/ManageSelectionOverlay";
@@ -16,12 +17,14 @@ export function ManagePhotoGrid({
   onManagePhotoActivate,
   onManagePhotoMarquee,
   onClearManageSelection,
+  coverPhotoId,
 }: {
   photos: Photo[];
   manageSelectedIds: Set<string>;
   onManagePhotoActivate: (id: string, meta: ManagePhotoActivateMeta) => void;
   onManagePhotoMarquee: (ids: string[], mergeBase?: string[]) => void;
   onClearManageSelection: () => void;
+  coverPhotoId?: string | null;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const cellRefs = useRef(new Map<string, HTMLElement>());
@@ -86,6 +89,7 @@ export function ManagePhotoGrid({
                 className="pointer-events-none select-none transition duration-200 group-hover:brightness-105"
               />
               {ph.is_selected && <ClientPickIndicator />}
+              {ph.id === coverPhotoId ? <ProjectCoverIndicator /> : null}
               {isManageSelected && <ManageSelectionOverlay />}
             </ManagePhotoCell>
           );

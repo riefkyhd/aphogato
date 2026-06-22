@@ -20,6 +20,7 @@ export function PhotoGridView({
   onClearManageSelection,
   facePickMode = false,
   onFacePickPhoto,
+  coverPhotoId,
 }: {
   photos: Photo[];
   mode: "gallery" | "dashboard";
@@ -32,6 +33,7 @@ export function PhotoGridView({
   onClearManageSelection?: () => void;
   facePickMode?: boolean;
   onFacePickPhoto?: (photo: Photo) => void;
+  coverPhotoId?: string | null;
 }) {
   const manageMode =
     mode === "dashboard" &&
@@ -70,6 +72,7 @@ export function PhotoGridView({
         onManagePhotoActivate={onManagePhotoActivate}
         onManagePhotoMarquee={onManagePhotoMarquee!}
         onClearManageSelection={onClearManageSelection!}
+        coverPhotoId={coverPhotoId}
       />
     );
   }

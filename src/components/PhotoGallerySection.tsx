@@ -43,6 +43,8 @@ export function PhotoGallerySection({
   onClearManageSelection,
   onDeletePhotos,
   onCloseManagePreview,
+  coverPhotoId,
+  onSetCover,
   selectionLimitReached = false,
   ready = true,
   facePickMode = false,
@@ -61,6 +63,8 @@ export function PhotoGallerySection({
   onClearManageSelection?: () => void;
   onDeletePhotos?: () => void;
   onCloseManagePreview?: () => void;
+  coverPhotoId?: string | null;
+  onSetCover?: () => void;
   ready?: boolean;
   facePickMode?: boolean;
   onFacePickPhoto?: (photo: Photo) => void;
@@ -178,6 +182,7 @@ export function PhotoGallerySection({
     mode === "dashboard" &&
     Boolean(onManagePhotoActivate && onClearManageSelection && onDeletePhotos) &&
     manageCount > 0;
+  const canSetCover = manageCount === 1 && Boolean(onSetCover);
   const previewPhoto =
     managePreviewId && mode === "dashboard"
       ? photos.find((p) => p.id === managePreviewId) ?? null
@@ -226,6 +231,16 @@ export function PhotoGallerySection({
               >
                 Clear
               </Button>
+              {canSetCover ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={onSetCover}
+                >
+                  Set cover
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 size="sm"
@@ -274,6 +289,7 @@ export function PhotoGallerySection({
             onManagePhotoActivate={onManagePhotoActivate}
             onManagePhotoMarquee={onManagePhotoMarquee}
             onClearManageSelection={onClearManageSelection}
+            coverPhotoId={coverPhotoId}
             facePickMode={facePickMode}
             onFacePickPhoto={onFacePickPhoto}
           />
@@ -289,6 +305,7 @@ export function PhotoGallerySection({
               manageSelectedIds={manageSelectedIds}
               onManagePhotoActivate={onManagePhotoActivate}
               managePreviewId={managePreviewId}
+              coverPhotoId={coverPhotoId}
               showSelectedDivider={showListDivider}
               selectedGroupCount={selectedCount}
               className="h-full min-h-0"
@@ -309,6 +326,16 @@ export function PhotoGallerySection({
           >
             Clear
           </Button>
+          {canSetCover ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={onSetCover}
+            >
+              Cover
+            </Button>
+          ) : null}
           <Button
             type="button"
             size="sm"

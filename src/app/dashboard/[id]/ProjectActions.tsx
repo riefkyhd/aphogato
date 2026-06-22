@@ -112,6 +112,7 @@ export function ProjectActions({
   onDeleteProject,
   onStatusChange,
   faceSearchEnabled,
+  coverImageUrl,
   upload,
 }: {
   projectId: string;
@@ -125,6 +126,7 @@ export function ProjectActions({
   onDeleteProject: () => void;
   onStatusChange: (status: ProjectStatus) => void;
   faceSearchEnabled: boolean;
+  coverImageUrl: string | null;
   upload: ProjectPhotoUpload;
 }) {
   const selectedFilenames = photos
@@ -482,6 +484,7 @@ export function ProjectActions({
       <ShareGalleryLinkDialog
         open={shareDialogOpen}
         photoCount={photos.length}
+        coverImageUrl={coverImageUrl}
         account={cloudinaryAccount}
         usage={cloudinaryUsage}
         loading={cloudinaryUsageLoading}
