@@ -14,13 +14,13 @@ export type ClientEventFields = Pick<
 >;
 
 const LABELS = {
-  clientName: "Nama",
-  clientPhone: "No. HP",
+  clientName: "Name",
+  clientPhone: "Phone",
   clientSocial: "Instagram",
-  projectTitle: "Nama acara",
-  eventDate: "Tanggal acara (DD/MM/YY)",
-  eventLocation: "Lokasi",
-  eventDuration: "Durasi",
+  projectTitle: "Event name",
+  eventDate: "Event date (DD/MM/YY)",
+  eventLocation: "Location",
+  eventDuration: "Duration",
 } as const;
 
 const FIELD_ALIASES: Record<string, keyof ClientEventFields> = {
@@ -114,7 +114,7 @@ export function buildClientEventClipboard(): string {
   ];
 
   return [
-    "Hai kak! mohon kirim data berikut agar aku buatkan quotation nya:",
+    "Hi! Please send the details below so I can prepare your quotation:",
     "",
     ...body,
   ]

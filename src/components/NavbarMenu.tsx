@@ -139,13 +139,13 @@ export function NavbarMenu({ shootsToday }: { shootsToday: number }) {
                 Clients
               </NavLink>
             ) : null}
-            {FEATURES.pricing ? (
+            {FEATURES.quotations || FEATURES.invoices ? (
               <NavLink
-                href="/dashboard/pricing"
+                href="/dashboard/quotations"
                 className={linkClass}
                 onActiveTap={() => setOpen(false)}
               >
-                Pricing
+                Quotes & invoices
               </NavLink>
             ) : null}
             {FEATURES.settings ? (

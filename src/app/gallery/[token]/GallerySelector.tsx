@@ -482,9 +482,12 @@ export function GallerySelector({
       disabled={syncing || !ready}
       className="shrink-0 whitespace-nowrap"
       onClick={syncGallery}
+      aria-label={syncing ? "Refreshing gallery" : "Refresh gallery"}
     >
       {!syncing && <RefreshCw className="h-3.5 w-3.5 shrink-0" aria-hidden />}
-      {syncing ? "Refreshing…" : "Refresh gallery"}
+      <span className="sr-only sm:not-sr-only">
+        {syncing ? "Refreshing…" : "Refresh"}
+      </span>
     </Button>
   );
 
@@ -506,39 +509,33 @@ export function GallerySelector({
 
       <DashboardShell className="pt-[max(1.5rem,env(safe-area-inset-top))] pb-3 sm:pt-10 sm:pb-4">
         <header>
-          <div className="flex flex-col gap-4 sm:gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
-            <div className="min-w-0 flex-1">
-              <h1 className="text-xl leading-tight sm:text-2xl md:text-3xl font-light tracking-[0.05em] uppercase break-words">
+          <div className="flex flex-col gap-3 sm:gap-4">
+            <div className="flex items-start justify-between gap-3">
+              <h1 className="min-w-0 flex-1 text-xl leading-tight sm:text-2xl md:text-3xl font-light tracking-[0.05em] uppercase break-words">
                 {project.name}
               </h1>
-              {project.client_name ? (
-                <p className="mt-2 text-text-secondary text-[14px] sm:text-[15px] leading-relaxed">
-                  Hi {project.client_name}, select up to {maxSelection} photo
-                  {maxSelection === 1 ? "" : "s"} you&rsquo;d like edited.
-                </p>
-              ) : (
-                <p className="mt-2 text-text-secondary text-[14px] sm:text-[15px] leading-relaxed">
-                  Select up to {maxSelection} photo
-                  {maxSelection === 1 ? "" : "s"} for editing.
-                </p>
-              )}
-              <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] uppercase tracking-label text-text-muted">
-                {ready ? (
-                  <span>
-                    {total} photo{total === 1 ? "" : "s"}
-                  </span>
-                ) : (
-                  <Skeleton className="h-3 w-24 rounded-sm" />
-                )}
-                {ready && selectedCount > 0 && (
-                  <span>
-                    {selectedCount} selected
-                  </span>
-                )}
-              </div>
+              {refreshButton}
             </div>
-
-            <div className="hidden lg:block shrink-0">{refreshButton}</div>
+            {project.client_name ? (
+              <p className="text-text-secondary text-[14px] sm:text-[15px] leading-relaxed">
+                Hi {project.client_name}, select up to {maxSelection} photo
+                {maxSelection === 1 ? "" : "s"} you&rsquo;d like edited.
+              </p>
+            ) : (
+              <p className="text-text-secondary text-[14px] sm:text-[15px] leading-relaxed">
+                Select up to {maxSelection} photo
+                {maxSelection === 1 ? "" : "s"} for editing.
+              </p>
+            )}
+            <div className="text-[11px] uppercase tracking-label text-text-muted">
+              {ready ? (
+                <span>
+                  {total} photo{total === 1 ? "" : "s"}
+                </span>
+              ) : (
+                <Skeleton className="h-3 w-24 rounded-sm" />
+              )}
+            </div>
           </div>
         </header>
       </DashboardShell>
@@ -607,19 +604,19 @@ export function GallerySelector({
               faceSearch.enabled &&
               faceSearch.status === "partial" ? (
                 <p className="mb-3 text-[12px] text-status-editing leading-relaxed">
-                  Fitur cari foto belum siap sepenuhnya — hasil mungkin terbatas
-                  sampai sebagian besar foto terindeks.
+                  Face search is still indexing — results may be limited until
+                  most photos are indexed.
                 </p>
               ) : null}
               {galleryScope === "selected" && scopedPhotos.length === 0 ? (
                 <p className="text-text-secondary text-[14px] leading-relaxed">
-                  Belum ada foto terpilih. Buka tab Semua, lalu ketuk foto yang
-                  ingin dipilih.
+                  No photos selected yet. Open the All tab, then tap the photos
+                  you want.
                 </p>
               ) : faceFilterIds && scopedPhotos.length === 0 ? (
                 <p className="text-text-secondary text-[14px] leading-relaxed">
-                  Tidak ada foto yang cocok dengan wajah ini. Coba foto lain atau
-                  hapus filter.
+                  No photos match this face. Try another photo or clear the
+                  filter.
                 </p>
               ) : (
                 <PhotoGallerySection
@@ -657,9 +654,9 @@ export function GallerySelector({
           setFacePickMode(false);
           setGalleryScope("all");
           if (matchCount === 0) {
-            setError("Tidak ada foto serupa ditemukan. Coba foto lain.");
+            setError("No matching photos found. Try another photo.");
           } else {
-            setSyncNotice(`${matchCount} foto dengan wajah ini`);
+            setSyncNotice(`${matchCount} photo${matchCount === 1 ? "" : "s"} with this face`);
           }
         }}
       />
@@ -688,28 +685,11 @@ export function GallerySelector({
               </span>
             ) : null}
           </span>
-          <div className="grid w-full grid-cols-[auto_1fr] gap-2 sm:flex sm:w-auto sm:items-center">
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="lg:hidden !w-9 !min-w-9 !px-0 sm:!w-auto sm:!min-w-0 sm:!px-3 whitespace-nowrap"
-              loading={syncing}
-              disabled={syncing || !ready}
-              onClick={syncGallery}
-              aria-label={syncing ? "Refreshing gallery" : "Refresh gallery"}
-            >
-              {!syncing && (
-                <RefreshCw className="h-3.5 w-3.5 shrink-0" aria-hidden />
-              )}
-              <span className="hidden sm:inline">
-                {syncing ? "Refreshing…" : "Refresh"}
-              </span>
-            </Button>
+          <div className="grid w-full sm:flex sm:w-auto sm:justify-end">
             <Button
               type="button"
               size="sm"
-              className="min-w-0"
+              className="w-full sm:w-auto min-w-0"
               loading={submitting}
               onClick={submitSelection}
               disabled={

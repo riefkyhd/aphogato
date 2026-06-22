@@ -555,12 +555,7 @@ export function CalendarClient({
       </div>
 
       <div className="flex flex-1 min-h-0 relative">
-        <div
-          className={cn(
-            "flex-1 min-w-0 overflow-auto transition-[padding] duration-300",
-            panelOpen ? "lg:pr-[380px]" : "pr-0"
-          )}
-        >
+        <div className="flex-1 min-w-0 overflow-auto">
           {view === "month" ? (
             <CalendarMonthGrid
               events={events}

@@ -23,7 +23,7 @@ export const FEATURES = {
   /** Client tap-to-select photos and confirm selection in the gallery */
   clientPhotoSelection: true,
 
-  /** Face search — admin indexing settings, upload indexing, and client "Cari foto saya" */
+  /** Face search — admin indexing settings, upload indexing, and client "Find my photos" */
   faceSearch: false,
 
   /** Shoot calendar at /dashboard/calendar */

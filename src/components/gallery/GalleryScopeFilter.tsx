@@ -15,9 +15,6 @@ export function GalleryScopeFilter({
   onChange: (value: GalleryScope) => void;
   disabled?: boolean;
 }) {
-  const selectedLabel =
-    selectedCount > 0 ? `Terpilih (${selectedCount})` : "Terpilih";
-
   return (
     <SegmentedControl
       value={value}
@@ -25,10 +22,10 @@ export function GalleryScopeFilter({
       aria-label="Filter gallery photos"
       className="w-full sm:w-auto"
       options={[
-        { value: "all", label: "Semua" },
+        { value: "all", label: "All" },
         {
           value: "selected",
-          label: selectedLabel,
+          label: "Selected",
           disabled: selectedCount === 0 && value !== "selected",
         },
       ]}

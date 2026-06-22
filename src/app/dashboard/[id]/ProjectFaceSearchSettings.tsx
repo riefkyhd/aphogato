@@ -110,17 +110,17 @@ export function ProjectFaceSearchSettings({
       await loadStatus();
       if (result.errors.length > 0) {
         toast.warning(
-          `Indexed ${result.indexed} photos (${result.skipped} tanpa wajah). ${result.errors.length} gagal: ${result.errors[0]}`
+          `Indexed ${result.indexed} photos (${result.skipped} with no face). ${result.errors.length} failed: ${result.errors[0]}`
         );
       } else if (result.indexed === 0) {
         toast.error(
           result.skipped > 0
-            ? `Tidak ada wajah terdeteksi di ${result.skipped} foto. Coba refresh halaman lalu index lagi.`
-            : "Tidak ada foto untuk di-index."
+            ? `No faces detected in ${result.skipped} photos. Refresh the page and try indexing again.`
+            : "No photos to index."
         );
       } else {
         toast.success(
-          `Indexed ${result.indexed} photos${result.skipped > 0 ? ` · ${result.skipped} tanpa wajah terdeteksi` : ""}`
+          `Indexed ${result.indexed} photos${result.skipped > 0 ? ` · ${result.skipped} with no face detected` : ""}`
         );
       }
     } catch (err) {
@@ -134,7 +134,7 @@ export function ProjectFaceSearchSettings({
   async function handleReindexAll() {
     if (
       !window.confirm(
-        "Hapus data wajah lama dan index ulang semua foto? Gunakan ini setelah update deteksi wajah."
+        "Delete existing face data and re-index all photos? Use this after updating face detection."
       )
     ) {
       return;
@@ -151,11 +151,11 @@ export function ProjectFaceSearchSettings({
       await loadStatus();
       if (result.errors.length > 0) {
         toast.warning(
-          `Re-indexed ${result.indexed} photos (${result.skipped} tanpa wajah). ${result.errors.length} gagal: ${result.errors[0]}`
+          `Re-indexed ${result.indexed} photos (${result.skipped} with no face). ${result.errors.length} failed: ${result.errors[0]}`
         );
       } else {
         toast.success(
-          `Re-indexed ${result.indexed} photos${result.skipped > 0 ? ` · ${result.skipped} tanpa wajah` : ""}`
+          `Re-indexed ${result.indexed} photos${result.skipped > 0 ? ` · ${result.skipped} with no face` : ""}`
         );
       }
     } catch (err) {

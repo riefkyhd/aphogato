@@ -45,13 +45,7 @@ export function GalleryClientHint({
       role="note"
     >
       <p className="text-[13px] leading-relaxed text-text-secondary">
-        <span className="sm:hidden">
-          Ketuk foto untuk memilih yang ingin diedit. Ketuk lagi untuk membatalkan
-          pilihan.
-        </span>
-        <span className="hidden sm:inline">
-          Tap a photo to select the shots you want edited. Tap again to deselect.
-        </span>
+        Tap a photo to select the shots you want edited. Tap again to deselect.
       </p>
       <button
         type="button"

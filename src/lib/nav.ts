@@ -16,9 +16,22 @@ export function financeIsActive(pathname: string): boolean {
   );
 }
 
+export function quotesIsActive(pathname: string): boolean {
+  return (
+    pathname === "/dashboard/quotations" ||
+    pathname.startsWith("/dashboard/quotations/") ||
+    pathname === "/dashboard/invoices" ||
+    pathname.startsWith("/dashboard/invoices/")
+  );
+}
+
 export function navIsActive(pathname: string, href: string): boolean {
   if (href === "/dashboard/finance") {
     return financeIsActive(pathname);
+  }
+
+  if (href === "/dashboard/quotations") {
+    return quotesIsActive(pathname);
   }
 
   if (href === "/dashboard") {

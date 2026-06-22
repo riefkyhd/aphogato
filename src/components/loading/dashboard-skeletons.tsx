@@ -202,7 +202,7 @@ export function ClientsSkeleton() {
 
 export function PricingSkeleton() {
   return (
-    <DashboardPageShell label="Loading pricing">
+    <DashboardPageShell label="Loading price list">
       <Skeleton className="h-4 w-28 mb-6" />
       <header className="mb-8 border-b border-border pb-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

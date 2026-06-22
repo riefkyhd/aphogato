@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, FileDown, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, FileDown, Plus, Receipt, RotateCcw, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -436,15 +436,13 @@ export function QuotationClient({
         }}
         onConfirm={() => void handleDeleteSaved()}
       />
-      {FEATURES.pricing ? (
       <BackNavLink
-        href="/dashboard/pricing"
+        href="/dashboard"
         className="inline-flex items-center gap-2 text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors mb-6"
       >
         <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
-        Price list
+        All projects
       </BackNavLink>
-      ) : null}
 
       <header className="mb-8 border-b border-border pb-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -459,6 +457,17 @@ export function QuotationClient({
             </p>
           </div>
           <PageToolbarActions>
+            {FEATURES.invoices ? (
+              <Tooltip label="Final payment invoice">
+                <Link
+                  href="/dashboard/invoices"
+                  className={`btn-secondary !text-[11px] !min-h-9 !px-3 !py-2 inline-flex items-center justify-center gap-1.5 ${toolbarButtonClass}`}
+                >
+                  <Receipt className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  Invoice
+                </Link>
+              </Tooltip>
+            ) : null}
             <Tooltip
               label={
                 canSave

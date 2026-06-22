@@ -51,7 +51,7 @@ export function FacePickModal({
         onClose();
       } catch (err) {
         if (signal?.aborted) return;
-        setError(err instanceof Error ? err.message : "Gagal mencari foto");
+        setError(err instanceof Error ? err.message : "Could not search photos");
       } finally {
         setMatching(false);
       }
@@ -81,7 +81,7 @@ export function FacePickModal({
       .then((detected) => {
         if (controller.signal.aborted) return;
         if (detected.length === 0) {
-          setError("Tidak ada wajah terdeteksi di foto ini. Coba foto lain.");
+          setError("No face detected in this photo. Try another photo.");
           return;
         }
         setFaces(detected);
@@ -89,7 +89,7 @@ export function FacePickModal({
       .catch((err) => {
         if (controller.signal.aborted) return;
         setError(
-          err instanceof Error ? err.message : "Gagal mendeteksi wajah"
+          err instanceof Error ? err.message : "Could not detect faces"
         );
       })
       .finally(() => {
@@ -117,14 +117,14 @@ export function FacePickModal({
         id={titleId}
         className="text-lg font-light tracking-[0.05em] uppercase mb-2"
       >
-        Cari foto saya
+        Find my photos
       </h2>
       <p className="text-[13px] text-text-secondary leading-relaxed mb-4">
         {loading
-          ? "Mendeteksi wajah di foto ini…"
+          ? "Detecting faces in this photo…"
           : faces.length > 1
-            ? "Ketuk wajah kamu di foto ini."
-            : "Ketuk wajah kamu untuk mencari foto lainnya."}
+            ? "Tap your face in this photo."
+            : "Tap your face to find other photos."}
       </p>
 
       <div className="flex justify-center border border-border bg-bg-primary">
@@ -144,7 +144,7 @@ export function FacePickModal({
                 key={index}
                 type="button"
                 disabled={matching || loading}
-                aria-label={`Pilih wajah ${index + 1}`}
+                aria-label={`Select face ${index + 1}`}
                 className="absolute border-2 border-text-primary bg-text-primary/10 hover:bg-text-primary/20 transition-colors disabled:opacity-50"
                 style={{
                   left: `${face.bbox_x * 100}%`,
@@ -171,7 +171,7 @@ export function FacePickModal({
 
       <div className="mt-5 flex justify-end gap-2">
         <Button type="button" variant="secondary" onClick={onClose}>
-          Batal
+          Cancel
         </Button>
       </div>
     </ModalShell>

@@ -62,8 +62,8 @@ export function Navbar({
             {FEATURES.clients ? (
               <NavbarLink href="/dashboard/clients">Clients</NavbarLink>
             ) : null}
-            {FEATURES.pricing ? (
-              <NavbarLink href="/dashboard/pricing">Pricing</NavbarLink>
+            {FEATURES.quotations || FEATURES.invoices ? (
+              <NavbarLink href="/dashboard/quotations">Quotes & invoices</NavbarLink>
             ) : null}
             {FEATURES.settings ? (
               <NavbarLink href="/dashboard/settings">Settings</NavbarLink>

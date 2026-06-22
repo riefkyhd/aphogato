@@ -128,8 +128,8 @@ export function NewProjectForm() {
               Enable face search for clients
             </span>
             <span className="mt-1 block text-[12px] text-text-muted leading-relaxed">
-              Cocok untuk event sport / tim. Klien bisa ketuk wajahnya untuk
-              melihat foto yang relevan.
+              Good for sports or team events. Clients can tap their face to see
+              relevant photos.
             </span>
           </span>
         </label>

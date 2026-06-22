@@ -70,7 +70,7 @@ export function ClientEventTools({
             value={importText}
             onChange={(e) => setImportText(e.target.value)}
             rows={8}
-            placeholder={`Nama: Andrew & Katherine\nNo. HP: +62 812 3456 7890\nInstagram: @andrew\n\nNama acara: Wedding\nTanggal acara (DD/MM/YY): 15/06/26\nDurasi: 8 jam\nLokasi: Hotel Mulia, Jakarta`}
+            placeholder={`Name: Andrew & Katherine\nPhone: +62 812 3456 7890\nInstagram: @andrew\n\nEvent name: Wedding\nEvent date (DD/MM/YY): 15/06/26\nDuration: 8 hours\nLocation: Hotel Mulia, Jakarta`}
             className="input-dark w-full min-h-[160px] resize-y text-[13px] leading-relaxed"
           />
           <div className="flex flex-wrap gap-2">

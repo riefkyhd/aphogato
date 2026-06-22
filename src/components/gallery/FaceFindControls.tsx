@@ -29,7 +29,7 @@ export function FaceFindControls({
       {matchCount !== null ? (
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center rounded-sm border border-border bg-bg-elevated px-3 py-1.5 text-[11px] uppercase tracking-label text-text-primary">
-            {matchCount} foto dengan wajah ini
+            {matchCount} photo{matchCount === 1 ? "" : "s"} with this face
           </span>
           <Button
             type="button"
@@ -38,13 +38,13 @@ export function FaceFindControls({
             disabled={disabled}
             onClick={onClearFilter}
           >
-            Hapus filter
+            Clear filter
           </Button>
         </div>
       ) : facePickMode ? (
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-[11px] uppercase tracking-label text-text-secondary">
-            Ketuk foto yang ada wajahmu
+            Tap a photo that shows your face
           </span>
           <Button
             type="button"
@@ -53,7 +53,7 @@ export function FaceFindControls({
             disabled={disabled || matching}
             onClick={onCancelPick}
           >
-            Batal
+            Cancel
           </Button>
         </div>
       ) : (
@@ -65,7 +65,7 @@ export function FaceFindControls({
           disabled={disabled || matching}
           onClick={onStartPick}
         >
-          Cari foto saya
+          Find my photos
         </Button>
       )}
     </div>
