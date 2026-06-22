@@ -1,4 +1,5 @@
 import { NavigatingLink } from "@/components/NavigatingLink";
+import { FEATURES } from "@/lib/features";
 import { ProjectsViewToggle } from "@/components/projects/ProjectsViewToggle";
 
 export function ProjectsPageHeader({
@@ -12,17 +13,21 @@ export function ProjectsPageHeader({
         <h1 className="text-xl sm:text-2xl font-light tracking-[0.05em] uppercase text-center sm:text-left">
           {title}
         </h1>
-        <NavigatingLink
-          href="/dashboard/new"
-          className="btn-primary w-full sm:w-auto justify-center shrink-0"
-          loadingLabel="Opening…"
-        >
-          New project
-        </NavigatingLink>
+        {FEATURES.newProject ? (
+          <NavigatingLink
+            href="/dashboard/new"
+            className="btn-primary w-full sm:w-auto justify-center shrink-0"
+            loadingLabel="Opening…"
+          >
+            New project
+          </NavigatingLink>
+        ) : null}
       </div>
-      <div className="flex justify-center mt-4 sm:mt-5">
-        <ProjectsViewToggle />
-      </div>
+      {FEATURES.projectPipeline ? (
+        <div className="flex justify-center mt-4 sm:mt-5">
+          <ProjectsViewToggle />
+        </div>
+      ) : null}
     </div>
   );
 }

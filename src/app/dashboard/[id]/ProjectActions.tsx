@@ -13,6 +13,7 @@ import type {
 } from "@/lib/cloudinary/types";
 import type { ProjectStatus } from "@/components/StatusDot";
 import { markProjectsStatusDirty } from "@/lib/projects/invalidateProjectsViews";
+import { FEATURES } from "@/lib/features";
 import { cn } from "@/lib/utils";
 import { ShareGalleryLinkDialog } from "@/components/cloudinary/ShareGalleryLinkDialog";
 import type { FaceSearchStatus } from "@/lib/faces/types";
@@ -139,7 +140,7 @@ export function ProjectActions({
   const [faceSearchLoading, setFaceSearchLoading] = useState(false);
 
   useEffect(() => {
-    if (!shareDialogOpen || !faceSearchEnabled) {
+    if (!FEATURES.faceSearch || !shareDialogOpen || !faceSearchEnabled) {
       setFaceSearchStatus(null);
       setFaceSearchLoading(false);
       return;
@@ -326,7 +327,8 @@ export function ProjectActions({
     </>
   );
 
-  const bridgeSection = showBridgeButton ? (
+  const bridgeSection =
+    FEATURES.bridgeExport && showBridgeButton ? (
     <div className="mt-2.5 border-t border-border/80 pt-2.5">
       <Button
         size="sm"
@@ -457,7 +459,7 @@ export function ProjectActions({
                 </Button>
               </div>
             )}
-            {showBridgeButton && moreOpen && (
+            {FEATURES.bridgeExport && showBridgeButton && moreOpen && (
               <div className="border-t border-border/80 pt-2">
                 <Button
                   size="sm"
@@ -483,8 +485,12 @@ export function ProjectActions({
         account={cloudinaryAccount}
         usage={cloudinaryUsage}
         loading={cloudinaryUsageLoading}
-        faceSearch={faceSearchEnabled ? faceSearchStatus : null}
-        faceSearchLoading={faceSearchEnabled && faceSearchLoading}
+        faceSearch={
+          FEATURES.faceSearch && faceSearchEnabled ? faceSearchStatus : null
+        }
+        faceSearchLoading={
+          FEATURES.faceSearch && faceSearchEnabled && faceSearchLoading
+        }
         onClose={() => setShareDialogOpen(false)}
         onCopy={copyLink}
       />

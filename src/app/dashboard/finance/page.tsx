@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { FinanceClient } from "@/app/dashboard/finance/FinanceClient";
+import { FEATURES } from "@/lib/features";
 import { createServerSupabase } from "@/lib/supabase/server";
 import type { CalendarEvent } from "@/lib/types";
 
@@ -52,7 +53,7 @@ export default async function FinancePage() {
     events
   );
 
-  return (
+  return FEATURES.finance ? (
     <Suspense fallback={null}>
       <FinanceClient
         initialYear={year}
@@ -63,5 +64,5 @@ export default async function FinancePage() {
         projects={projects}
       />
     </Suspense>
-  );
+  ) : null;
 }

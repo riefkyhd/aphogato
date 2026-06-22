@@ -1,4 +1,5 @@
 import { createServerSupabase } from "@/lib/supabase/server";
+import { FEATURES } from "@/lib/features";
 import { normalizeClientSocialAccounts } from "@/lib/clients/socialAccounts";
 import type { Client } from "@/lib/types";
 import { ClientsClient } from "./ClientsClient";
@@ -17,5 +18,7 @@ export default async function ClientsPage() {
     social_accounts: normalizeClientSocialAccounts(row.social_accounts),
   }));
 
-  return <ClientsClient initialClients={clients} />;
+  return FEATURES.clients ? (
+    <ClientsClient initialClients={clients} />
+  ) : null;
 }

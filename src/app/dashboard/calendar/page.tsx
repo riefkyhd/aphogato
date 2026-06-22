@@ -1,4 +1,5 @@
 import { CalendarClient } from "@/app/dashboard/calendar/CalendarClient";
+import { FEATURES } from "@/lib/features";
 import { isGoogleOAuthConfigured } from "@/lib/calendar/googleOAuthConfig";
 import { isGoogleCalendarConnected } from "@/lib/calendar/googleSettings";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -26,12 +27,12 @@ export default async function CalendarPage() {
   const initialEvents = (eventsRes.data ?? []) as CalendarEvent[];
   const projects = projectsRes.data ?? [];
 
-  return (
+  return FEATURES.calendar ? (
     <CalendarClient
       initialEvents={initialEvents}
       projects={projects}
       isGoogleConnected={isGoogleConnected}
       isOAuthConfigured={isOAuthConfigured}
     />
-  );
+  ) : null;
 }

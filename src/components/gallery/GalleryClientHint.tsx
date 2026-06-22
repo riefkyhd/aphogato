@@ -46,12 +46,11 @@ export function GalleryClientHint({
     >
       <p className="text-[13px] leading-relaxed text-text-secondary">
         <span className="sm:hidden">
-          Ketuk foto untuk pratinjau, lalu pilih yang ingin diedit. Geser kiri/kanan
-          di pratinjau untuk foto berikutnya.
+          Ketuk foto untuk memilih yang ingin diedit. Ketuk lagi untuk membatalkan
+          pilihan.
         </span>
         <span className="hidden sm:inline">
-          Tap a photo to preview, then select the shots you want edited. Swipe
-          left or right in preview to browse.
+          Tap a photo to select the shots you want edited. Tap again to deselect.
         </span>
       </p>
       <button

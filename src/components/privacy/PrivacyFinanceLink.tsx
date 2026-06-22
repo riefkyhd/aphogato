@@ -4,6 +4,7 @@ import { Lock } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { usePrivacyLockContext } from "@/components/privacy/PrivacyLockProvider";
+import { FEATURES } from "@/lib/features";
 import { financeIsActive } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +20,9 @@ export function PrivacyFinanceLink({
   const pathname = usePathname();
   const href = "/dashboard/finance";
   const { pinEnabled, isLocked, settingsLoaded } = usePrivacyLockContext();
+
+  if (!FEATURES.finance) return null;
+
   const active = financeIsActive(pathname);
 
   return (

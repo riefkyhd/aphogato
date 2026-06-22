@@ -8,11 +8,13 @@ import type { Photo } from "@/lib/types";
 export function VirtualGalleryGrid({
   photos,
   selectedIds,
-  onOpenPhoto,
+  selectionLimitReached = false,
+  onTogglePhoto,
 }: {
   photos: Photo[];
   selectedIds: Set<string>;
-  onOpenPhoto: (index: number) => void;
+  selectionLimitReached?: boolean;
+  onTogglePhoto: (index: number) => void;
 }) {
   const photoIndexById = useMemo(() => {
     const map = new Map<string, number>();
@@ -26,12 +28,14 @@ export function VirtualGalleryGrid({
       getKey={(ph) => ph.id}
       renderItem={(ph) => {
         const index = photoIndexById.get(ph.id) ?? 0;
+        const selected = selectedIds.has(ph.id);
         return (
           <GalleryPhotoCell
             cloudinaryUrl={ph.cloudinary_url}
             filename={ph.filename}
-            selected={selectedIds.has(ph.id)}
-            onOpen={() => onOpenPhoto(index)}
+            selected={selected}
+            selectDisabled={selectionLimitReached && !selected}
+            onToggle={() => onTogglePhoto(index)}
           />
         );
       }}

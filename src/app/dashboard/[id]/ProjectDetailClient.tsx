@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { preloadFaceIndexWorker } from "@/lib/faces/faceIndexClient";
+import { FEATURES } from "@/lib/features";
 import { DashboardMain } from "@/components/layout/DashboardShell";
 import { BackNavLink } from "@/components/BackNavLink";
 import { ArrowLeft } from "lucide-react";
@@ -58,10 +58,14 @@ export function ProjectDetailClient({
   }, [project]);
 
   useEffect(() => {
-    if (projectState.face_search_enabled) {
-      preloadFaceIndexWorker();
-    }
+    if (!FEATURES.faceSearch || !projectState.face_search_enabled) return;
+    void import("@/lib/faces/faceIndexClient").then((m) =>
+      m.preloadFaceIndexWorker()
+    );
   }, [projectState.face_search_enabled]);
+
+  const faceSearchActive =
+    FEATURES.faceSearch && projectState.face_search_enabled;
 
   const setPhotosFromServer = useCallback((next: Photo[]) => {
     setPhotos(next);
@@ -85,7 +89,7 @@ export function ProjectDetailClient({
     projectState.id,
     setPhotosFromServer,
     refreshProjectPhotos,
-    projectState.face_search_enabled
+    faceSearchActive
   );
 
   const photoIds = useMemo(() => photos.map((p) => p.id), [photos]);
@@ -272,18 +276,22 @@ export function ProjectDetailClient({
                   {clientSelectedCount} client pick
                   {clientSelectedCount === 1 ? "" : "s"}
                 </span>
-                <ProjectCloudinaryUsageBadge
+                {FEATURES.cloudinarySettings ? (
+                  <ProjectCloudinaryUsageBadge
+                    account={cloudinaryAccount}
+                    usage={cloudinaryUsage}
+                    loading={cloudinaryUsageLoading}
+                  />
+                ) : null}
+              </div>
+              {FEATURES.cloudinarySettings ? (
+                <ProjectCloudinaryAccountNote
                   account={cloudinaryAccount}
                   usage={cloudinaryUsage}
                   loading={cloudinaryUsageLoading}
+                  photoCount={photos.length}
                 />
-              </div>
-              <ProjectCloudinaryAccountNote
-                account={cloudinaryAccount}
-                usage={cloudinaryUsage}
-                loading={cloudinaryUsageLoading}
-                photoCount={photos.length}
-              />
+              ) : null}
             </div>
             <ProjectActions
               projectId={projectState.id}
@@ -298,7 +306,7 @@ export function ProjectDetailClient({
               onStatusChange={(status) =>
                 setProjectState((prev) => ({ ...prev, status }))
               }
-              faceSearchEnabled={projectState.face_search_enabled}
+              faceSearchEnabled={faceSearchActive}
               upload={upload}
             />
           </div>
@@ -344,22 +352,28 @@ export function ProjectDetailClient({
                     clientOverLimit={clientOverLimit}
                     onUpdated={setProjectState}
                   />
-                  <ProjectFaceSearchSettings
-                    project={projectState}
-                    photoCount={photos.length}
-                    onUpdated={setProjectState}
-                  />
-                  <div className="border-t border-border bg-bg-secondary p-4 sm:p-5">
-                    <DeliverablesChecklist projectId={projectState.id} compact />
-                  </div>
-                  <div className="border-t border-border bg-bg-secondary p-4 sm:p-5">
-                    <ProjectReferencesSection
-                      projectId={projectState.id}
-                      projectName={projectState.name}
-                      clientName={projectState.client_name}
-                      compact
+                  {FEATURES.faceSearch ? (
+                    <ProjectFaceSearchSettings
+                      project={projectState}
+                      photoCount={photos.length}
+                      onUpdated={setProjectState}
                     />
-                  </div>
+                  ) : null}
+                  {FEATURES.deliverables ? (
+                    <div className="border-t border-border bg-bg-secondary p-4 sm:p-5">
+                      <DeliverablesChecklist projectId={projectState.id} compact />
+                    </div>
+                  ) : null}
+                  {FEATURES.projectReferences ? (
+                    <div className="border-t border-border bg-bg-secondary p-4 sm:p-5">
+                      <ProjectReferencesSection
+                        projectId={projectState.id}
+                        projectName={projectState.name}
+                        clientName={projectState.client_name}
+                        compact
+                      />
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>

@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { GalleryPhotoLightbox } from "@/components/gallery/GalleryPhotoLightbox";
 import { VirtualGalleryGrid } from "@/components/gallery/VirtualGalleryGrid";
 import { MasonryColumnGrid } from "@/components/MasonryColumnGrid";
 import { MasonryPhoto } from "@/components/MasonryPhoto";
@@ -35,8 +33,6 @@ export function PhotoGridView({
   facePickMode?: boolean;
   onFacePickPhoto?: (photo: Photo) => void;
 }) {
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-
   const manageMode =
     mode === "dashboard" &&
     Boolean(
@@ -48,32 +44,21 @@ export function PhotoGridView({
 
   if (mode === "gallery" && onToggleSelect) {
     return (
-      <>
-        <VirtualGalleryGrid
-          photos={photos}
-          selectedIds={selectedIds}
-          onOpenPhoto={(index) => {
-            const photo = photos[index];
-            if (!photo) return;
-            if (facePickMode && onFacePickPhoto) {
-              onFacePickPhoto(photo);
-              return;
-            }
-            setLightboxIndex(index);
-          }}
-        />
-        {!facePickMode && lightboxIndex !== null ? (
-          <GalleryPhotoLightbox
-            photos={photos}
-            index={lightboxIndex}
-            selectedIds={selectedIds}
-            selectionLimitReached={selectionLimitReached}
-            onToggleSelect={onToggleSelect}
-            onClose={() => setLightboxIndex(null)}
-            onIndexChange={setLightboxIndex}
-          />
-        ) : null}
-      </>
+      <VirtualGalleryGrid
+        photos={photos}
+        selectedIds={selectedIds}
+        selectionLimitReached={selectionLimitReached}
+        onTogglePhoto={(index) => {
+          const photo = photos[index];
+          if (!photo) return;
+          if (facePickMode && onFacePickPhoto) {
+            onFacePickPhoto(photo);
+            return;
+          }
+          if (selectionLimitReached && !selectedIds.has(photo.id)) return;
+          onToggleSelect(photo.id);
+        }}
+      />
     );
   }
 

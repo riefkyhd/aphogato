@@ -1,4 +1,5 @@
 import { NavigatingLink } from "@/components/NavigatingLink";
+import { FEATURES } from "@/lib/features";
 import { ProjectsGrid } from "@/components/projects/ProjectsGrid";
 import { loadGridProjects } from "@/lib/projects/loadGridProjects";
 
@@ -12,13 +13,15 @@ export async function ProjectsGridSection() {
         <p className="mt-2 text-[11px] uppercase tracking-label text-text-muted">
           Create your first project to get started.
         </p>
-        <NavigatingLink
-          href="/dashboard/new"
-          className="btn-primary inline-flex mt-8"
-          loadingLabel="Opening…"
-        >
-          New project
-        </NavigatingLink>
+        {FEATURES.newProject ? (
+          <NavigatingLink
+            href="/dashboard/new"
+            className="btn-primary inline-flex mt-8"
+            loadingLabel="Opening…"
+          >
+            New project
+          </NavigatingLink>
+        ) : null}
       </div>
     );
   }

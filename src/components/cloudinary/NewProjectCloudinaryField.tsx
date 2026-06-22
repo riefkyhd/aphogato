@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/Label";
 import type { CloudinaryUsageLevel } from "@/lib/cloudinary/types";
 import { usageLevelClass } from "@/lib/cloudinary/display";
 import { useNewProjectCloudinaryOptions } from "@/hooks/useNewProjectCloudinaryOptions";
+import { FEATURES } from "@/lib/features";
 import { cn } from "@/lib/utils";
 
 function bannerClass(level: CloudinaryUsageLevel | undefined): string {
@@ -133,13 +134,19 @@ export function NewProjectCloudinaryField({
         >
           <p>{hint.message}</p>
           <p className="mt-2 text-[12px] text-text-secondary">
-            <Link
-              href="/dashboard/settings"
-              className="underline underline-offset-2"
-            >
-              Open Settings
-            </Link>{" "}
-            to change the default Cloudinary account for future projects.
+            {FEATURES.settings ? (
+              <>
+                <Link
+                  href="/dashboard/settings"
+                  className="underline underline-offset-2"
+                >
+                  Open Settings
+                </Link>{" "}
+                to change the default Cloudinary account for future projects.
+              </>
+            ) : (
+              "Change the default Cloudinary account for future projects in Settings."
+            )}
           </p>
         </div>
       ) : null}

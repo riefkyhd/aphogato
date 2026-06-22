@@ -4,6 +4,7 @@ import { ArrowLeft, FileDown, Plus, RotateCcw, Save, Trash2 } from "lucide-react
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { FEATURES } from "@/lib/features";
 import { DashboardMain } from "@/components/layout/DashboardShell";
 import { ClientEventTools } from "@/components/quotations/ClientEventTools";
 import { QuotationArchive } from "@/components/quotations/QuotationArchive";
@@ -435,6 +436,7 @@ export function QuotationClient({
         }}
         onConfirm={() => void handleDeleteSaved()}
       />
+      {FEATURES.pricing ? (
       <BackNavLink
         href="/dashboard/pricing"
         className="inline-flex items-center gap-2 text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors mb-6"
@@ -442,6 +444,7 @@ export function QuotationClient({
         <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
         Price list
       </BackNavLink>
+      ) : null}
 
       <header className="mb-8 border-b border-border pb-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -759,14 +762,21 @@ export function QuotationClient({
               </div>
             ) : (
               <p className="text-[12px] text-text-muted">
-                No active price list items.{" "}
-                <Link
-                  href="/dashboard/pricing"
-                  className="text-text-secondary hover:text-text-primary underline"
-                >
-                  Add services
-                </Link>{" "}
-                to insert them quickly.
+                No active price list items.
+                {FEATURES.pricing ? (
+                  <>
+                    {" "}
+                    <Link
+                      href="/dashboard/pricing"
+                      className="text-text-secondary hover:text-text-primary underline"
+                    >
+                      Add services
+                    </Link>{" "}
+                    to insert them quickly.
+                  </>
+                ) : (
+                  " Add services in the price list to insert them quickly."
+                )}
               </p>
             )}
 

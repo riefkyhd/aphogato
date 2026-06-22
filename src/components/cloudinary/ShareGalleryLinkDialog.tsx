@@ -14,6 +14,7 @@ import {
   usageLevelClass,
 } from "@/lib/cloudinary/display";
 import { cn } from "@/lib/utils";
+import { FEATURES } from "@/lib/features";
 import type { FaceSearchStatus } from "@/lib/faces/types";
 
 function faceSearchShareLine(faceSearch: FaceSearchStatus): string | null {
@@ -169,12 +170,14 @@ export function ShareGalleryLinkDialog({
         >
           Cancel
         </Button>
+        {FEATURES.settings ? (
         <Link
           href="/dashboard/settings"
           className="btn-secondary inline-flex items-center justify-center gap-2 w-full sm:w-auto !text-[11px] !min-h-9 !px-3 !py-2"
         >
           Open Settings
         </Link>
+        ) : null}
         <Button
           ref={copyRef}
           type="button"

@@ -23,6 +23,7 @@ import type {
   FinanceProjectOption,
 } from "@/lib/finance/financeOptions";
 import { formatMoney } from "@/lib/finance/formatMoney";
+import { FEATURES } from "@/lib/features";
 import { sumExpenseAmounts } from "@/lib/finance/projectExpenses";
 import type { CalendarEvent, ExpenseEntry, IncomeEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -477,13 +478,19 @@ export function EventDetailPanel({
                   </>
                 ) : (
                   <p className="text-[12px] text-text-secondary">
-                    Not recorded yet — add in Edit or{" "}
-                    <Link
-                      href="/dashboard/finance"
-                      className="text-text-primary hover:underline"
-                    >
-                      Finance
-                    </Link>
+                    Not recorded yet — add in Edit
+                    {FEATURES.finance ? (
+                      <>
+                        {" "}
+                        or{" "}
+                        <Link
+                          href="/dashboard/finance"
+                          className="text-text-primary hover:underline"
+                        >
+                          Finance
+                        </Link>
+                      </>
+                    ) : null}
                   </p>
                 )}
               </div>
@@ -529,10 +536,13 @@ export function EventDetailPanel({
                 onChanged={onExpensesChanged}
               />
 
+              {FEATURES.deliverables ? (
               <div className="border-t border-border pt-4 mt-4">
                 <DeliverablesChecklist eventId={event.id} compact />
               </div>
+              ) : null}
 
+              {FEATURES.googleCalendarSync ? (
               <div className="border-t border-border pt-4 mt-4">
                 <p className="text-[11px] uppercase tracking-label text-text-muted mb-2">
                   Google Calendar
@@ -563,6 +573,7 @@ export function EventDetailPanel({
                   </p>
                 )}
               </div>
+              ) : null}
 
               <div className="flex flex-col-reverse sm:flex-row gap-2 pt-6 mt-4 border-t border-border [&_button]:w-full [&_button]:sm:flex-1">
                 <Button

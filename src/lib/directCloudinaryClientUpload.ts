@@ -1,7 +1,7 @@
 import type { Photo, ProjectReference } from "@/lib/types";
 import { CLOUDINARY_MAX_UPLOAD_BYTES } from "@/lib/imageUploadLimits";
-import { indexFacesFromFile } from "@/lib/faces/faceIndexClient";
 import type { PhotoFaceInput } from "@/lib/faces/types";
+import { FEATURES } from "@/lib/features";
 import { prepareImageForUpload } from "@/lib/prepareImageForUpload";
 import { UploadCancelledError } from "@/lib/uploadCancelled";
 
@@ -232,9 +232,16 @@ async function uploadViaSignedCloudinary<T>(
   const originalFilename = file.name;
   const prepared = await prepareImageForUpload(file, signal);
 
-  const facesPromise = options?.faceSearchEnabled
-    ? (options.onIndexingFaces?.(), indexFacesFromFile(prepared, signal))
-    : Promise.resolve<PhotoFaceInput[]>([]);
+  const facesPromise =
+    FEATURES.faceSearch && options?.faceSearchEnabled
+      ? (async () => {
+          options.onIndexingFaces?.();
+          const { indexFacesFromFile } = await import(
+            "@/lib/faces/faceIndexClient"
+          );
+          return indexFacesFromFile(prepared, signal);
+        })()
+      : Promise.resolve<PhotoFaceInput[]>([]);
 
   const uploadPromise = (async () => {
     const signed = await requestUploadSign(signUrl, prepared, signal);

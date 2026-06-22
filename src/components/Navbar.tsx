@@ -1,5 +1,6 @@
 import { Bell, ExternalLink } from "lucide-react";
 import Link from "next/link";
+import { FEATURES } from "@/lib/features";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { NavbarLink } from "./NavbarLink";
 import { PrivacyFinanceLink } from "./privacy/PrivacyFinanceLink";
@@ -23,8 +24,11 @@ export function Navbar({
         <nav className="ml-auto hidden md:flex items-center gap-6">
         {isAuthenticated ? (
           <>
-            <NavbarLink href="/dashboard">Projects</NavbarLink>
-            <PrivacyFinanceLink />
+            {FEATURES.projectsGrid ? (
+              <NavbarLink href="/dashboard">Projects</NavbarLink>
+            ) : null}
+            {FEATURES.finance ? <PrivacyFinanceLink /> : null}
+            {FEATURES.calendar ? (
             <NavbarLink
               href="/dashboard/calendar"
               className="relative inline-flex items-center gap-1.5"
@@ -44,6 +48,7 @@ export function Navbar({
                 </span>
               )}
             </NavbarLink>
+            ) : null}
             <a
               href={PORTFOLIO_URL}
               target="_blank"
@@ -54,9 +59,15 @@ export function Navbar({
               <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
               <span className="sr-only">(opens in new tab)</span>
             </a>
-            <NavbarLink href="/dashboard/clients">Clients</NavbarLink>
-            <NavbarLink href="/dashboard/pricing">Pricing</NavbarLink>
-            <NavbarLink href="/dashboard/settings">Settings</NavbarLink>
+            {FEATURES.clients ? (
+              <NavbarLink href="/dashboard/clients">Clients</NavbarLink>
+            ) : null}
+            {FEATURES.pricing ? (
+              <NavbarLink href="/dashboard/pricing">Pricing</NavbarLink>
+            ) : null}
+            {FEATURES.settings ? (
+              <NavbarLink href="/dashboard/settings">Settings</NavbarLink>
+            ) : null}
             <SignOutButton />
           </>
         ) : (

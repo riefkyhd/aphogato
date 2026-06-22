@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { ContentColumn } from "@/components/layout/ContentColumn";
 import { DashboardMain } from "@/components/layout/DashboardShell";
+import { FEATURES } from "@/lib/features";
 import { CloudinarySettings } from "@/app/dashboard/settings/CloudinarySettings";
 import { DomainSecurityInfo } from "@/app/dashboard/settings/DomainSecurityInfo";
 import { GoogleCalendarSettings } from "@/app/dashboard/settings/GoogleCalendarSettings";
@@ -13,6 +14,8 @@ import { isGoogleCalendarConnected } from "@/lib/calendar/googleSettings";
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
+  if (!FEATURES.settings) return null;
+
   const [isConnected, isOAuthConfigured] = await Promise.all([
     isGoogleCalendarConnected(),
     Promise.resolve(isGoogleOAuthConfigured()),
@@ -24,17 +27,19 @@ export default async function SettingsPage() {
         <h1 className="text-xl sm:text-2xl font-light tracking-[0.05em] uppercase mb-8 text-center sm:text-left">
           Settings
         </h1>
-        <Suspense fallback={null}>
-          <GoogleCalendarSettings
-            isConnected={isConnected}
-            isOAuthConfigured={isOAuthConfigured}
-          />
-        </Suspense>
+        {FEATURES.googleCalendarSync ? (
+          <Suspense fallback={null}>
+            <GoogleCalendarSettings
+              isConnected={isConnected}
+              isOAuthConfigured={isOAuthConfigured}
+            />
+          </Suspense>
+        ) : null}
         <PreferencesSettings />
-        <CloudinarySettings />
-        <TodayReminderSettings />
-        <PrivacySettings />
-        <DomainSecurityInfo />
+        {FEATURES.cloudinarySettings ? <CloudinarySettings /> : null}
+        {FEATURES.todayShootsReminder ? <TodayReminderSettings /> : null}
+        {FEATURES.privacyLock ? <PrivacySettings /> : null}
+        {FEATURES.domainVerification ? <DomainSecurityInfo /> : null}
       </ContentColumn>
     </DashboardMain>
   );

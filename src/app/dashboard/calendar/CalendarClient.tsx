@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useUserPreferencesContext } from "@/components/preferences/UserPreferencesProvider";
 import { toast } from "sonner";
+import { FEATURES } from "@/lib/features";
 import { DashboardMain } from "@/components/layout/DashboardShell";
 import { CalendarListView } from "@/components/calendar/CalendarListView";
 import { CalendarMonthGrid } from "@/components/calendar/CalendarMonthGrid";
@@ -437,7 +438,8 @@ export function CalendarClient({
               Export PDF
             </Button>
           </Tooltip>
-          {isGoogleConnected ? (
+          {FEATURES.googleCalendarSync ? (
+            isGoogleConnected ? (
             <Tooltip label="Sync all events to Google Calendar">
               <Button
                 type="button"
@@ -459,7 +461,8 @@ export function CalendarClient({
                 className={toolbarButtonClass}
               />
             </Tooltip>
-          )}
+          )
+          ) : null}
           <Tooltip label="Create new calendar event">
             <Button
               type="button"

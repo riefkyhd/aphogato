@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { unstable_noStore as noStore } from "next/cache";
+import { FEATURES } from "@/lib/features";
 import { loadGalleryByToken } from "@/lib/gallery";
 import { GallerySelector } from "./GallerySelector";
 
@@ -19,7 +20,7 @@ export default async function GalleryPage({
 
   const previouslyConfirmed = data.project.status !== "pending";
 
-  return (
+  return FEATURES.clientGallery ? (
     <GallerySelector
       token={params.token}
       initialProject={data.project}
@@ -28,5 +29,5 @@ export default async function GalleryPage({
       initialConfirmedSelectedIds={data.confirmedSelectedIds}
       initialFaceSearch={data.faceSearch}
     />
-  );
+  ) : null;
 }

@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { InvoiceClient } from "@/app/dashboard/invoices/InvoiceClient";
+import { FEATURES } from "@/lib/features";
 import { normalizeQuotation } from "@/lib/quotations/db";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -21,9 +22,9 @@ export default async function InvoicesPage() {
     normalizeQuotation(row as Record<string, unknown>)
   );
 
-  return (
+  return FEATURES.invoices ? (
     <Suspense fallback={null}>
       <InvoiceClient initialSavedQuotations={savedQuotations} />
     </Suspense>
-  );
+  ) : null;
 }

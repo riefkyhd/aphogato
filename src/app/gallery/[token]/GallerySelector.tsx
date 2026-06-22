@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import dynamic from "next/dynamic";
 import { RefreshCw } from "lucide-react";
 import {
   GALLERY_ERROR_CODES,
@@ -29,13 +30,12 @@ import {
 import { gallerySelectionStorageKey } from "@/lib/galleryStorage";
 import { GalleryClientHint } from "@/components/gallery/GalleryClientHint";
 import { FaceFindControls } from "@/components/gallery/FaceFindControls";
-import { FacePickModal } from "@/components/gallery/FacePickModal";
 import { FaceSearchPrivacyBanner } from "@/components/gallery/FaceSearchPrivacyBanner";
 import {
   GalleryScopeFilter,
   type GalleryScope,
 } from "@/components/gallery/GalleryScopeFilter";
-import { preloadFaceIndexWorker } from "@/lib/faces/faceIndexClient";
+import { FEATURES } from "@/lib/features";
 import type { FaceSearchStatus } from "@/lib/faces/types";
 import { GalleryPhotosLoading } from "@/components/GalleryPhotosLoading";
 import { PhotoGallerySection } from "@/components/PhotoGallerySection";
@@ -47,6 +47,16 @@ import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import type { Photo, Project } from "@/lib/types";
 import { cn } from "@/lib/utils";
+
+const FacePickModal = FEATURES.faceSearch
+  ? dynamic(
+      () =>
+        import("@/components/gallery/FacePickModal").then((m) => ({
+          default: m.FacePickModal,
+        })),
+      { ssr: false }
+    )
+  : null;
 
 type GalleryApiResponse = {
   project: Project;
@@ -298,13 +308,22 @@ export function GallerySelector({
   const selectionLimitReached = selectedCount >= maxSelection;
 
   useEffect(() => {
-    if (faceSearch.enabled && faceSearch.status === "ready") {
-      preloadFaceIndexWorker();
+    if (
+      !FEATURES.faceSearch ||
+      !faceSearch.enabled ||
+      faceSearch.status !== "ready"
+    ) {
+      return;
     }
+    void import("@/lib/faces/faceIndexClient").then((m) =>
+      m.preloadFaceIndexWorker()
+    );
   }, [faceSearch.enabled, faceSearch.status]);
 
   const faceSearchReady =
-    faceSearch.enabled && faceSearch.status === "ready";
+    FEATURES.faceSearch &&
+    faceSearch.enabled &&
+    faceSearch.status === "ready";
 
   const scopedPhotos = useMemo(() => {
     let rows = photos;
@@ -554,12 +573,17 @@ export function GallerySelector({
                 </div>
               ) : null}
               <div className="mb-3 flex flex-col gap-3 sm:mb-4 sm:flex-row sm:items-center sm:justify-between">
-                <GalleryScopeFilter
-                  value={galleryScope}
-                  selectedCount={selectedCount}
-                  disabled={!ready}
-                  onChange={setGalleryScope}
-                />
+                {FEATURES.clientPhotoSelection ? (
+                  <GalleryScopeFilter
+                    value={galleryScope}
+                    selectedCount={selectedCount}
+                    disabled={!ready}
+                    onChange={setGalleryScope}
+                  />
+                ) : (
+                  <div />
+                )}
+                {FEATURES.faceSearch ? (
                 <FaceFindControls
                   active={faceSearchReady}
                   facePickMode={facePickMode}
@@ -577,8 +601,11 @@ export function GallerySelector({
                   }}
                   onCancelPick={() => setFacePickMode(false)}
                 />
+                ) : null}
               </div>
-              {faceSearch.enabled && faceSearch.status === "partial" ? (
+              {FEATURES.faceSearch &&
+              faceSearch.enabled &&
+              faceSearch.status === "partial" ? (
                 <p className="mb-3 text-[12px] text-status-editing leading-relaxed">
                   Fitur cari foto belum siap sepenuhnya — hasil mungkin terbatas
                   sampai sebagian besar foto terindeks.
@@ -586,8 +613,8 @@ export function GallerySelector({
               ) : null}
               {galleryScope === "selected" && scopedPhotos.length === 0 ? (
                 <p className="text-text-secondary text-[14px] leading-relaxed">
-                  Belum ada foto terpilih. Buka tab Semua, ketuk foto, lalu pilih
-                  dari pratinjau.
+                  Belum ada foto terpilih. Buka tab Semua, lalu ketuk foto yang
+                  ingin dipilih.
                 </p>
               ) : faceFilterIds && scopedPhotos.length === 0 ? (
                 <p className="text-text-secondary text-[14px] leading-relaxed">
@@ -602,8 +629,12 @@ export function GallerySelector({
                   selectedIds={selected}
                   onToggleSelect={toggle}
                   selectionLimitReached={selectionLimitReached}
-                  facePickMode={facePickMode}
-                  onFacePickPhoto={(photo) => setFacePickPhoto(photo)}
+                  facePickMode={FEATURES.faceSearch && facePickMode}
+                  onFacePickPhoto={
+                    FEATURES.faceSearch
+                      ? (photo) => setFacePickPhoto(photo)
+                      : undefined
+                  }
                 />
               )}
             </>
@@ -611,6 +642,7 @@ export function GallerySelector({
         </section>
       </DashboardShell>
 
+      {FEATURES.faceSearch && FacePickModal ? (
       <FacePickModal
         open={facePickPhoto !== null}
         photo={facePickPhoto}
@@ -631,7 +663,9 @@ export function GallerySelector({
           }
         }}
       />
+      ) : null}
 
+      {FEATURES.clientPhotoSelection ? (
       <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-bg-secondary/95 backdrop-blur-md">
         <div
           className={cn(
@@ -696,6 +730,7 @@ export function GallerySelector({
           </div>
         </div>
       </div>
+      ) : null}
     </main>
   );
 }

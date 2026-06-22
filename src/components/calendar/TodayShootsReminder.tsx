@@ -14,6 +14,7 @@ import type { CalendarEvent } from "@/lib/types";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { cn } from "@/lib/utils";
+import { FEATURES } from "@/lib/features";
 import { Bell, Calendar, X } from "lucide-react";
 import Link from "next/link";
 import { useUserPreferencesContext } from "@/components/preferences/UserPreferencesProvider";
@@ -135,6 +136,7 @@ export function TodayShootsReminder({
                 );
               })}
             </ul>
+            {FEATURES.calendar ? (
             <Link
               href="/dashboard/calendar"
               className="inline-flex items-center gap-1.5 mt-3 text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors"
@@ -142,6 +144,7 @@ export function TodayShootsReminder({
               <Calendar className="h-3.5 w-3.5" />
               Open calendar
             </Link>
+            ) : null}
           </div>
           <Tooltip label="Dismiss reminder">
             <button

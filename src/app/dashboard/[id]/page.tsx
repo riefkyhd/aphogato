@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { FEATURES } from "@/lib/features";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { ProjectDetailClient } from "./ProjectDetailClient";
 import { normalizeProject } from "@/lib/normalizeProject";
@@ -24,10 +25,10 @@ export default async function ProjectDetailPage({
 
   const photos = await fetchAllProjectPhotos(supabase, params.id);
 
-  return (
+  return FEATURES.projectDetail ? (
     <ProjectDetailClient
       project={normalizeProject(project as Project)}
       initialPhotos={photos}
     />
-  );
+  ) : null;
 }

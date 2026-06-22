@@ -5,6 +5,7 @@ import type {
   CloudinaryAccountPublic,
   CloudinaryAccountUsagePublic,
 } from "@/lib/cloudinary/types";
+import { FEATURES } from "@/lib/features";
 
 export function ProjectCloudinaryAccountNote({
   account,
@@ -29,12 +30,14 @@ export function ProjectCloudinaryAccountNote({
       {photoCount > 0
         ? "This account is locked for this project once photos are uploaded."
         : "Pick the account before uploading — it cannot be changed later."}{" "}
-      <Link
-        href="/dashboard/settings"
-        className="underline underline-offset-2 text-text-secondary hover:text-text-primary"
-      >
-        Cloudinary settings
-      </Link>
+      {FEATURES.cloudinarySettings && FEATURES.settings ? (
+        <Link
+          href="/dashboard/settings"
+          className="underline underline-offset-2 text-text-secondary hover:text-text-primary"
+        >
+          Cloudinary settings
+        </Link>
+      ) : null}
     </p>
   );
 }

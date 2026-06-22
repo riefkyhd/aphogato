@@ -57,11 +57,6 @@ export function faceIndexImageUrl(src: string, width = 2048) {
   return cloudinaryTransformUrl(src, `w_${width},c_limit,q_auto,f_jpg`);
 }
 
-/** Lightbox / preview — larger cap, same recipe family as grid. */
-export function galleryPreviewImageUrl(src: string) {
-  return galleryGridImageUrl(src, 900);
-}
-
 export function listThumbUrl(src: string) {
   return cloudinaryTransformUrl(src, "w_120,h_120,c_fill,q_60,f_auto");
 }

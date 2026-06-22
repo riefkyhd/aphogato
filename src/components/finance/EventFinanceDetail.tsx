@@ -11,6 +11,7 @@ import {
 import type { FinanceEventOption } from "@/lib/finance/financeOptions";
 import { filterExpensesForEvent, sumExpenseAmounts } from "@/lib/finance/projectExpenses";
 import { formatMoney } from "@/lib/finance/formatMoney";
+import { FEATURES } from "@/lib/features";
 import type { ExpenseEntry, IncomeEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -64,12 +65,14 @@ export function EventFinanceDetail({
             {event.client_name ? ` · ${event.client_name}` : ""}
           </p>
         </div>
+        {FEATURES.calendar ? (
         <Link
           href="/dashboard/calendar"
           className="text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors shrink-0"
         >
           Open in Calendar →
         </Link>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-[2px] mt-4">

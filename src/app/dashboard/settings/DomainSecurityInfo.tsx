@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FEATURES } from "@/lib/features";
 
 export function DomainSecurityInfo() {
   return (
@@ -37,12 +38,14 @@ export function DomainSecurityInfo() {
           domain entries from Vercel when you retire a hostname.
         </li>
       </ul>
+      {FEATURES.domainVerification ? (
       <Link
         href="/dashboard/settings/domain-verification"
         className="text-[11px] uppercase tracking-label text-text-muted hover:text-text-primary transition-colors"
       >
         Read full domain verification guide →
       </Link>
+      ) : null}
     </section>
   );
 }

@@ -2,10 +2,14 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { FEATURES } from "@/lib/features";
 
 export function ProjectsViewToggle() {
   const pathname = usePathname();
   const router = useRouter();
+
+  if (!FEATURES.projectPipeline) return null;
+
   const view = pathname === "/dashboard/board" ? "pipeline" : "grid";
 
   return (

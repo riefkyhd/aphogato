@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { ContentColumn } from "@/components/layout/ContentColumn";
 import { DashboardMain } from "@/components/layout/DashboardShell";
+import { FEATURES } from "@/lib/features";
 
 export default function DomainVerificationPage() {
+  if (!FEATURES.domainVerification) return null;
+
   return (
     <DashboardMain>
       <ContentColumn size="lg">

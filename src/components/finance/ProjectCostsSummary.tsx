@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { MaskedMoney } from "@/components/privacy/MaskedMoney";
 import { usePrivacyLockContext } from "@/components/privacy/PrivacyLockProvider";
+import { FEATURES } from "@/lib/features";
 
 export function ProjectCostsSummary({
   total,
@@ -30,29 +31,41 @@ export function ProjectCostsSummary({
             )}
           </p>
         </div>
+        {FEATURES.finance ? (
         <Link
           href="/dashboard/finance"
           className="text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors shrink-0"
         >
           Open in Finance →
         </Link>
+        ) : null}
       </div>
       {count === 0 && (
         <p className="mt-2 text-[12px] text-text-secondary">
-          No costs linked yet. Log shoot expenses from{" "}
-          <Link
-            href="/dashboard/calendar"
-            className="text-text-primary hover:underline"
-          >
-            Calendar
-          </Link>{" "}
-          or add them in{" "}
-          <Link
-            href="/dashboard/finance"
-            className="text-text-primary hover:underline"
-          >
-            Finance
-          </Link>
+          No costs linked yet.
+          {FEATURES.calendar ? (
+            <>
+              {" "}
+              Log shoot expenses from{" "}
+              <Link
+                href="/dashboard/calendar"
+                className="text-text-primary hover:underline"
+              >
+                Calendar
+              </Link>
+            </>
+          ) : null}
+          {FEATURES.finance ? (
+            <>
+              {FEATURES.calendar ? " or add them in " : " Add them in "}
+              <Link
+                href="/dashboard/finance"
+                className="text-text-primary hover:underline"
+              >
+                Finance
+              </Link>
+            </>
+          ) : null}
           .
         </p>
       )}

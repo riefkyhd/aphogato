@@ -1,4 +1,5 @@
 import { createServerSupabase } from "@/lib/supabase/server";
+import { FEATURES } from "@/lib/features";
 import type { PriceListItem } from "@/lib/types";
 import { PricingClient } from "./PricingClient";
 
@@ -23,5 +24,7 @@ export default async function PricingPage() {
     normalizeItem(row as Record<string, unknown>)
   );
 
-  return <PricingClient initialItems={items} />;
+  return FEATURES.pricing ? (
+    <PricingClient initialItems={items} />
+  ) : null;
 }

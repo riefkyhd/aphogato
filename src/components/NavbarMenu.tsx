@@ -8,6 +8,7 @@ import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
 import { PrivacyFinanceLink } from "@/components/privacy/PrivacyFinanceLink";
 import { SignOutButton } from "@/components/SignOutButton";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { FEATURES } from "@/lib/features";
 import { navIsActive } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
@@ -92,13 +93,18 @@ export function NavbarMenu({ shootsToday }: { shootsToday: number }) {
             id="mobile-nav"
             className="fixed left-0 right-0 top-14 z-50 max-h-[calc(100dvh-3.5rem)] overflow-y-auto border-b border-border bg-bg-primary px-4 py-2 shadow-lg"
           >
-            <NavLink href="/dashboard" className={linkClass} onActiveTap={() => setOpen(false)}>
-              Projects
-            </NavLink>
-            <PrivacyFinanceLink
-              className={cn(linkClass, "flex items-center gap-2")}
-              onActiveTap={() => setOpen(false)}
-            />
+            {FEATURES.projectsGrid ? (
+              <NavLink href="/dashboard" className={linkClass} onActiveTap={() => setOpen(false)}>
+                Projects
+              </NavLink>
+            ) : null}
+            {FEATURES.finance ? (
+              <PrivacyFinanceLink
+                className={cn(linkClass, "flex items-center gap-2")}
+                onActiveTap={() => setOpen(false)}
+              />
+            ) : null}
+            {FEATURES.calendar ? (
             <NavLink
               href="/dashboard/calendar"
               className={cn(linkClass, "flex items-center gap-2")}
@@ -114,6 +120,7 @@ export function NavbarMenu({ shootsToday }: { shootsToday: number }) {
                 </span>
               )}
             </NavLink>
+            ) : null}
             <a
               href={PORTFOLIO_URL}
               target="_blank"
@@ -123,27 +130,33 @@ export function NavbarMenu({ shootsToday }: { shootsToday: number }) {
               Portfolio
               <ExternalLink className="h-3.5 w-3.5 opacity-70" aria-hidden />
             </a>
-            <NavLink
-              href="/dashboard/clients"
-              className={linkClass}
-              onActiveTap={() => setOpen(false)}
-            >
-              Clients
-            </NavLink>
-            <NavLink
-              href="/dashboard/pricing"
-              className={linkClass}
-              onActiveTap={() => setOpen(false)}
-            >
-              Pricing
-            </NavLink>
-            <NavLink
-              href="/dashboard/settings"
-              className={linkClass}
-              onActiveTap={() => setOpen(false)}
-            >
-              Settings
-            </NavLink>
+            {FEATURES.clients ? (
+              <NavLink
+                href="/dashboard/clients"
+                className={linkClass}
+                onActiveTap={() => setOpen(false)}
+              >
+                Clients
+              </NavLink>
+            ) : null}
+            {FEATURES.pricing ? (
+              <NavLink
+                href="/dashboard/pricing"
+                className={linkClass}
+                onActiveTap={() => setOpen(false)}
+              >
+                Pricing
+              </NavLink>
+            ) : null}
+            {FEATURES.settings ? (
+              <NavLink
+                href="/dashboard/settings"
+                className={linkClass}
+                onActiveTap={() => setOpen(false)}
+              >
+                Settings
+              </NavLink>
+            ) : null}
             <div className="py-4">
               <SignOutButton />
             </div>

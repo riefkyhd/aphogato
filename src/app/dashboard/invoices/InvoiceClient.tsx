@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/PageToolbarActions";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { formatMoney, parseMoneyInput } from "@/lib/finance/formatMoney";
+import { FEATURES } from "@/lib/features";
 import { createBlankInvoice } from "@/lib/invoices/defaults";
 import { exportInvoicePdf } from "@/lib/invoices/exportInvoicePdf";
 import { invoiceFromQuotation } from "@/lib/invoices/fromQuotation";
@@ -109,6 +110,7 @@ export function InvoiceClient({
 
   return (
     <DashboardMain>
+      {FEATURES.quotations ? (
       <BackNavLink
         href="/dashboard/quotations"
         className="inline-flex items-center gap-2 text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors mb-6"
@@ -116,6 +118,7 @@ export function InvoiceClient({
         <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
         Quotations
       </BackNavLink>
+      ) : null}
 
       <header className="mb-8 border-b border-border pb-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

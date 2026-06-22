@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useUserPreferencesContext } from "@/components/preferences/UserPreferencesProvider";
+import { FEATURES } from "@/lib/features";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { PageLoadingOverlay } from "@/components/PageLoadingOverlay";
@@ -53,7 +54,7 @@ export function NewProjectForm() {
           client_name: clientName,
           max_photo_selection: Number(maxSelection),
           cloudinary_account: cloudinaryAccount || undefined,
-          face_search_enabled: faceSearchEnabled,
+          face_search_enabled: FEATURES.faceSearch && faceSearchEnabled,
         }),
       });
       const json = await res.json();
@@ -113,6 +114,7 @@ export function NewProjectForm() {
           page.
         </p>
       </div>
+      {FEATURES.faceSearch ? (
       <div className="border border-border bg-bg-secondary p-4 sm:p-5">
         <label className="flex items-start gap-3 cursor-pointer">
           <input
@@ -132,6 +134,7 @@ export function NewProjectForm() {
           </span>
         </label>
       </div>
+      ) : null}
       <FormActions>
         <Button type="submit" loading={busy} disabled={busy}>
           {phase === "creating"

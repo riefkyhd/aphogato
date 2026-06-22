@@ -1,5 +1,6 @@
 import { ContentColumn } from "@/components/layout/ContentColumn";
 import { DashboardMain } from "@/components/layout/DashboardShell";
+import { FEATURES } from "@/lib/features";
 import { NewProjectForm } from "./NewProjectForm";
 
 export const metadata = {
@@ -17,7 +18,7 @@ export default function NewProjectPage() {
           Set up a gallery for your client. On the next screen, add your photos
           and share the link when you&rsquo;re ready.
         </p>
-        <NewProjectForm />
+        {FEATURES.newProject ? <NewProjectForm /> : null}
       </ContentColumn>
     </DashboardMain>
   );

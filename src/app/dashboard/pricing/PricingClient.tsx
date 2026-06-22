@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { formatMoney, parseMoneyInput } from "@/lib/finance/formatMoney";
+import { FEATURES } from "@/lib/features";
 import {
   downloadPriceListCsv,
   exportPriceListPdf,
@@ -218,6 +219,7 @@ export function PricingClient({
             </p>
           </div>
           <PageToolbarActions>
+            {FEATURES.quotations ? (
             <Tooltip label="Create client quotation">
               <Link
                 href="/dashboard/quotations"
@@ -230,6 +232,8 @@ export function PricingClient({
                 Quotation
               </Link>
             </Tooltip>
+            ) : null}
+            {FEATURES.invoices ? (
             <Tooltip label="Final payment invoice">
               <Link
                 href="/dashboard/invoices"
@@ -242,6 +246,7 @@ export function PricingClient({
                 Invoice
               </Link>
             </Tooltip>
+            ) : null}
             <Tooltip label="Export as CSV">
               <Button
                 type="button"

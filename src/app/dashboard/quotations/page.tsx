@@ -1,4 +1,5 @@
 import { QuotationClient } from "@/app/dashboard/quotations/QuotationClient";
+import { FEATURES } from "@/lib/features";
 import { normalizeQuotation } from "@/lib/quotations/db";
 import { createServerSupabase } from "@/lib/supabase/server";
 import type { PriceListItem } from "@/lib/types";
@@ -39,10 +40,10 @@ export default async function QuotationsPage() {
     normalizeQuotation(row as Record<string, unknown>)
   );
 
-  return (
+  return FEATURES.quotations ? (
     <QuotationClient
       priceListItems={items}
       initialSavedQuotations={savedQuotations}
     />
-  );
+  ) : null;
 }
