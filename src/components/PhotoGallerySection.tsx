@@ -236,10 +236,12 @@ export function PhotoGallerySection({
             viewStorageId={viewStorageId}
           />
           <div className="flex items-center justify-end gap-2">
-            <PhotoFilterToggle
-              active={selectedFirst}
-              onChange={handleFilterChange}
-            />
+            {mode !== "gallery" ? (
+              <PhotoFilterToggle
+                active={selectedFirst}
+                onChange={handleFilterChange}
+              />
+            ) : null}
             <PhotoViewToggle view={view} onChange={handleViewChange} />
           </div>
         </div>

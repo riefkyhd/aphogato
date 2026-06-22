@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import {
   GALLERY_ERROR_CODES,
@@ -20,6 +20,11 @@ import {
   pruneSelectionToPhotos,
 } from "@/lib/gallerySelection";
 import { gallerySelectionStorageKey } from "@/lib/galleryStorage";
+import { GalleryClientHint } from "@/components/gallery/GalleryClientHint";
+import {
+  GalleryScopeFilter,
+  type GalleryScope,
+} from "@/components/gallery/GalleryScopeFilter";
 import { GalleryPhotosLoading } from "@/components/GalleryPhotosLoading";
 import { PhotoGallerySection } from "@/components/PhotoGallerySection";
 import {
@@ -136,6 +141,7 @@ export function GallerySelector({
   const [error, setError] = useState<string | null>(null);
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
+  const [galleryScope, setGalleryScope] = useState<GalleryScope>("all");
   const selectedRef = useRef(selected);
   selectedRef.current = selected;
 
@@ -290,6 +296,17 @@ export function GallerySelector({
   const selectedCount = selected.size;
   const overSelectionLimit = isOverSelectionLimit(selectedCount, maxSelection);
   const selectionLimitReached = selectedCount >= maxSelection;
+
+  const scopedPhotos = useMemo(() => {
+    if (galleryScope === "all") return photos;
+    return photos.filter((photo) => selected.has(photo.id));
+  }, [photos, galleryScope, selected]);
+
+  useEffect(() => {
+    if (galleryScope === "selected" && selectedCount === 0) {
+      setGalleryScope("all");
+    }
+  }, [galleryScope, selectedCount]);
 
   function toggle(id: string) {
     if (!photos.some((p) => p.id === id)) return;
@@ -515,22 +532,30 @@ export function GallerySelector({
             </p>
           ) : (
             <>
-              <p className="mb-3 text-[11px] text-text-muted leading-relaxed max-w-3xl sm:mb-4">
-                <span className="sm:hidden">
-                  Ketuk foto untuk pratinjau, lalu pilih yang ingin diedit.
-                </span>
-                <span className="hidden sm:inline">
-                  Tap a photo to preview, then select the shots you want edited.
-                </span>
-              </p>
-              <PhotoGallerySection
-                photos={photos}
-                mode="gallery"
-                viewStorageId={token}
-                selectedIds={selected}
-                onToggleSelect={toggle}
-                selectionLimitReached={selectionLimitReached}
-              />
+              <GalleryClientHint token={token} className="mb-3 sm:mb-4" />
+              <div className="mb-3 flex flex-col gap-3 sm:mb-4 sm:flex-row sm:items-center sm:justify-between">
+                <GalleryScopeFilter
+                  value={galleryScope}
+                  selectedCount={selectedCount}
+                  disabled={!ready}
+                  onChange={setGalleryScope}
+                />
+              </div>
+              {galleryScope === "selected" && scopedPhotos.length === 0 ? (
+                <p className="text-text-secondary text-[14px] leading-relaxed">
+                  Belum ada foto terpilih. Buka tab Semua, ketuk foto, lalu pilih
+                  dari pratinjau.
+                </p>
+              ) : (
+                <PhotoGallerySection
+                  photos={scopedPhotos}
+                  mode="gallery"
+                  viewStorageId={token}
+                  selectedIds={selected}
+                  onToggleSelect={toggle}
+                  selectionLimitReached={selectionLimitReached}
+                />
+              )}
             </>
           )}
         </section>
