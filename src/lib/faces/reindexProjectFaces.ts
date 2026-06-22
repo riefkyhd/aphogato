@@ -62,3 +62,21 @@ export async function reindexUnindexedProjectPhotos(
 
   return { indexed, skipped, errors };
 }
+
+export async function resetProjectFaceIndex(projectId: string): Promise<void> {
+  const res = await fetch(`/api/projects/${projectId}/faces/reset`, {
+    method: "POST",
+  });
+  const json = (await res.json()) as { error?: string };
+  if (!res.ok) {
+    throw new Error(json.error ?? "Failed to reset face index");
+  }
+}
+
+export async function reindexAllProjectPhotos(
+  projectId: string,
+  onProgress?: (done: number, total: number, fileName: string) => void
+): Promise<{ indexed: number; skipped: number; errors: string[] }> {
+  await resetProjectFaceIndex(projectId);
+  return reindexUnindexedProjectPhotos(projectId, onProgress);
+}

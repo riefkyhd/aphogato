@@ -4,11 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ModalShell } from "@/components/ui/ModalShell";
-import { galleryPreviewImageUrl } from "@/lib/cloudinaryUrls";
+import { faceIndexImageUrl } from "@/lib/cloudinaryUrls";
 import { indexFacesFromImageUrl } from "@/lib/faces/faceIndexClient";
 import type { PhotoFaceInput } from "@/lib/faces/types";
 import type { Photo } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 export function FacePickModal({
   open,
@@ -76,7 +75,7 @@ export function FacePickModal({
     setFaces([]);
 
     void indexFacesFromImageUrl(
-      galleryPreviewImageUrl(photo.cloudinary_url),
+      faceIndexImageUrl(photo.cloudinary_url),
       controller.signal
     )
       .then((detected) => {
@@ -86,9 +85,6 @@ export function FacePickModal({
           return;
         }
         setFaces(detected);
-        if (detected.length === 1) {
-          void matchFace(detected[0], controller.signal);
-        }
       })
       .catch((err) => {
         if (controller.signal.aborted) return;
@@ -103,12 +99,12 @@ export function FacePickModal({
       });
 
     return () => controller.abort();
-  }, [open, photo, matchFace]);
+  }, [open, photo]);
 
   if (!open || !photo) return null;
 
   const titleId = "face-pick-title";
-  const previewSrc = galleryPreviewImageUrl(photo.cloudinary_url);
+  const previewSrc = faceIndexImageUrl(photo.cloudinary_url);
 
   return (
     <ModalShell
@@ -124,44 +120,47 @@ export function FacePickModal({
         Cari foto saya
       </h2>
       <p className="text-[13px] text-text-secondary leading-relaxed mb-4">
-        {faces.length > 1
-          ? "Ketuk wajah kamu di foto ini."
-          : "Mendeteksi wajah di foto ini…"}
+        {loading
+          ? "Mendeteksi wajah di foto ini…"
+          : faces.length > 1
+            ? "Ketuk wajah kamu di foto ini."
+            : "Ketuk wajah kamu untuk mencari foto lainnya."}
       </p>
 
-      <div className="relative overflow-hidden border border-border bg-bg-primary">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={previewSrc}
-          alt=""
-          className={cn(
-            "block w-full h-auto max-h-[min(60vh,520px)] object-contain mx-auto",
-            !imageLoaded && "opacity-0"
+      <div className="flex justify-center border border-border bg-bg-primary">
+        <div className="relative inline-block max-w-full">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={previewSrc}
+            alt=""
+            className={`block max-h-[min(60vh,520px)] w-auto max-w-full h-auto ${
+              imageLoaded ? "" : "opacity-0"
+            }`}
+            onLoad={() => setImageLoaded(true)}
+          />
+          {imageLoaded &&
+            faces.map((face, index) => (
+              <button
+                key={index}
+                type="button"
+                disabled={matching || loading}
+                aria-label={`Pilih wajah ${index + 1}`}
+                className="absolute border-2 border-text-primary bg-text-primary/10 hover:bg-text-primary/20 transition-colors disabled:opacity-50"
+                style={{
+                  left: `${face.bbox_x * 100}%`,
+                  top: `${face.bbox_y * 100}%`,
+                  width: `${face.bbox_w * 100}%`,
+                  height: `${face.bbox_h * 100}%`,
+                }}
+                onClick={() => void matchFace(face)}
+              />
+            ))}
+          {(loading || matching) && (
+            <div className="absolute inset-0 flex items-center justify-center bg-bg-primary/60">
+              <Loader2 className="h-8 w-8 animate-spin text-text-muted" />
+            </div>
           )}
-          onLoad={() => setImageLoaded(true)}
-        />
-        {imageLoaded &&
-          faces.map((face, index) => (
-            <button
-              key={index}
-              type="button"
-              disabled={matching || loading}
-              aria-label={`Pilih wajah ${index + 1}`}
-              className="absolute border-2 border-text-primary bg-text-primary/10 hover:bg-text-primary/20 transition-colors disabled:opacity-50"
-              style={{
-                left: `${face.bbox_x * 100}%`,
-                top: `${face.bbox_y * 100}%`,
-                width: `${face.bbox_w * 100}%`,
-                height: `${face.bbox_h * 100}%`,
-              }}
-              onClick={() => void matchFace(face)}
-            />
-          ))}
-        {(loading || matching) && (
-          <div className="absolute inset-0 flex items-center justify-center bg-bg-primary/60">
-            <Loader2 className="h-8 w-8 animate-spin text-text-muted" />
-          </div>
-        )}
+        </div>
       </div>
 
       {error ? (

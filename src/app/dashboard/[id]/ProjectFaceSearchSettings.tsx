@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { normalizeProject } from "@/lib/normalizeProject";
 import type { FaceSearchStatus } from "@/lib/faces/types";
-import { reindexUnindexedProjectPhotos } from "@/lib/faces/reindexProjectFaces";
+import { reindexAllProjectPhotos, reindexUnindexedProjectPhotos } from "@/lib/faces/reindexProjectFaces";
 import { cn } from "@/lib/utils";
 import type { Project } from "@/lib/types";
 
@@ -131,6 +131,41 @@ export function ProjectFaceSearchSettings({
     }
   }
 
+  async function handleReindexAll() {
+    if (
+      !window.confirm(
+        "Hapus data wajah lama dan index ulang semua foto? Gunakan ini setelah update deteksi wajah."
+      )
+    ) {
+      return;
+    }
+    setIndexing(true);
+    setIndexProgress(null);
+    try {
+      const result = await reindexAllProjectPhotos(
+        project.id,
+        (done, total, fileName) => {
+          setIndexProgress(`${done} / ${total} — ${fileName}`);
+        }
+      );
+      await loadStatus();
+      if (result.errors.length > 0) {
+        toast.warning(
+          `Re-indexed ${result.indexed} photos (${result.skipped} tanpa wajah). ${result.errors.length} gagal: ${result.errors[0]}`
+        );
+      } else {
+        toast.success(
+          `Re-indexed ${result.indexed} photos${result.skipped > 0 ? ` · ${result.skipped} tanpa wajah` : ""}`
+        );
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Re-index failed");
+    } finally {
+      setIndexing(false);
+      setIndexProgress(null);
+    }
+  }
+
   const displayStatus = faceStatus ?? {
     enabled: project.face_search_enabled,
     totalPhotos: photoCount,
@@ -200,18 +235,29 @@ export function ProjectFaceSearchSettings({
               photos are indexed.
             </p>
           ) : null}
-          {photoCount > 0 &&
-          displayStatus.indexedPhotos < displayStatus.totalPhotos ? (
-            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+          {photoCount > 0 ? (
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+              {displayStatus.indexedPhotos < displayStatus.totalPhotos ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  loading={indexing}
+                  disabled={indexing || saving}
+                  onClick={() => void handleIndexMissing()}
+                >
+                  Index missing photos
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 variant="secondary"
                 size="sm"
                 loading={indexing}
                 disabled={indexing || saving}
-                onClick={() => void handleIndexMissing()}
+                onClick={() => void handleReindexAll()}
               >
-                Index missing photos
+                Re-index all photos
               </Button>
               {indexProgress ? (
                 <span className="text-[11px] text-text-muted truncate">
