@@ -7,10 +7,10 @@ const sourceDir = join(root, "node_modules", "@vladmandic", "face-api", "model")
 const targetDir = join(root, "public", "models", "face-api");
 
 const files = [
-  "tiny_face_detector_model-weights_manifest.json",
-  "tiny_face_detector_model.bin",
-  "face_landmark_68_tiny_model-weights_manifest.json",
-  "face_landmark_68_tiny_model.bin",
+  "ssd_mobilenetv1_model-weights_manifest.json",
+  "ssd_mobilenetv1_model.bin",
+  "face_landmark_68_model-weights_manifest.json",
+  "face_landmark_68_model.bin",
   "face_recognition_model-weights_manifest.json",
   "face_recognition_model.bin",
 ];

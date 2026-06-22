@@ -52,8 +52,8 @@ export function galleryGridSizes(columnCount: number): string {
   return "100vw";
 }
 
-/** Face indexing — larger JPEG for reliable worker decode + detection. */
-export function faceIndexImageUrl(src: string, width = 1280) {
+/** Face indexing — high-res JPEG for detection + embedding quality. */
+export function faceIndexImageUrl(src: string, width = 2048) {
   return cloudinaryTransformUrl(src, `w_${width},c_limit,q_auto,f_jpg`);
 }
 

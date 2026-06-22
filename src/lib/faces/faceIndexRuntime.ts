@@ -1,11 +1,10 @@
 "use client";
 
 import {
-  FACE_DETECT_INPUT_SIZE,
   FACE_DETECT_MIN_AREA_RATIO,
+  FACE_DETECT_MIN_CONFIDENCE,
   FACE_DETECT_MIN_PX,
   FACE_DETECT_MIN_SCORE,
-  FACE_DETECT_SCORE_THRESHOLD,
 } from "@/lib/faces/detectionConfig";
 import { l2NormalizeEmbedding } from "@/lib/faces/normalizeEmbedding";
 import { MAX_FACES_PER_PHOTO, type PhotoFaceInput } from "@/lib/faces/types";
@@ -44,8 +43,8 @@ async function loadFaceApi(): Promise<FaceApiModule> {
       await tf.ready();
 
       await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_BASE_URL),
-        faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_BASE_URL),
+        faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_BASE_URL),
+        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_BASE_URL),
         faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_BASE_URL),
       ]);
 
@@ -136,12 +135,12 @@ export async function detectFacesFromBuffer(
   const detections = await faceapi
     .detectAllFaces(
       canvas,
-      new faceapi.TinyFaceDetectorOptions({
-        inputSize: FACE_DETECT_INPUT_SIZE,
-        scoreThreshold: FACE_DETECT_SCORE_THRESHOLD,
+      new faceapi.SsdMobilenetv1Options({
+        minConfidence: FACE_DETECT_MIN_CONFIDENCE,
+        maxResults: MAX_FACES_PER_PHOTO,
       })
     )
-    .withFaceLandmarks(true)
+    .withFaceLandmarks()
     .withFaceDescriptors();
 
   return toNormalizedFaces(
