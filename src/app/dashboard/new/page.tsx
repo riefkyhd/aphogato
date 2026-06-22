@@ -1,6 +1,5 @@
 import { ContentColumn } from "@/components/layout/ContentColumn";
 import { DashboardMain } from "@/components/layout/DashboardShell";
-import { NewProjectCloudinaryNotice } from "./NewProjectCloudinaryNotice";
 import { NewProjectForm } from "./NewProjectForm";
 
 export const metadata = {
@@ -18,7 +17,6 @@ export default function NewProjectPage() {
           Set up a gallery for your client. On the next screen, add your photos
           and share the link when you&rsquo;re ready.
         </p>
-        <NewProjectCloudinaryNotice />
         <NewProjectForm />
       </ContentColumn>
     </DashboardMain>

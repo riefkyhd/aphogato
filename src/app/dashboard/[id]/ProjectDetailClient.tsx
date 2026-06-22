@@ -23,6 +23,7 @@ import { ProjectActions } from "./ProjectActions";
 import { DeliverablesChecklist } from "@/components/DeliverablesChecklist";
 import { ProjectReferencesSection } from "@/components/ProjectReferencesSection";
 import { ProjectCloudinaryUsageBadge } from "@/components/cloudinary/ProjectCloudinaryUsageBadge";
+import { ProjectCloudinaryAccountNote } from "@/components/cloudinary/ProjectCloudinaryAccountNote";
 import { useProjectCloudinaryUsage } from "@/hooks/useProjectCloudinaryUsage";
 import { ProjectMaxSelection } from "./ProjectMaxSelection";
 import { ProjectRename } from "./ProjectRename";
@@ -264,6 +265,12 @@ export function ProjectDetailClient({
                   loading={cloudinaryUsageLoading}
                 />
               </div>
+              <ProjectCloudinaryAccountNote
+                account={cloudinaryAccount}
+                usage={cloudinaryUsage}
+                loading={cloudinaryUsageLoading}
+                photoCount={photos.length}
+              />
             </div>
             <ProjectActions
               projectId={projectState.id}

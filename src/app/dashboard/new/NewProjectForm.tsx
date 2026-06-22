@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { PageLoadingOverlay } from "@/components/PageLoadingOverlay";
 import { ClientNameInput } from "@/components/clients/ClientNameInput";
+import { NewProjectCloudinaryField } from "@/components/cloudinary/NewProjectCloudinaryField";
 import { Button } from "@/components/ui/Button";
 import { FormActions } from "@/components/ui/FormActions";
 import { Input } from "@/components/ui/Input";
@@ -23,6 +24,7 @@ export function NewProjectForm() {
     String(DEFAULT_MAX_PHOTO_SELECTION)
   );
   const [maxSelectionInitialized, setMaxSelectionInitialized] = useState(false);
+  const [cloudinaryAccount, setCloudinaryAccount] = useState("");
   const [phase, setPhase] = useState<CreatePhase>("idle");
 
   useEffect(() => {
@@ -49,6 +51,7 @@ export function NewProjectForm() {
           name,
           client_name: clientName,
           max_photo_selection: Number(maxSelection),
+          cloudinary_account: cloudinaryAccount || undefined,
         }),
       });
       const json = await res.json();
@@ -87,6 +90,10 @@ export function NewProjectForm() {
         id="client"
         value={clientName}
         onChange={setClientName}
+      />
+      <NewProjectCloudinaryField
+        value={cloudinaryAccount}
+        onChange={setCloudinaryAccount}
       />
       <div>
         <Label htmlFor="max-selection">Max photos client can select</Label>

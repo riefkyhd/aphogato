@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/api/requireAuth";
 import { ensureClientByName } from "@/lib/clients/ensureClientByName";
 import { parseMaxPhotoSelectionInput } from "@/lib/photoSelectionLimit";
 import { resolveUniqueCloudinaryFolder } from "@/lib/resolveCloudinaryFolder";
+import { getCloudinaryAccount } from "@/lib/cloudinary/accounts";
 import { getDefaultCloudinaryAccountId } from "@/lib/cloudinary/settings";
 
 export const runtime = "nodejs";
@@ -13,7 +14,12 @@ export async function POST(request: Request) {
   if (!auth.ok) return auth.response;
   const { supabase } = auth;
 
-  let body: { name?: string; client_name?: string; max_photo_selection?: unknown };
+  let body: {
+    name?: string;
+    client_name?: string;
+    max_photo_selection?: unknown;
+    cloudinary_account?: string;
+  };
   try {
     body = await request.json();
   } catch {
@@ -45,7 +51,24 @@ export async function POST(request: Request) {
 
   const gallery_token = nanoid();
   const clientName = body.client_name?.trim() || null;
-  const cloudinary_account = await getDefaultCloudinaryAccountId();
+
+  let cloudinary_account: string;
+  try {
+    const requested = body.cloudinary_account?.trim();
+    cloudinary_account = requested
+      ? getCloudinaryAccount(requested).id
+      : await getDefaultCloudinaryAccountId();
+  } catch (err) {
+    return NextResponse.json(
+      {
+        error:
+          err instanceof Error
+            ? err.message
+            : "Invalid Cloudinary account",
+      },
+      { status: 400 }
+    );
+  }
 
   try {
     await ensureClientByName(supabase, clientName);
