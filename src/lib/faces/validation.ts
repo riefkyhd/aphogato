@@ -1,4 +1,5 @@
 import {
+  DEFAULT_FACE_MATCH_THRESHOLD,
   FACE_EMBEDDING_DIM,
   MAX_FACES_PER_PHOTO,
   type PhotoFaceInput,
@@ -89,4 +90,29 @@ export function parseFaceSearchEnabledInput(
     return { ok: false, error: "face_search_enabled must be a boolean" };
   }
   return { ok: true, value };
+}
+
+export function parseFaceMatchBody(body: Record<string, unknown>): {
+  data?: { embedding: number[]; threshold: number };
+  error?: string;
+} {
+  const embedding = parseEmbedding(body.embedding);
+  if (!embedding) {
+    return {
+      error: `embedding must be a number[${FACE_EMBEDDING_DIM}] array`,
+    };
+  }
+
+  let threshold = DEFAULT_FACE_MATCH_THRESHOLD;
+  if (body.threshold !== undefined) {
+    if (typeof body.threshold !== "number" || !Number.isFinite(body.threshold)) {
+      return { error: "threshold must be a number" };
+    }
+    if (body.threshold < 0.3 || body.threshold > 0.95) {
+      return { error: "threshold must be between 0.3 and 0.95" };
+    }
+    threshold = body.threshold;
+  }
+
+  return { data: { embedding, threshold } };
 }

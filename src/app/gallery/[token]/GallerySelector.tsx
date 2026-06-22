@@ -28,10 +28,15 @@ import {
 } from "@/lib/gallerySelection";
 import { gallerySelectionStorageKey } from "@/lib/galleryStorage";
 import { GalleryClientHint } from "@/components/gallery/GalleryClientHint";
+import { FaceFindControls } from "@/components/gallery/FaceFindControls";
+import { FacePickModal } from "@/components/gallery/FacePickModal";
+import { FaceSearchPrivacyBanner } from "@/components/gallery/FaceSearchPrivacyBanner";
 import {
   GalleryScopeFilter,
   type GalleryScope,
 } from "@/components/gallery/GalleryScopeFilter";
+import { preloadFaceIndexWorker } from "@/lib/faces/faceIndexClient";
+import type { FaceSearchStatus } from "@/lib/faces/types";
 import { GalleryPhotosLoading } from "@/components/GalleryPhotosLoading";
 import { PhotoGallerySection } from "@/components/PhotoGallerySection";
 import {
@@ -47,6 +52,7 @@ type GalleryApiResponse = {
   project: Project;
   photos: Photo[];
   confirmedSelectedIds: string[];
+  faceSearch: FaceSearchStatus;
 };
 
 type ConfirmErrorResponse = {
@@ -130,12 +136,14 @@ export function GallerySelector({
   initialPhotos,
   previouslyConfirmed,
   initialConfirmedSelectedIds,
+  initialFaceSearch,
 }: {
   token: string;
   initialProject: Project;
   initialPhotos: Photo[];
   previouslyConfirmed: boolean;
   initialConfirmedSelectedIds: string[];
+  initialFaceSearch: FaceSearchStatus;
 }) {
   const storageKey = gallerySelectionStorageKey(token);
 
@@ -149,6 +157,11 @@ export function GallerySelector({
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
   const [galleryScope, setGalleryScope] = useState<GalleryScope>("all");
+  const [faceSearch, setFaceSearch] = useState(initialFaceSearch);
+  const [facePickMode, setFacePickMode] = useState(false);
+  const [facePickPhoto, setFacePickPhoto] = useState<Photo | null>(null);
+  const [faceFilterIds, setFaceFilterIds] = useState<Set<string> | null>(null);
+  const [faceMatchCount, setFaceMatchCount] = useState<number | null>(null);
   const selectedRef = useRef(selected);
   selectedRef.current = selected;
 
@@ -162,6 +175,7 @@ export function GallerySelector({
     ) => {
       setProject(normalizeProject(data.project));
       setPhotos(data.photos);
+      setFaceSearch(data.faceSearch);
 
       const prunedCount = options.previousSelected
         ? findStaleSelectionIds(data.photos, options.previousSelected).length
@@ -237,6 +251,7 @@ export function GallerySelector({
         project: initialProject,
         photos: initialPhotos,
         confirmedSelectedIds: initialConfirmedSelectedIds,
+        faceSearch: initialFaceSearch,
       },
       { persistSelectionToStorage: true }
     );
@@ -250,6 +265,7 @@ export function GallerySelector({
     initialProject,
     initialPhotos,
     initialConfirmedSelectedIds,
+    initialFaceSearch,
   ]);
 
   useEffect(() => {
@@ -281,10 +297,25 @@ export function GallerySelector({
   const overSelectionLimit = isOverSelectionLimit(selectedCount, maxSelection);
   const selectionLimitReached = selectedCount >= maxSelection;
 
+  useEffect(() => {
+    if (faceSearch.enabled && faceSearch.status === "ready") {
+      preloadFaceIndexWorker();
+    }
+  }, [faceSearch.enabled, faceSearch.status]);
+
+  const faceSearchReady =
+    faceSearch.enabled && faceSearch.status === "ready";
+
   const scopedPhotos = useMemo(() => {
-    if (galleryScope === "all") return photos;
-    return photos.filter((photo) => selected.has(photo.id));
-  }, [photos, galleryScope, selected]);
+    let rows = photos;
+    if (faceFilterIds) {
+      rows = rows.filter((photo) => faceFilterIds.has(photo.id));
+    }
+    if (galleryScope === "selected") {
+      rows = rows.filter((photo) => selected.has(photo.id));
+    }
+    return rows;
+  }, [photos, galleryScope, selected, faceFilterIds]);
 
   useEffect(() => {
     if (galleryScope === "selected" && selectedCount === 0) {
@@ -517,6 +548,11 @@ export function GallerySelector({
           ) : (
             <>
               <GalleryClientHint token={token} className="mb-3 sm:mb-4" />
+              {faceSearchReady ? (
+                <div className="mb-3 sm:mb-4">
+                  <FaceSearchPrivacyBanner />
+                </div>
+              ) : null}
               <div className="mb-3 flex flex-col gap-3 sm:mb-4 sm:flex-row sm:items-center sm:justify-between">
                 <GalleryScopeFilter
                   value={galleryScope}
@@ -524,11 +560,39 @@ export function GallerySelector({
                   disabled={!ready}
                   onChange={setGalleryScope}
                 />
+                <FaceFindControls
+                  active={faceSearchReady}
+                  facePickMode={facePickMode}
+                  matchCount={faceMatchCount}
+                  matching={facePickPhoto !== null}
+                  disabled={!ready || syncing}
+                  onStartPick={() => {
+                    setFacePickMode(true);
+                    setError(null);
+                  }}
+                  onClearFilter={() => {
+                    setFaceFilterIds(null);
+                    setFaceMatchCount(null);
+                    setFacePickMode(false);
+                  }}
+                  onCancelPick={() => setFacePickMode(false)}
+                />
               </div>
+              {faceSearch.enabled && faceSearch.status === "partial" ? (
+                <p className="mb-3 text-[12px] text-status-editing leading-relaxed">
+                  Fitur cari foto belum siap sepenuhnya — hasil mungkin terbatas
+                  sampai sebagian besar foto terindeks.
+                </p>
+              ) : null}
               {galleryScope === "selected" && scopedPhotos.length === 0 ? (
                 <p className="text-text-secondary text-[14px] leading-relaxed">
                   Belum ada foto terpilih. Buka tab Semua, ketuk foto, lalu pilih
                   dari pratinjau.
+                </p>
+              ) : faceFilterIds && scopedPhotos.length === 0 ? (
+                <p className="text-text-secondary text-[14px] leading-relaxed">
+                  Tidak ada foto yang cocok dengan wajah ini. Coba foto lain atau
+                  hapus filter.
                 </p>
               ) : (
                 <PhotoGallerySection
@@ -538,12 +602,35 @@ export function GallerySelector({
                   selectedIds={selected}
                   onToggleSelect={toggle}
                   selectionLimitReached={selectionLimitReached}
+                  facePickMode={facePickMode}
+                  onFacePickPhoto={(photo) => setFacePickPhoto(photo)}
                 />
               )}
             </>
           )}
         </section>
       </DashboardShell>
+
+      <FacePickModal
+        open={facePickPhoto !== null}
+        photo={facePickPhoto}
+        token={token}
+        onClose={() => {
+          setFacePickPhoto(null);
+          setFacePickMode(false);
+        }}
+        onMatched={(photoIds, matchCount) => {
+          setFaceFilterIds(new Set(photoIds));
+          setFaceMatchCount(matchCount);
+          setFacePickMode(false);
+          setGalleryScope("all");
+          if (matchCount === 0) {
+            setError("Tidak ada foto serupa ditemukan. Coba foto lain.");
+          } else {
+            setSyncNotice(`${matchCount} foto dengan wajah ini`);
+          }
+        }}
+      />
 
       <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-bg-secondary/95 backdrop-blur-md">
         <div

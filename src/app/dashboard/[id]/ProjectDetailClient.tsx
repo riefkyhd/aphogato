@@ -298,6 +298,7 @@ export function ProjectDetailClient({
               onStatusChange={(status) =>
                 setProjectState((prev) => ({ ...prev, status }))
               }
+              faceSearchEnabled={projectState.face_search_enabled}
               upload={upload}
             />
           </div>

@@ -45,6 +45,8 @@ export function PhotoGallerySection({
   onCloseManagePreview,
   selectionLimitReached = false,
   ready = true,
+  facePickMode = false,
+  onFacePickPhoto,
 }: {
   photos: Photo[];
   mode: "gallery" | "dashboard";
@@ -60,6 +62,8 @@ export function PhotoGallerySection({
   onDeletePhotos?: () => void;
   onCloseManagePreview?: () => void;
   ready?: boolean;
+  facePickMode?: boolean;
+  onFacePickPhoto?: (photo: Photo) => void;
 }) {
   const touchLike = useTouchLike();
   const prefsCtx = useOptionalUserPreferencesContext();
@@ -270,6 +274,8 @@ export function PhotoGallerySection({
             onManagePhotoActivate={onManagePhotoActivate}
             onManagePhotoMarquee={onManagePhotoMarquee}
             onClearManageSelection={onClearManageSelection}
+            facePickMode={facePickMode}
+            onFacePickPhoto={onFacePickPhoto}
           />
         </div>
         {!isGallery ? (

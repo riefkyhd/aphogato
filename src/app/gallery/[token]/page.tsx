@@ -26,6 +26,7 @@ export default async function GalleryPage({
       initialPhotos={data.photos}
       previouslyConfirmed={previouslyConfirmed}
       initialConfirmedSelectedIds={data.confirmedSelectedIds}
+      initialFaceSearch={data.faceSearch}
     />
   );
 }

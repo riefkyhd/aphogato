@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { PhotoUploadButton } from "@/components/PhotoUploadButton";
@@ -15,6 +15,7 @@ import type { ProjectStatus } from "@/components/StatusDot";
 import { markProjectsStatusDirty } from "@/lib/projects/invalidateProjectsViews";
 import { cn } from "@/lib/utils";
 import { ShareGalleryLinkDialog } from "@/components/cloudinary/ShareGalleryLinkDialog";
+import type { FaceSearchStatus } from "@/lib/faces/types";
 
 const NEXT_STATUS: Record<ProjectStatus, ProjectStatus | null> = {
   pending: null,
@@ -109,6 +110,7 @@ export function ProjectActions({
   onPhotosSynced,
   onDeleteProject,
   onStatusChange,
+  faceSearchEnabled,
   upload,
 }: {
   projectId: string;
@@ -121,6 +123,7 @@ export function ProjectActions({
   onPhotosSynced: (photos: Photo[]) => void;
   onDeleteProject: () => void;
   onStatusChange: (status: ProjectStatus) => void;
+  faceSearchEnabled: boolean;
   upload: ProjectPhotoUpload;
 }) {
   const selectedFilenames = photos
@@ -131,6 +134,42 @@ export function ProjectActions({
   const [syncing, setSyncing] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [faceSearchStatus, setFaceSearchStatus] =
+    useState<FaceSearchStatus | null>(null);
+  const [faceSearchLoading, setFaceSearchLoading] = useState(false);
+
+  useEffect(() => {
+    if (!shareDialogOpen || !faceSearchEnabled) {
+      setFaceSearchStatus(null);
+      setFaceSearchLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    setFaceSearchLoading(true);
+    void fetch(`/api/projects/${projectId}/faces/status`, {
+      signal: controller.signal,
+    })
+      .then(async (res) => {
+        const json = (await res.json()) as FaceSearchStatus & { error?: string };
+        if (!res.ok) {
+          throw new Error(json.error ?? "Failed to load face search status");
+        }
+        setFaceSearchStatus(json);
+      })
+      .catch((err) => {
+        if (controller.signal.aborted) return;
+        console.warn(err);
+        setFaceSearchStatus(null);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setFaceSearchLoading(false);
+        }
+      });
+
+    return () => controller.abort();
+  }, [shareDialogOpen, faceSearchEnabled, projectId]);
 
   function copyLink() {
     const url = `${window.location.origin}/gallery/${galleryToken}`;
@@ -444,6 +483,8 @@ export function ProjectActions({
         account={cloudinaryAccount}
         usage={cloudinaryUsage}
         loading={cloudinaryUsageLoading}
+        faceSearch={faceSearchEnabled ? faceSearchStatus : null}
+        faceSearchLoading={faceSearchEnabled && faceSearchLoading}
         onClose={() => setShareDialogOpen(false)}
         onCopy={copyLink}
       />

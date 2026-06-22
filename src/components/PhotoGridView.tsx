@@ -20,6 +20,8 @@ export function PhotoGridView({
   onManagePhotoActivate,
   onManagePhotoMarquee,
   onClearManageSelection,
+  facePickMode = false,
+  onFacePickPhoto,
 }: {
   photos: Photo[];
   mode: "gallery" | "dashboard";
@@ -30,6 +32,8 @@ export function PhotoGridView({
   onManagePhotoActivate?: (id: string, meta: ManagePhotoActivateMeta) => void;
   onManagePhotoMarquee?: (ids: string[], mergeBase?: string[]) => void;
   onClearManageSelection?: () => void;
+  facePickMode?: boolean;
+  onFacePickPhoto?: (photo: Photo) => void;
 }) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
@@ -48,9 +52,17 @@ export function PhotoGridView({
         <VirtualGalleryGrid
           photos={photos}
           selectedIds={selectedIds}
-          onOpenPhoto={setLightboxIndex}
+          onOpenPhoto={(index) => {
+            const photo = photos[index];
+            if (!photo) return;
+            if (facePickMode && onFacePickPhoto) {
+              onFacePickPhoto(photo);
+              return;
+            }
+            setLightboxIndex(index);
+          }}
         />
-        {lightboxIndex !== null ? (
+        {!facePickMode && lightboxIndex !== null ? (
           <GalleryPhotoLightbox
             photos={photos}
             index={lightboxIndex}

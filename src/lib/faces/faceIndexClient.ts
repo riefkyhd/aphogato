@@ -22,8 +22,8 @@ function getWorker(): Worker {
   return worker;
 }
 
-export function indexFacesFromFile(
-  file: File,
+function runFaceIndexOnBuffer(
+  buffer: ArrayBuffer,
   signal?: AbortSignal
 ): Promise<PhotoFaceInput[]> {
   if (signal?.aborted) {
@@ -65,22 +65,48 @@ export function indexFacesFromFile(
     faceWorker.addEventListener("message", onMessage);
     faceWorker.addEventListener("error", onError, { once: true });
 
-    void file.arrayBuffer().then((buffer) => {
-      if (signal?.aborted) {
-        onAbort();
-        return;
-      }
-      faceWorker.postMessage(
-        {
-          type: "index",
-          id: requestId,
-          buffer,
-          modelBaseUrl: MODEL_BASE_URL,
-        },
-        [buffer]
-      );
-    });
+    faceWorker.postMessage(
+      {
+        type: "index",
+        id: requestId,
+        buffer,
+        modelBaseUrl: MODEL_BASE_URL,
+      },
+      [buffer]
+    );
   });
+}
+
+export function indexFacesFromFile(
+  file: File,
+  signal?: AbortSignal
+): Promise<PhotoFaceInput[]> {
+  if (signal?.aborted) {
+    return Promise.reject(new UploadCancelledError());
+  }
+
+  return file.arrayBuffer().then((buffer) => {
+    if (signal?.aborted) {
+      throw new UploadCancelledError();
+    }
+    return runFaceIndexOnBuffer(buffer, signal);
+  });
+}
+
+export async function indexFacesFromImageUrl(
+  imageUrl: string,
+  signal?: AbortSignal
+): Promise<PhotoFaceInput[]> {
+  if (signal?.aborted) {
+    throw new UploadCancelledError();
+  }
+
+  const response = await fetch(imageUrl, { signal });
+  if (!response.ok) {
+    throw new Error("Could not load photo for face search");
+  }
+  const buffer = await response.arrayBuffer();
+  return runFaceIndexOnBuffer(buffer, signal);
 }
 
 export function preloadFaceIndexWorker(): void {

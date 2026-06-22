@@ -14,6 +14,18 @@ import {
   usageLevelClass,
 } from "@/lib/cloudinary/display";
 import { cn } from "@/lib/utils";
+import type { FaceSearchStatus } from "@/lib/faces/types";
+
+function faceSearchShareLine(faceSearch: FaceSearchStatus): string | null {
+  if (!faceSearch.enabled) return null;
+  if (faceSearch.status === "ready") {
+    return "Face search: on — clients can filter photos by tapping their face.";
+  }
+  if (faceSearch.status === "partial") {
+    return "Face search: indexing incomplete — clients may see limited results.";
+  }
+  return "Face search: on — not indexed yet; upload photos to enable client filtering.";
+}
 
 function usageCalloutClass(level: CloudinaryAccountUsagePublic["level"]): string {
   if (level === "critical") {
@@ -31,6 +43,8 @@ export function ShareGalleryLinkDialog({
   account,
   usage,
   loading,
+  faceSearch,
+  faceSearchLoading,
   onClose,
   onCopy,
 }: {
@@ -39,6 +53,8 @@ export function ShareGalleryLinkDialog({
   account: CloudinaryAccountPublic | null;
   usage: CloudinaryAccountUsagePublic | null;
   loading?: boolean;
+  faceSearch?: FaceSearchStatus | null;
+  faceSearchLoading?: boolean;
   onClose: () => void;
   onCopy: () => void;
 }) {
@@ -97,6 +113,19 @@ export function ShareGalleryLinkDialog({
         . When your client opens the link, browsing uses bandwidth and
         transforms on that account.
       </p>
+
+      {faceSearchLoading ? (
+        <p className="mt-4 text-[13px] text-text-muted">Loading face search…</p>
+      ) : faceSearch ? (
+        (() => {
+          const line = faceSearchShareLine(faceSearch);
+          return line ? (
+            <p className="mt-4 text-[13px] text-text-secondary leading-relaxed border border-border bg-bg-primary/40 px-4 py-3">
+              {line}
+            </p>
+          ) : null;
+        })()
+      ) : null}
 
       {loading ? (
         <p className="mt-4 text-[13px] text-text-muted">Loading usage…</p>
