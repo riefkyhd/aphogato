@@ -16,6 +16,7 @@ import {
   type PhotoSortPreference,
 } from "@/lib/photoSortStorage";
 import {
+  photoViewStorageKey,
   readPhotoViewPreference,
   writePhotoViewPreference,
   type PhotoViewMode,
@@ -70,11 +71,23 @@ export function PhotoGallerySection({
 
   useEffect(() => {
     if (prefsCtx && !prefsCtx.loaded) return;
-    setView(readPhotoViewPreference(viewStorageId));
+    if (mode === "gallery") {
+      setView("grid");
+      try {
+        if (window.localStorage.getItem(photoViewStorageKey(viewStorageId)) === "list") {
+          window.localStorage.removeItem(photoViewStorageKey(viewStorageId));
+        }
+      } catch {
+        // ignore
+      }
+    } else {
+      setView(readPhotoViewPreference(viewStorageId));
+    }
     setSelectedFirst(readPhotoFilterPreference(viewStorageId));
     setSortPreference(readPhotoSortPreference(viewStorageId));
   }, [
     viewStorageId,
+    mode,
     prefsCtx,
     prefsCtx?.loaded,
     prefsCtx?.preferences.defaultPhotoView,
@@ -82,6 +95,7 @@ export function PhotoGallerySection({
   ]);
 
   function handleViewChange(next: PhotoViewMode) {
+    if (mode === "gallery") return;
     setView(next);
     writePhotoViewPreference(viewStorageId, next);
   }
@@ -164,26 +178,22 @@ export function PhotoGallerySection({
     managePreviewId && mode === "dashboard"
       ? photos.find((p) => p.id === managePreviewId) ?? null
       : null;
-  const showMobileLightbox =
-    touchLike && view === "grid" && Boolean(previewPhoto && onCloseManagePreview);
-
   const isGallery = mode === "gallery";
+  const activeView = isGallery ? "grid" : view;
+  const showMobileLightbox =
+    touchLike && activeView === "grid" && Boolean(previewPhoto && onCloseManagePreview);
+
   /** Client gallery scrolls with the page; dashboard keeps a bounded panel. */
   const viewportClass = isGallery
     ? "relative"
     : "relative h-[min(65dvh,720px)] min-h-[280px] sm:min-h-[320px]";
   const gridLayerClass = isGallery
-    ? view === "grid"
-      ? "block"
-      : "hidden"
-    : view === "grid"
+    ? "block"
+    : activeView === "grid"
       ? "absolute inset-0 overflow-y-auto"
       : "absolute inset-0 overflow-hidden invisible pointer-events-none";
-  const listLayerClass = isGallery
-    ? view === "list"
-      ? "flex flex-col min-h-[280px] lg:min-h-[calc(100dvh-11.5rem)] lg:max-h-[calc(100dvh-11.5rem)]"
-      : "hidden"
-    : view === "list"
+  const listLayerClass =
+    activeView === "list"
       ? "absolute inset-0 flex flex-col overflow-hidden"
       : "absolute inset-0 flex flex-col overflow-hidden invisible pointer-events-none";
 
@@ -242,12 +252,14 @@ export function PhotoGallerySection({
                 onChange={handleFilterChange}
               />
             ) : null}
-            <PhotoViewToggle view={view} onChange={handleViewChange} />
+            {mode !== "gallery" ? (
+              <PhotoViewToggle view={activeView} onChange={handleViewChange} />
+            ) : null}
           </div>
         </div>
       </div>
       <div key={layoutKey} className={viewportClass}>
-        <div data-photo-grid-scroll className={gridLayerClass} aria-hidden={view !== "grid"}>
+        <div data-photo-grid-scroll className={gridLayerClass} aria-hidden={activeView !== "grid"}>
           <PhotoGridView
             photos={displayPhotos}
             mode={mode}
@@ -260,21 +272,23 @@ export function PhotoGallerySection({
             onClearManageSelection={onClearManageSelection}
           />
         </div>
-        <div className={listLayerClass} aria-hidden={view !== "list"}>
-          <PhotoListView
-            photos={displayPhotos}
-            mode={mode}
-            selectedIds={selectedIds}
-            onToggleSelect={onToggleSelect}
-            selectionLimitReached={selectionLimitReached}
-            manageSelectedIds={manageSelectedIds}
-            onManagePhotoActivate={onManagePhotoActivate}
-            managePreviewId={managePreviewId}
-            showSelectedDivider={showListDivider}
-            selectedGroupCount={selectedCount}
-            className="h-full min-h-0"
-          />
-        </div>
+        {!isGallery ? (
+          <div className={listLayerClass} aria-hidden={activeView !== "list"}>
+            <PhotoListView
+              photos={displayPhotos}
+              mode={mode}
+              selectedIds={selectedIds}
+              onToggleSelect={onToggleSelect}
+              selectionLimitReached={selectionLimitReached}
+              manageSelectedIds={manageSelectedIds}
+              onManagePhotoActivate={onManagePhotoActivate}
+              managePreviewId={managePreviewId}
+              showSelectedDivider={showListDivider}
+              selectedGroupCount={selectedCount}
+              className="h-full min-h-0"
+            />
+          </div>
+        ) : null}
       </div>
       {showManageActions && (
         <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-bg-secondary/95 backdrop-blur-md px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex items-center gap-2">
