@@ -7,5 +7,6 @@ export function normalizeProject(row: Project | Record<string, unknown>): Projec
   return {
     ...p,
     max_photo_selection: normalizeMaxPhotoSelection(p.max_photo_selection),
+    face_search_enabled: Boolean(p.face_search_enabled),
   };
 }

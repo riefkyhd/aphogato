@@ -26,6 +26,7 @@ import { ProjectCloudinaryUsageBadge } from "@/components/cloudinary/ProjectClou
 import { ProjectCloudinaryAccountNote } from "@/components/cloudinary/ProjectCloudinaryAccountNote";
 import { useProjectCloudinaryUsage } from "@/hooks/useProjectCloudinaryUsage";
 import { ProjectMaxSelection } from "./ProjectMaxSelection";
+import { ProjectFaceSearchSettings } from "./ProjectFaceSearchSettings";
 import { ProjectRename } from "./ProjectRename";
 import {
   isOverSelectionLimit,
@@ -332,6 +333,11 @@ export function ProjectDetailClient({
                     clientSelectedCount={clientSelectedCount}
                     photoCount={photos.length}
                     clientOverLimit={clientOverLimit}
+                    onUpdated={setProjectState}
+                  />
+                  <ProjectFaceSearchSettings
+                    project={projectState}
+                    photoCount={photos.length}
                     onUpdated={setProjectState}
                   />
                   <div className="border-t border-border bg-bg-secondary p-4 sm:p-5">

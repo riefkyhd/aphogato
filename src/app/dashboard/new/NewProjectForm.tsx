@@ -25,6 +25,7 @@ export function NewProjectForm() {
   );
   const [maxSelectionInitialized, setMaxSelectionInitialized] = useState(false);
   const [cloudinaryAccount, setCloudinaryAccount] = useState("");
+  const [faceSearchEnabled, setFaceSearchEnabled] = useState(false);
   const [phase, setPhase] = useState<CreatePhase>("idle");
 
   useEffect(() => {
@@ -52,6 +53,7 @@ export function NewProjectForm() {
           client_name: clientName,
           max_photo_selection: Number(maxSelection),
           cloudinary_account: cloudinaryAccount || undefined,
+          face_search_enabled: faceSearchEnabled,
         }),
       });
       const json = await res.json();
@@ -110,6 +112,25 @@ export function NewProjectForm() {
           Each project has its own limit. You can change it later on the project
           page.
         </p>
+      </div>
+      <div className="border border-border bg-bg-secondary p-4 sm:p-5">
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            className="mt-0.5 h-4 w-4 accent-text-primary"
+            checked={faceSearchEnabled}
+            onChange={(e) => setFaceSearchEnabled(e.target.checked)}
+          />
+          <span>
+            <span className="block text-[13px] text-text-primary">
+              Enable face search for clients
+            </span>
+            <span className="mt-1 block text-[12px] text-text-muted leading-relaxed">
+              Cocok untuk event sport / tim. Klien bisa ketuk wajahnya untuk
+              melihat foto yang relevan.
+            </span>
+          </span>
+        </label>
       </div>
       <FormActions>
         <Button type="submit" loading={busy} disabled={busy}>

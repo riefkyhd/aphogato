@@ -10,6 +10,7 @@ export interface Project {
   created_at: string;
   status: ProjectStatus;
   max_photo_selection: number;
+  face_search_enabled: boolean;
 }
 
 export interface Photo {

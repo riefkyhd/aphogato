@@ -17,6 +17,8 @@ import {
   fetchAllProjectPhotoRows,
   fetchAllProjectPhotos,
 } from "@/lib/photos/fetchProjectPhotos";
+import { insertPhotoFaces } from "@/lib/faces/insertPhotoFaces";
+import { parsePhotoFacesInput } from "@/lib/faces/validation";
 
 export const runtime = "nodejs";
 
@@ -28,6 +30,7 @@ type CompleteBody = {
   height?: number;
   bytes?: number;
   format?: string;
+  faces?: unknown;
 };
 
 export async function POST(
@@ -56,12 +59,23 @@ export async function POST(
 
   const { data: project, error: projectError } = await supabase
     .from("projects")
-    .select("id, cloudinary_folder, cloudinary_account")
+    .select("id, cloudinary_folder, cloudinary_account, face_search_enabled")
     .eq("id", params.id)
     .single();
 
   if (projectError || !project) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  }
+
+  const facesParsed = parsePhotoFacesInput(body.faces);
+  if (!facesParsed.ok) {
+    return NextResponse.json({ error: facesParsed.error }, { status: 400 });
+  }
+  if (facesParsed.faces.length > 0 && !project.face_search_enabled) {
+    return NextResponse.json(
+      { error: "Face search is not enabled for this project" },
+      { status: 400 }
+    );
   }
 
   const accountId = getProjectCloudinaryAccountId(project);
@@ -177,6 +191,27 @@ export async function POST(
       { error: insertError?.message ?? "DB insert failed" },
       { status: 500 }
     );
+  }
+
+  if (project.face_search_enabled && facesParsed.faces.length > 0) {
+    const faceInsert = await insertPhotoFaces(
+      supabase,
+      project.id,
+      row.id,
+      facesParsed.faces
+    );
+    if (faceInsert.error) {
+      await supabase.from("photos").delete().eq("id", row.id);
+      try {
+        await deleteCloudinaryImageByUrl(secureUrl);
+      } catch {
+        // Best-effort cleanup when face insert fails.
+      }
+      return NextResponse.json(
+        { error: faceInsert.error ?? "Failed to save face data" },
+        { status: 500 }
+      );
+    }
   }
 
   const photos = await fetchAllProjectPhotos(supabase, project.id);

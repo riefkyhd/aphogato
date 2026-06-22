@@ -3,6 +3,7 @@ import { nanoid } from "nanoid";
 import { requireAuth } from "@/lib/api/requireAuth";
 import { ensureClientByName } from "@/lib/clients/ensureClientByName";
 import { parseMaxPhotoSelectionInput } from "@/lib/photoSelectionLimit";
+import { parseFaceSearchEnabledInput } from "@/lib/faces/validation";
 import { resolveUniqueCloudinaryFolder } from "@/lib/resolveCloudinaryFolder";
 import { getCloudinaryAccount } from "@/lib/cloudinary/accounts";
 import { getDefaultCloudinaryAccountId } from "@/lib/cloudinary/settings";
@@ -19,6 +20,7 @@ export async function POST(request: Request) {
     client_name?: string;
     max_photo_selection?: unknown;
     cloudinary_account?: string;
+    face_search_enabled?: unknown;
   };
   try {
     body = await request.json();
@@ -47,6 +49,11 @@ export async function POST(request: Request) {
   const maxParsed = parseMaxPhotoSelectionInput(body.max_photo_selection);
   if (!maxParsed.ok) {
     return NextResponse.json({ error: maxParsed.error }, { status: 400 });
+  }
+
+  const faceSearchParsed = parseFaceSearchEnabledInput(body.face_search_enabled);
+  if (!faceSearchParsed.ok) {
+    return NextResponse.json({ error: faceSearchParsed.error }, { status: 400 });
   }
 
   const gallery_token = nanoid();
@@ -92,6 +99,7 @@ export async function POST(request: Request) {
       gallery_token,
       status: "pending",
       max_photo_selection: maxParsed.value,
+      face_search_enabled: faceSearchParsed.value,
     })
     .select("id, cloudinary_folder")
     .single();

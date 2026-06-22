@@ -4,6 +4,8 @@ import { requireAuth } from "@/lib/api/requireAuth";
 import { fetchAllProjectPhotoRows } from "@/lib/photos/fetchProjectPhotos";
 import { parseMaxPhotoSelectionInput } from "@/lib/photoSelectionLimit";
 import { renameProject } from "@/lib/renameProject";
+import { normalizeProject } from "@/lib/normalizeProject";
+import { parseFaceSearchEnabledInput } from "@/lib/faces/validation";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -16,7 +18,11 @@ export async function PATCH(
   if (!auth.ok) return auth.response;
   const { supabase } = auth;
 
-  let body: { name?: unknown; max_photo_selection?: unknown };
+  let body: {
+    name?: unknown;
+    max_photo_selection?: unknown;
+    face_search_enabled?: unknown;
+  };
   try {
     body = await request.json();
   } catch {
@@ -25,10 +31,14 @@ export async function PATCH(
 
   const hasName = body.name !== undefined;
   const hasMaxSelection = body.max_photo_selection !== undefined;
+  const hasFaceSearchEnabled = body.face_search_enabled !== undefined;
 
-  if (!hasName && !hasMaxSelection) {
+  if (!hasName && !hasMaxSelection && !hasFaceSearchEnabled) {
     return NextResponse.json(
-      { error: "name or max_photo_selection is required" },
+      {
+        error:
+          "name, max_photo_selection, or face_search_enabled is required",
+      },
       { status: 400 }
     );
   }
@@ -55,14 +65,33 @@ export async function PATCH(
     }
   }
 
-  const parsed = parseMaxPhotoSelectionInput(body.max_photo_selection);
-  if (!parsed.ok) {
-    return NextResponse.json({ error: parsed.error }, { status: 400 });
+  const updatePayload: Record<string, unknown> = {};
+
+  if (hasMaxSelection) {
+    const parsed = parseMaxPhotoSelectionInput(body.max_photo_selection);
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
+    }
+    updatePayload.max_photo_selection = parsed.value;
+  }
+
+  if (hasFaceSearchEnabled) {
+    const parsed = parseFaceSearchEnabledInput(body.face_search_enabled);
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
+    }
+    updatePayload.face_search_enabled = parsed.value;
+  }
+
+  if (Object.keys(updatePayload).length === 0) {
+    return NextResponse.json({ error: "No valid fields to update" }, {
+      status: 400,
+    });
   }
 
   const { data: project, error } = await supabase
     .from("projects")
-    .update({ max_photo_selection: parsed.value })
+    .update(updatePayload)
     .eq("id", params.id)
     .select("*")
     .single();
@@ -74,7 +103,7 @@ export async function PATCH(
     );
   }
 
-  return NextResponse.json({ project });
+  return NextResponse.json({ project: normalizeProject(project) });
 }
 
 export async function DELETE(
