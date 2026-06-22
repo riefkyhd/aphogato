@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, ChevronLeft, ChevronRight, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
-import { galleryGridImageUrl } from "@/lib/cloudinaryUrls";
+import { galleryPreviewImageUrl } from "@/lib/cloudinaryUrls";
 import type { Photo } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -68,7 +68,7 @@ export function GalleryPhotoLightbox({
 
   if (!photo) return null;
 
-  const previewSrc = galleryGridImageUrl(photo.cloudinary_url);
+  const previewSrc = galleryPreviewImageUrl(photo.cloudinary_url);
 
   return (
     <div

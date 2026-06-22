@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { RefreshCw } from "lucide-react";
 import {
   GALLERY_ERROR_CODES,
@@ -224,42 +231,19 @@ export function GallerySelector({
     [token, applyGalleryData]
   );
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadFreshGallery() {
-      const result = await fetchGallery(token);
-      if (cancelled) return;
-
-      if (!result.ok) {
-        setError(
-          result.status === 404
-            ? GALLERY_MESSAGES.galleryNotFound
-            : result.error
-        );
-        applyGalleryData(
-          {
-            project: initialProject,
-            photos: initialPhotos,
-            confirmedSelectedIds: initialConfirmedSelectedIds,
-          },
-          { persistSelectionToStorage: true }
-        );
-        setReady(true);
-        return;
-      }
-
-      applyGalleryData(result.data, { persistSelectionToStorage: true });
-      if (result.data.photos.length === 0) {
-        setSyncNotice(GALLERY_MESSAGES.galleryEmpty);
-      }
-      setReady(true);
+  useLayoutEffect(() => {
+    applyGalleryData(
+      {
+        project: initialProject,
+        photos: initialPhotos,
+        confirmedSelectedIds: initialConfirmedSelectedIds,
+      },
+      { persistSelectionToStorage: true }
+    );
+    if (initialPhotos.length === 0) {
+      setSyncNotice(GALLERY_MESSAGES.galleryEmpty);
     }
-
-    loadFreshGallery();
-    return () => {
-      cancelled = true;
-    };
+    setReady(true);
   }, [
     token,
     applyGalleryData,

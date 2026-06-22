@@ -20,8 +20,41 @@ export function masonryImageUrl(src: string, width = 800, quality = 70) {
 }
 
 /** Client gallery grid — width cap, natural aspect ratio (no crop). */
-export function galleryGridImageUrl(src: string) {
-  return cloudinaryTransformUrl(src, "w_900,c_limit,q_75,f_auto");
+export function galleryGridImageUrl(src: string, width = 900) {
+  return cloudinaryTransformUrl(src, `w_${width},c_limit,q_auto,f_auto`);
+}
+
+/** Target delivery width per masonry column count (viewport-aware grid). */
+export function galleryGridWidthForColumns(columns: number): number {
+  if (columns <= 1) return 540;
+  if (columns === 2) return 480;
+  if (columns === 3) return 420;
+  return 380;
+}
+
+export function galleryGridSrcSet(src: string, baseWidth: number): string {
+  const widths = Array.from(
+    new Set([baseWidth, Math.min(baseWidth * 2, 900)])
+  ).sort((a, b) => a - b);
+  return widths.map((w) => `${galleryGridImageUrl(src, w)} ${w}w`).join(", ");
+}
+
+export function galleryGridSizes(columnCount: number): string {
+  if (columnCount >= 4) {
+    return "(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw";
+  }
+  if (columnCount === 3) {
+    return "(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw";
+  }
+  if (columnCount === 2) {
+    return "(min-width: 480px) 50vw, 100vw";
+  }
+  return "100vw";
+}
+
+/** Lightbox / preview — larger cap, same recipe family as grid. */
+export function galleryPreviewImageUrl(src: string) {
+  return galleryGridImageUrl(src, 900);
 }
 
 export function listThumbUrl(src: string) {

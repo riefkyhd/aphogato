@@ -2,6 +2,7 @@
 
 import { MasonryPhoto } from "@/components/MasonryPhoto";
 import { SelectionOverlay } from "@/components/SelectionOverlay";
+import { useColumnCount } from "@/hooks/useColumnCount";
 import { cn } from "@/lib/utils";
 
 export function GalleryPhotoCell({
@@ -15,8 +16,10 @@ export function GalleryPhotoCell({
   selected: boolean;
   onOpen: () => void;
 }) {
+  const columnCount = useColumnCount("dashboard");
+
   return (
-    <div className="w-full">
+    <div className="w-full [content-visibility:auto] [contain-intrinsic-size:auto_280px]">
       <button
         type="button"
         className={cn(
@@ -30,6 +33,7 @@ export function GalleryPhotoCell({
           src={cloudinaryUrl}
           alt=""
           variant="gallery"
+          galleryColumnCount={columnCount}
           className="pointer-events-none select-none transition duration-200 group-hover:brightness-105"
         />
         {selected ? <SelectionOverlay /> : null}
