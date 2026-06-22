@@ -7,9 +7,14 @@ import { Button } from "@/components/ui/Button";
 import { PhotoUploadButton } from "@/components/PhotoUploadButton";
 import type { ProjectPhotoUpload } from "@/hooks/useProjectPhotoUpload";
 import type { Photo } from "@/lib/types";
+import type {
+  CloudinaryAccountPublic,
+  CloudinaryAccountUsagePublic,
+} from "@/lib/cloudinary/types";
 import type { ProjectStatus } from "@/components/StatusDot";
 import { markProjectsStatusDirty } from "@/lib/projects/invalidateProjectsViews";
 import { cn } from "@/lib/utils";
+import { ShareGalleryLinkDialog } from "@/components/cloudinary/ShareGalleryLinkDialog";
 
 const NEXT_STATUS: Record<ProjectStatus, ProjectStatus | null> = {
   pending: null,
@@ -98,6 +103,9 @@ export function ProjectActions({
   galleryToken,
   status,
   photos,
+  cloudinaryAccount,
+  cloudinaryUsage,
+  cloudinaryUsageLoading,
   onPhotosSynced,
   onDeleteProject,
   upload,
@@ -106,6 +114,9 @@ export function ProjectActions({
   galleryToken: string;
   status: ProjectStatus;
   photos: Photo[];
+  cloudinaryAccount: CloudinaryAccountPublic | null;
+  cloudinaryUsage: CloudinaryAccountUsagePublic | null;
+  cloudinaryUsageLoading: boolean;
   onPhotosSynced: (photos: Photo[]) => void;
   onDeleteProject: () => void;
   upload: ProjectPhotoUpload;
@@ -117,11 +128,13 @@ export function ProjectActions({
   const [statusBusy, setStatusBusy] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   function copyLink() {
     const url = `${window.location.origin}/gallery/${galleryToken}`;
     navigator.clipboard.writeText(url);
     toast.success("Gallery link copied");
+    setShareDialogOpen(false);
   }
 
   function downloadList() {
@@ -297,7 +310,7 @@ export function ProjectActions({
           <Button
             size="sm"
             variant="secondary"
-            onClick={copyLink}
+            onClick={() => setShareDialogOpen(true)}
             className={actionBtn}
           >
             Copy link
@@ -328,7 +341,7 @@ export function ProjectActions({
       <div className="lg:hidden rounded-sm border border-border bg-bg-secondary/30 p-3 space-y-2">
         <PhotoUploadButton upload={upload} size="sm" className="w-full" />
         <div className="grid grid-cols-2 gap-2">
-          <Button size="sm" variant="secondary" onClick={copyLink}>
+          <Button size="sm" variant="secondary" onClick={() => setShareDialogOpen(true)}>
             Copy link
           </Button>
           {nextStatus ? (
@@ -421,6 +434,16 @@ export function ProjectActions({
           </>
         )}
       </div>
+
+      <ShareGalleryLinkDialog
+        open={shareDialogOpen}
+        photoCount={photos.length}
+        account={cloudinaryAccount}
+        usage={cloudinaryUsage}
+        loading={cloudinaryUsageLoading}
+        onClose={() => setShareDialogOpen(false)}
+        onCopy={copyLink}
+      />
     </div>
   );
 }

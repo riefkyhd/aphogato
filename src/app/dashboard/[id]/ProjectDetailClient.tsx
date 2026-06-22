@@ -22,6 +22,8 @@ import { useSyncServerPhotos } from "@/hooks/useSyncServerPhotos";
 import { ProjectActions } from "./ProjectActions";
 import { DeliverablesChecklist } from "@/components/DeliverablesChecklist";
 import { ProjectReferencesSection } from "@/components/ProjectReferencesSection";
+import { ProjectCloudinaryUsageBadge } from "@/components/cloudinary/ProjectCloudinaryUsageBadge";
+import { useProjectCloudinaryUsage } from "@/hooks/useProjectCloudinaryUsage";
 import { ProjectMaxSelection } from "./ProjectMaxSelection";
 import { ProjectRename } from "./ProjectRename";
 import {
@@ -97,6 +99,12 @@ export function ProjectDetailClient({
     clientSelectedCount,
     normalizeMaxPhotoSelection(projectState.max_photo_selection)
   );
+
+  const {
+    account: cloudinaryAccount,
+    usage: cloudinaryUsage,
+    loading: cloudinaryUsageLoading,
+  } = useProjectCloudinaryUsage(projectState.cloudinary_account);
 
   const clientSelectedIds = useMemo(
     () => new Set(photos.filter((ph) => ph.is_selected).map((ph) => ph.id)),
@@ -250,6 +258,11 @@ export function ProjectDetailClient({
                   {clientSelectedCount} client pick
                   {clientSelectedCount === 1 ? "" : "s"}
                 </span>
+                <ProjectCloudinaryUsageBadge
+                  account={cloudinaryAccount}
+                  usage={cloudinaryUsage}
+                  loading={cloudinaryUsageLoading}
+                />
               </div>
             </div>
             <ProjectActions
@@ -257,6 +270,9 @@ export function ProjectDetailClient({
               galleryToken={projectState.gallery_token}
               status={projectState.status as ProjectStatus}
               photos={photos}
+              cloudinaryAccount={cloudinaryAccount}
+              cloudinaryUsage={cloudinaryUsage}
+              cloudinaryUsageLoading={cloudinaryUsageLoading}
               onPhotosSynced={applyServerPhotos}
               onDeleteProject={() => setDeleteProjectOpen(true)}
               upload={upload}

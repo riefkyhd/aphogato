@@ -8,8 +8,12 @@ import { Label } from "@/components/ui/Label";
 import type {
   CloudinaryAccountPublic,
   CloudinaryAccountUsagePublic,
-  CloudinaryUsageLevel,
 } from "@/lib/cloudinary/types";
+import {
+  usageBarClass,
+  usageLevelClass,
+  usagePeakPercent,
+} from "@/lib/cloudinary/display";
 import { cn } from "@/lib/utils";
 
 type CloudinarySettingsResponse = {
@@ -23,40 +27,8 @@ type CloudinarySettingsResponse = {
   };
 };
 
-function usageLevelClass(level: CloudinaryUsageLevel): string {
-  switch (level) {
-    case "critical":
-      return "text-status-cancelled";
-    case "warning":
-      return "text-status-editing";
-    case "ok":
-      return "text-status-delivered";
-    default:
-      return "text-text-muted";
-  }
-}
-
-function usageBarClass(level: CloudinaryUsageLevel): string {
-  switch (level) {
-    case "critical":
-      return "bg-status-cancelled";
-    case "warning":
-      return "bg-status-editing";
-    case "ok":
-      return "bg-status-delivered";
-    default:
-      return "bg-border";
-  }
-}
-
 function usagePercent(entry: CloudinaryAccountUsagePublic): number | null {
-  const values = [
-    entry.storage.usedPercent,
-    entry.bandwidth.usedPercent,
-    entry.transformations.usedPercent,
-  ].filter((value): value is number => value !== null);
-
-  return values.length > 0 ? Math.max(...values) : null;
+  return usagePeakPercent(entry);
 }
 
 function AccountUsageCard({
@@ -212,7 +184,8 @@ export function CloudinarySettings() {
             Cloudinary
           </h2>
           <p className="text-[13px] text-text-secondary leading-relaxed mt-2">
-            Choose which Cloudinary account new projects use. Usage is cached for
+            Choose which Cloudinary account new projects use. Percentages reflect
+            a rolling 30-day window from Cloudinary and are cached here for about
             30 minutes to stay within Admin API limits.
           </p>
         </div>
