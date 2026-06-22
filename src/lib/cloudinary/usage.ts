@@ -4,6 +4,7 @@ import { v2 as cloudinary } from "cloudinary";
 import {
   getCloudinaryAccount,
   listCloudinaryAccounts,
+  type CloudinaryAccount,
 } from "@/lib/cloudinary/accounts";
 import type {
   CloudinaryAccountUsagePublic,
@@ -14,6 +15,8 @@ import type {
 const CACHE_TTL_MS = 30 * 60 * 1000;
 const WARNING_PERCENT = 75;
 const CRITICAL_PERCENT = 90;
+/** Cap live storage scans so refresh stays within Admin API limits. */
+const LIVE_STORAGE_SCAN_MAX_ASSETS = 10_000;
 
 type UsageBucket = {
   usage?: number;
@@ -25,6 +28,7 @@ type CloudinaryUsageApiResponse = {
   plan?: string;
   last_updated?: string;
   resources?: number;
+  objects?: UsageBucket;
   storage?: UsageBucket;
   bandwidth?: UsageBucket;
   transformations?: UsageBucket;
@@ -34,6 +38,14 @@ const usageCache = new Map<
   string,
   { usage: CloudinaryAccountUsagePublic; fetchedAt: number }
 >();
+
+function configureCloudinaryAccount(account: CloudinaryAccount): void {
+  cloudinary.config({
+    cloud_name: account.cloudName,
+    api_key: account.apiKey,
+    api_secret: account.apiSecret,
+  });
+}
 
 function metricFromBucket(bucket?: UsageBucket): CloudinaryUsageMetric {
   if (!bucket) {
@@ -105,18 +117,46 @@ function buildHeadline(
   return "Usage data unavailable";
 }
 
+function reportedResourceCount(raw: CloudinaryUsageApiResponse): number | null {
+  if (typeof raw.resources === "number" && raw.resources > 0) {
+    return raw.resources;
+  }
+  if (typeof raw.objects?.usage === "number" && raw.objects.usage > 0) {
+    return raw.objects.usage;
+  }
+  if (typeof raw.resources === "number") return raw.resources;
+  if (typeof raw.objects?.usage === "number") return raw.objects.usage;
+  return null;
+}
+
 function summarizeUsage(
   accountId: string,
-  raw: CloudinaryUsageApiResponse
+  raw: CloudinaryUsageApiResponse,
+  live?: { resourceCount: number; storageBytes: number }
 ): CloudinaryAccountUsagePublic {
   const storage = metricFromBucket(raw.storage);
   const bandwidth = metricFromBucket(raw.bandwidth);
   const transformations = metricFromBucket(raw.transformations);
-  const resources =
-    typeof raw.resources === "number" ? raw.resources : null;
+
+  let resources = reportedResourceCount(raw);
+  let storageUsage = storage.usage;
+
+  if (live) {
+    if (live.resourceCount > 0) {
+      resources = live.resourceCount;
+    }
+    if (live.storageBytes > 0) {
+      storageUsage = live.storageBytes;
+    }
+  }
+
+  const effectiveStorage: CloudinaryUsageMetric = {
+    ...storage,
+    usage: storageUsage,
+  };
 
   const level = worstLevel([
-    levelFromPercent(storage.usedPercent),
+    levelFromPercent(effectiveStorage.usedPercent),
     levelFromPercent(bandwidth.usedPercent),
     levelFromPercent(transformations.usedPercent),
   ]);
@@ -126,13 +166,84 @@ function summarizeUsage(
     plan: raw.plan ?? null,
     lastUpdated: raw.last_updated ?? null,
     resources,
-    storage,
+    storage: effectiveStorage,
     bandwidth,
     transformations,
     level,
-    headline: buildHeadline(storage, bandwidth, transformations, resources),
+    headline: buildHeadline(
+      effectiveStorage,
+      bandwidth,
+      transformations,
+      resources
+    ),
     storageLabel:
-      storage.usage !== null ? formatBytes(storage.usage) : null,
+      storageUsage !== null && storageUsage > 0
+        ? formatBytes(storageUsage)
+        : null,
+  };
+}
+
+async function fetchLiveAssetCount(): Promise<number> {
+  const result = await cloudinary.search
+    .expression(
+      "resource_type:image OR resource_type:video OR resource_type:raw"
+    )
+    .max_results(1)
+    .execute();
+
+  return typeof result.total_count === "number" ? result.total_count : 0;
+}
+
+async function fetchLiveStorageBytes(
+  expectedCount: number
+): Promise<number> {
+  if (expectedCount <= 0) return 0;
+
+  const scanCap = Math.min(expectedCount, LIVE_STORAGE_SCAN_MAX_ASSETS);
+  let totalBytes = 0;
+  let scanned = 0;
+  let nextCursor: string | undefined;
+
+  do {
+    const page = await cloudinary.api.resources({
+      type: "upload",
+      max_results: 500,
+      ...(nextCursor ? { next_cursor: nextCursor } : {}),
+    });
+
+    for (const resource of page.resources ?? []) {
+      totalBytes += typeof resource.bytes === "number" ? resource.bytes : 0;
+      scanned += 1;
+      if (scanned >= scanCap) break;
+    }
+
+    if (scanned >= scanCap) break;
+    nextCursor = page.next_cursor;
+  } while (nextCursor);
+
+  return totalBytes;
+}
+
+async function fetchLiveAssetStats(
+  raw: CloudinaryUsageApiResponse
+): Promise<{ resourceCount: number; storageBytes: number } | null> {
+  const liveCount = await fetchLiveAssetCount();
+  if (liveCount <= 0) return null;
+
+  const reported = reportedResourceCount(raw);
+  const reportedStorage = raw.storage?.usage ?? 0;
+  const needsCount = liveCount > 0 && (reported === null || reported === 0);
+  const needsStorage = reportedStorage === 0;
+
+  if (!needsCount && !needsStorage) return null;
+
+  const storageBytes = needsStorage
+    ? await fetchLiveStorageBytes(liveCount)
+    : 0;
+
+  return {
+    resourceCount: needsCount ? liveCount : 0,
+    storageBytes,
   };
 }
 
@@ -140,14 +251,11 @@ async function fetchAccountUsage(
   accountId: string
 ): Promise<CloudinaryAccountUsagePublic> {
   const account = getCloudinaryAccount(accountId);
-  cloudinary.config({
-    cloud_name: account.cloudName,
-    api_key: account.apiKey,
-    api_secret: account.apiSecret,
-  });
+  configureCloudinaryAccount(account);
 
   const raw = (await cloudinary.api.usage()) as CloudinaryUsageApiResponse;
-  return summarizeUsage(accountId, raw);
+  const live = await fetchLiveAssetStats(raw);
+  return summarizeUsage(accountId, raw, live ?? undefined);
 }
 
 export async function getCloudinaryAccountUsage(
@@ -186,9 +294,14 @@ export async function getCloudinaryUsageForAllAccounts(options?: {
   refresh?: boolean;
 }): Promise<CloudinaryAccountUsagePublic[]> {
   const accounts = listCloudinaryAccounts();
-  return Promise.all(
-    accounts.map((account) => getCloudinaryAccountUsage(account.id, options))
-  );
+  const usage: CloudinaryAccountUsagePublic[] = [];
+
+  // Sequential: cloudinary.config() is global; parallel calls race credentials.
+  for (const account of accounts) {
+    usage.push(await getCloudinaryAccountUsage(account.id, options));
+  }
+
+  return usage;
 }
 
 export function pickAccountWithMostHeadroom(
