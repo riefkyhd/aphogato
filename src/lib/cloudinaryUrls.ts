@@ -52,6 +52,11 @@ export function galleryGridSizes(columnCount: number): string {
   return "100vw";
 }
 
+/** Face indexing — larger JPEG for reliable worker decode + detection. */
+export function faceIndexImageUrl(src: string, width = 1280) {
+  return cloudinaryTransformUrl(src, `w_${width},c_limit,q_auto,f_jpg`);
+}
+
 /** Lightbox / preview — larger cap, same recipe family as grid. */
 export function galleryPreviewImageUrl(src: string) {
   return galleryGridImageUrl(src, 900);

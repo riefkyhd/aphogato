@@ -7,12 +7,13 @@ import "@tensorflow/tfjs-backend-cpu";
 import { l2NormalizeEmbedding } from "@/lib/faces/normalizeEmbedding";
 import { MAX_FACES_PER_PHOTO } from "@/lib/faces/types";
 
-const MIN_FACE_PX = 40;
+const MIN_FACE_PX = 28;
 
 type FaceIndexWorkerRequest = {
   type: "index";
   id: number;
   buffer: ArrayBuffer;
+  mimeType?: string;
   modelBaseUrl: string;
 };
 
@@ -33,13 +34,9 @@ let modelsReady: Promise<void> | null = null;
 
 async function ensureBackend(): Promise<void> {
   if (tf.getBackend()) return;
-  try {
-    await tf.setBackend("webgl");
-    await tf.ready();
-  } catch {
-    await tf.setBackend("cpu");
-    await tf.ready();
-  }
+  // CPU is more reliable inside dedicated workers than WebGL/OffscreenCanvas.
+  await tf.setBackend("cpu");
+  await tf.ready();
 }
 
 async function ensureModels(modelBaseUrl: string): Promise<void> {
@@ -97,8 +94,9 @@ self.onmessage = async (event: MessageEvent<FaceIndexWorkerRequest>) => {
 
   try {
     await ensureModels(message.modelBaseUrl);
+    const mimeType = message.mimeType?.trim() || "image/jpeg";
     const bitmap = await createImageBitmap(
-      new Blob([message.buffer], { type: "image/jpeg" })
+      new Blob([message.buffer], { type: mimeType })
     );
     const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
     const ctx = canvas.getContext("2d");
@@ -108,16 +106,23 @@ self.onmessage = async (event: MessageEvent<FaceIndexWorkerRequest>) => {
     ctx.drawImage(bitmap, 0, 0);
     bitmap.close();
 
-    const detections = await faceapi
-      .detectAllFaces(
-        canvas as unknown as HTMLCanvasElement,
-        new faceapi.TinyFaceDetectorOptions({
-          inputSize: 416,
-          scoreThreshold: 0.5,
-        })
-      )
-      .withFaceLandmarks(true)
-      .withFaceDescriptors();
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const tensor = tf.browser.fromPixels(imageData);
+    let detections;
+    try {
+      detections = await faceapi
+        .detectAllFaces(
+          tensor as unknown as faceapi.TNetInput,
+          new faceapi.TinyFaceDetectorOptions({
+            inputSize: 512,
+            scoreThreshold: 0.35,
+          })
+        )
+        .withFaceLandmarks(true)
+        .withFaceDescriptors();
+    } finally {
+      tensor.dispose();
+    }
 
     const faces = toNormalizedFaces(
       detections,

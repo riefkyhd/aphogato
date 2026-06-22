@@ -24,7 +24,8 @@ function getWorker(): Worker {
 
 function runFaceIndexOnBuffer(
   buffer: ArrayBuffer,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  mimeType?: string
 ): Promise<PhotoFaceInput[]> {
   if (signal?.aborted) {
     return Promise.reject(new UploadCancelledError());
@@ -45,7 +46,9 @@ function runFaceIndexOnBuffer(
       if (payload.type !== "index-result" || payload.id !== requestId) return;
       cleanup();
       if (payload.error) {
-        console.warn("Face indexing skipped:", payload.error);
+        console.warn("Face indexing failed:", payload.error);
+        reject(new Error(payload.error));
+        return;
       }
       resolve(payload.faces ?? []);
     };
@@ -70,6 +73,7 @@ function runFaceIndexOnBuffer(
         type: "index",
         id: requestId,
         buffer,
+        mimeType,
         modelBaseUrl: MODEL_BASE_URL,
       },
       [buffer]
@@ -89,7 +93,11 @@ export function indexFacesFromFile(
     if (signal?.aborted) {
       throw new UploadCancelledError();
     }
-    return runFaceIndexOnBuffer(buffer, signal);
+    return runFaceIndexOnBuffer(buffer, signal, file.type || "image/jpeg");
+  }).catch((err) => {
+    if (err instanceof UploadCancelledError) throw err;
+    console.warn("Face indexing failed:", err);
+    return [] as PhotoFaceInput[];
   });
 }
 
@@ -101,12 +109,13 @@ export async function indexFacesFromImageUrl(
     throw new UploadCancelledError();
   }
 
-  const response = await fetch(imageUrl, { signal });
+  const response = await fetch(imageUrl, { signal, mode: "cors" });
   if (!response.ok) {
     throw new Error("Could not load photo for face search");
   }
-  const buffer = await response.arrayBuffer();
-  return runFaceIndexOnBuffer(buffer, signal);
+  const blob = await response.blob();
+  const buffer = await blob.arrayBuffer();
+  return runFaceIndexOnBuffer(buffer, signal, blob.type || "image/jpeg");
 }
 
 export function preloadFaceIndexWorker(): void {

@@ -110,11 +110,17 @@ export function ProjectFaceSearchSettings({
       await loadStatus();
       if (result.errors.length > 0) {
         toast.warning(
-          `Indexed ${result.indexed} photos (${result.skipped} without faces). ${result.errors.length} failed.`
+          `Indexed ${result.indexed} photos (${result.skipped} tanpa wajah). ${result.errors.length} gagal.`
+        );
+      } else if (result.indexed === 0) {
+        toast.error(
+          result.skipped > 0
+            ? `Tidak ada wajah terdeteksi di ${result.skipped} foto. Coba refresh halaman lalu index lagi.`
+            : "Tidak ada foto untuk di-index."
         );
       } else {
         toast.success(
-          `Indexed ${result.indexed} photos${result.skipped > 0 ? ` · ${result.skipped} without detectable faces` : ""}`
+          `Indexed ${result.indexed} photos${result.skipped > 0 ? ` · ${result.skipped} tanpa wajah terdeteksi` : ""}`
         );
       }
     } catch (err) {
@@ -185,7 +191,7 @@ export function ProjectFaceSearchSettings({
           {displayStatus.status === "none" && photoCount > 0 ? (
             <p className="mt-2 text-[12px] text-text-muted leading-relaxed">
               Upload new photos to index automatically, or index existing photos
-              below. Uses Cloudinary delivery once per photo (~640px wide).
+              below. Uses Cloudinary delivery once per photo (~1280px JPEG).
             </p>
           ) : null}
           {displayStatus.status === "partial" ? (

@@ -1,4 +1,4 @@
-import { galleryGridImageUrl } from "@/lib/cloudinaryUrls";
+import { faceIndexImageUrl } from "@/lib/cloudinaryUrls";
 import {
   indexFacesFromImageUrl,
   preloadFaceIndexWorker,
@@ -35,7 +35,7 @@ export async function reindexUnindexedProjectPhotos(
     onProgress?.(i + 1, photos.length, photo.filename);
 
     try {
-      const imageUrl = galleryGridImageUrl(photo.cloudinary_url, 640);
+      const imageUrl = faceIndexImageUrl(photo.cloudinary_url);
       const faces = await indexFacesFromImageUrl(imageUrl);
 
       const saveRes = await fetch(`/api/projects/${projectId}/faces/backfill`, {
