@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { normalizeProject } from "@/lib/normalizeProject";
 import type { FaceSearchStatus } from "@/lib/faces/types";
+import { reindexUnindexedProjectPhotos } from "@/lib/faces/reindexProjectFaces";
 import { cn } from "@/lib/utils";
 import type { Project } from "@/lib/types";
 
@@ -32,6 +33,8 @@ export function ProjectFaceSearchSettings({
   onUpdated: (project: Project) => void;
 }) {
   const [saving, setSaving] = useState(false);
+  const [indexing, setIndexing] = useState(false);
+  const [indexProgress, setIndexProgress] = useState<string | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
   const [faceStatus, setFaceStatus] = useState<FaceSearchStatus | null>(null);
 
@@ -94,6 +97,34 @@ export function ProjectFaceSearchSettings({
     }
   }
 
+  async function handleIndexMissing() {
+    setIndexing(true);
+    setIndexProgress(null);
+    try {
+      const result = await reindexUnindexedProjectPhotos(
+        project.id,
+        (done, total, fileName) => {
+          setIndexProgress(`${done} / ${total} — ${fileName}`);
+        }
+      );
+      await loadStatus();
+      if (result.errors.length > 0) {
+        toast.warning(
+          `Indexed ${result.indexed} photos (${result.skipped} without faces). ${result.errors.length} failed.`
+        );
+      } else {
+        toast.success(
+          `Indexed ${result.indexed} photos${result.skipped > 0 ? ` · ${result.skipped} without detectable faces` : ""}`
+        );
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Indexing failed");
+    } finally {
+      setIndexing(false);
+      setIndexProgress(null);
+    }
+  }
+
   const displayStatus = faceStatus ?? {
     enabled: project.face_search_enabled,
     totalPhotos: photoCount,
@@ -153,8 +184,8 @@ export function ProjectFaceSearchSettings({
           </div>
           {displayStatus.status === "none" && photoCount > 0 ? (
             <p className="mt-2 text-[12px] text-text-muted leading-relaxed">
-              Upload photos with face search enabled to index faces
-              automatically.
+              Upload new photos to index automatically, or index existing photos
+              below. Uses Cloudinary delivery once per photo (~640px wide).
             </p>
           ) : null}
           {displayStatus.status === "partial" ? (
@@ -162,6 +193,26 @@ export function ProjectFaceSearchSettings({
               Indexing incomplete — clients may see limited results until most
               photos are indexed.
             </p>
+          ) : null}
+          {photoCount > 0 &&
+          displayStatus.indexedPhotos < displayStatus.totalPhotos ? (
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                loading={indexing}
+                disabled={indexing || saving}
+                onClick={() => void handleIndexMissing()}
+              >
+                Index missing photos
+              </Button>
+              {indexProgress ? (
+                <span className="text-[11px] text-text-muted truncate">
+                  {indexProgress}
+                </span>
+              ) : null}
+            </div>
           ) : null}
         </div>
       ) : null}
