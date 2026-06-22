@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { ProjectDetailClient } from "./ProjectDetailClient";
 import { normalizeProject } from "@/lib/normalizeProject";
-import type { Photo, Project } from "@/lib/types";
+import { fetchAllProjectPhotos } from "@/lib/photos/fetchProjectPhotos";
+import type { Project } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -21,16 +22,12 @@ export default async function ProjectDetailPage({
 
   if (!project) notFound();
 
-  const { data: photos } = await supabase
-    .from("photos")
-    .select("*")
-    .eq("project_id", params.id)
-    .order("created_at", { ascending: false });
+  const photos = await fetchAllProjectPhotos(supabase, params.id);
 
   return (
     <ProjectDetailClient
       project={normalizeProject(project as Project)}
-      initialPhotos={(photos ?? []) as Photo[]}
+      initialPhotos={photos}
     />
   );
 }

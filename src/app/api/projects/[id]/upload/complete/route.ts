@@ -13,7 +13,10 @@ import {
   type ImageHashRow,
 } from "@/lib/images/duplicateDetection";
 import { extractShotAt } from "@/lib/images/extractShotAt";
-import type { Photo } from "@/lib/types";
+import {
+  fetchAllProjectPhotoRows,
+  fetchAllProjectPhotos,
+} from "@/lib/photos/fetchProjectPhotos";
 
 export const runtime = "nodejs";
 
@@ -84,12 +87,14 @@ export async function POST(
     body.format
   );
 
-  const { data: existingPhotos } = await supabase
-    .from("photos")
-    .select("filename, perceptual_hash")
-    .eq("project_id", project.id);
+  const existingPhotos = await fetchAllProjectPhotoRows<{
+    filename: string;
+    perceptual_hash: string | null;
+  }>(supabase, project.id, {
+    columns: "filename, perceptual_hash",
+  });
 
-  const existingRows: ImageHashRow[] = (existingPhotos ?? []).map((p) => ({
+  const existingRows: ImageHashRow[] = existingPhotos.map((p) => ({
     filename: p.filename as string,
     perceptual_hash: (p.perceptual_hash as string | null) ?? null,
   }));
@@ -174,15 +179,11 @@ export async function POST(
     );
   }
 
-  const { data: photos } = await supabase
-    .from("photos")
-    .select("*")
-    .eq("project_id", project.id)
-    .order("created_at", { ascending: false });
+  const photos = await fetchAllProjectPhotos(supabase, project.id);
 
   return NextResponse.json({
     uploaded: 1,
     errors: [] as string[],
-    photos: (photos ?? []) as Photo[],
+    photos,
   });
 }

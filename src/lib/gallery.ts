@@ -1,6 +1,7 @@
 import "server-only";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { normalizeProject } from "@/lib/normalizeProject";
+import { fetchAllProjectPhotos } from "@/lib/photos/fetchProjectPhotos";
 import type { Photo, Project } from "@/lib/types";
 
 export type GalleryData = {
@@ -23,17 +24,7 @@ export async function loadGalleryByToken(
 
   if (projectError || !project) return null;
 
-  const { data: photos, error: photosError } = await supabase
-    .from("photos")
-    .select("*")
-    .eq("project_id", project.id)
-    .order("created_at", { ascending: false });
-
-  if (photosError) {
-    throw new Error(photosError.message);
-  }
-
-  const all = (photos ?? []) as Photo[];
+  const all = await fetchAllProjectPhotos(supabase, project.id);
   const p = normalizeProject(project as Project);
 
   return {

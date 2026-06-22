@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { deleteCloudinaryImageByUrl } from "@/lib/cloudinary";
 import { requireAuth } from "@/lib/api/requireAuth";
+import { fetchAllProjectPhotos } from "@/lib/photos/fetchProjectPhotos";
 import type { Photo } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -74,19 +75,19 @@ export async function DELETE(
     return NextResponse.json({ error: deleteError.message }, { status: 500 });
   }
 
-  const { data: remaining, error: remainingError } = await supabase
-    .from("photos")
-    .select("*")
-    .eq("project_id", params.id)
-    .order("created_at", { ascending: false });
-
-  if (remainingError) {
-    return NextResponse.json({ error: remainingError.message }, { status: 500 });
+  let remaining: Photo[];
+  try {
+    remaining = await fetchAllProjectPhotos(supabase, params.id);
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Failed to load photos" },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({
     deleted: idsToRemove.length,
     errors,
-    photos: (remaining ?? []) as Photo[],
+    photos: remaining,
   });
 }

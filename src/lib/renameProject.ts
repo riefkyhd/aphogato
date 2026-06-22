@@ -7,6 +7,10 @@ import {
 } from "@/lib/cloudinary";
 import { getProjectCloudinaryAccountId } from "@/lib/cloudinary/accounts";
 import { resolveRenamedCloudinaryFolder } from "@/lib/resolveCloudinaryFolder";
+import {
+  fetchAllProjectPhotoRows,
+  fetchAllProjectPhotos,
+} from "@/lib/photos/fetchProjectPhotos";
 import type { Photo, Project } from "@/lib/types";
 
 function normalizeFolder(folder: string): string {
@@ -41,18 +45,14 @@ export async function renameProject(
 
   const current = project as Project;
   if (current.name === name) {
-    const { data: photos } = await supabase
-      .from("photos")
-      .select("*")
-      .eq("project_id", projectId)
-      .order("created_at", { ascending: false });
+    const photos = await fetchAllProjectPhotos(supabase, projectId);
 
     return {
       project: current,
       folderRenamed: false,
       photosUpdated: 0,
       referencesUpdated: 0,
-      photos: (photos ?? []) as Photo[],
+      photos,
     };
   }
 
@@ -93,16 +93,12 @@ export async function renameProject(
   let referencesUpdated = 0;
 
   if (folderChanged) {
-    const { data: photos, error: photosError } = await supabase
-      .from("photos")
-      .select("id, cloudinary_url")
-      .eq("project_id", projectId);
+    const photos = await fetchAllProjectPhotoRows<{
+      id: string;
+      cloudinary_url: string;
+    }>(supabase, projectId, { columns: "id, cloudinary_url" });
 
-    if (photosError) {
-      throw new Error(photosError.message);
-    }
-
-    for (const photo of photos ?? []) {
+    for (const photo of photos) {
       const cloudinary_url = migrateCloudinaryUrlForFolderRename(
         photo.cloudinary_url as string,
         oldFolder,
@@ -140,21 +136,13 @@ export async function renameProject(
     }
   }
 
-  const { data: photos, error: photosListError } = await supabase
-    .from("photos")
-    .select("*")
-    .eq("project_id", projectId)
-    .order("created_at", { ascending: false });
-
-  if (photosListError) {
-    throw new Error(photosListError.message);
-  }
+  const photos = await fetchAllProjectPhotos(supabase, projectId);
 
   return {
     project: updatedProject as Project,
     folderRenamed: folderChanged,
     photosUpdated,
     referencesUpdated,
-    photos: (photos ?? []) as Photo[],
+    photos,
   };
 }

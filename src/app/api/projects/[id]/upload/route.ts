@@ -14,6 +14,10 @@ import {
   MAX_IMAGE_UPLOAD_FILES_PER_REQUEST,
 } from "@/lib/imageUploadLimits";
 import { isAllowedImageBuffer } from "@/lib/security/imageBytes";
+import {
+  fetchAllProjectPhotoRows,
+  fetchAllProjectPhotos,
+} from "@/lib/photos/fetchProjectPhotos";
 import type { Photo } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -50,12 +54,14 @@ export async function POST(
     );
   }
 
-  const { data: existingPhotos } = await supabase
-    .from("photos")
-    .select("filename, perceptual_hash")
-    .eq("project_id", project.id);
+  const existingPhotos = await fetchAllProjectPhotoRows<{
+    filename: string;
+    perceptual_hash: string | null;
+  }>(supabase, project.id, {
+    columns: "filename, perceptual_hash",
+  });
 
-  const existingRows: ImageHashRow[] = (existingPhotos ?? []).map((p) => ({
+  const existingRows: ImageHashRow[] = existingPhotos.map((p) => ({
     filename: p.filename as string,
     perceptual_hash: (p.perceptual_hash as string | null) ?? null,
   }));
@@ -144,15 +150,11 @@ export async function POST(
     return NextResponse.json({ error: errors.join("; ") }, { status: 400 });
   }
 
-  const { data: photos } = await supabase
-    .from("photos")
-    .select("*")
-    .eq("project_id", project.id)
-    .order("created_at", { ascending: false });
+  const photos = await fetchAllProjectPhotos(supabase, project.id);
 
   return NextResponse.json({
     uploaded: uploaded.length,
     errors,
-    photos: (photos ?? []) as Photo[],
+    photos,
   });
 }

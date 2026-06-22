@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminSupabase } from "@/lib/supabase/admin";
+import { fetchSelectedPhotoFilenames } from "@/lib/photos/fetchProjectPhotos";
 
 export const runtime = "nodejs";
 
@@ -44,18 +45,18 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Invalid project or token" }, { status: 403 });
   }
 
-  const { data: photos, error: photosError } = await supabase
-    .from("photos")
-    .select("filename")
-    .eq("project_id", projectId)
-    .eq("is_selected", true);
-
-  if (photosError) {
-    return NextResponse.json({ error: photosError.message }, { status: 500 });
+  let rawFilenames: string[];
+  try {
+    rawFilenames = await fetchSelectedPhotoFilenames(supabase, projectId);
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Failed to load selection" },
+      { status: 500 }
+    );
   }
 
-  const filenames = (photos ?? [])
-    .map((photo) => basenameWithoutExtension(photo.filename))
+  const filenames = rawFilenames
+    .map((filename) => basenameWithoutExtension(filename))
     .filter((name) => name.length > 0);
 
   return NextResponse.json({

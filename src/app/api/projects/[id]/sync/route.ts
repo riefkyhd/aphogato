@@ -11,6 +11,7 @@ import {
 import { backfillDerivedFilenames } from "@/lib/images/backfillFilenames";
 import { backfillMissingShotAt } from "@/lib/images/backfillShotAt";
 import { extractShotAt } from "@/lib/images/extractShotAt";
+import { fetchAllProjectPhotoRows, fetchAllProjectPhotos } from "@/lib/photos/fetchProjectPhotos";
 import type { Photo } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -51,15 +52,6 @@ export async function POST(
     );
   }
 
-  const { data: existingPhotos, error: existingError } = await supabase
-    .from("photos")
-    .select("id, filename, cloudinary_url, perceptual_hash, shot_at")
-    .eq("project_id", project.id);
-
-  if (existingError) {
-    return NextResponse.json({ error: existingError.message }, { status: 500 });
-  }
-
   type ExistingPhoto = {
     id: string;
     filename: string;
@@ -68,8 +60,22 @@ export async function POST(
     shot_at: string | null;
   };
 
+  let existingPhotos: ExistingPhoto[];
+  try {
+    existingPhotos = await fetchAllProjectPhotoRows<ExistingPhoto>(
+      supabase,
+      project.id,
+      { columns: "id, filename, cloudinary_url, perceptual_hash, shot_at" }
+    );
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Failed to load photos" },
+      { status: 500 }
+    );
+  }
+
   const existing = await backfillMissingHashes(
-    (existingPhotos ?? []) as ExistingPhoto[],
+    existingPhotos,
     async (id, hash) => {
       await supabase.from("photos").update({ perceptual_hash: hash }).eq("id", id);
     }
@@ -162,19 +168,19 @@ export async function POST(
     }
   }
 
-  const { data: photos, error: photosError } = await supabase
-    .from("photos")
-    .select("*")
-    .eq("project_id", project.id)
-    .order("created_at", { ascending: false });
-
-  if (photosError) {
-    return NextResponse.json({ error: photosError.message }, { status: 500 });
+  let photos: Photo[];
+  try {
+    photos = await fetchAllProjectPhotos(supabase, project.id);
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Failed to load photos" },
+      { status: 500 }
+    );
   }
 
   const added = newResources.length;
   const removed = idsToRemove.length;
-  const total = (photos ?? []).length;
+  const total = photos.length;
 
   return NextResponse.json({
     added,
@@ -184,6 +190,6 @@ export async function POST(
     skipped_duplicates: skippedDuplicates.length,
     duplicate_warnings: skippedDuplicates,
     total,
-    photos: (photos ?? []) as Photo[],
+    photos,
   });
 }
