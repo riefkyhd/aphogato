@@ -23,10 +23,21 @@ function accountLabelFromId(id: string): string {
     .join(" ");
 }
 
+function trimEnvValue(value: string | undefined): string {
+  const trimmed = value?.trim() ?? "";
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+  return trimmed;
+}
+
 function readDefaultAccountFromEnv(): CloudinaryAccount | null {
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME?.trim();
-  const apiKey = process.env.CLOUDINARY_API_KEY?.trim();
-  const apiSecret = process.env.CLOUDINARY_API_SECRET?.trim();
+  const cloudName = trimEnvValue(process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME);
+  const apiKey = trimEnvValue(process.env.CLOUDINARY_API_KEY);
+  const apiSecret = trimEnvValue(process.env.CLOUDINARY_API_SECRET);
   if (!cloudName || !apiKey || !apiSecret) return null;
 
   return {
@@ -50,12 +61,15 @@ function readAdditionalAccountsFromEnv(): CloudinaryAccount[] {
     const id = slug.toLowerCase();
     if (id === DEFAULT_CLOUDINARY_ACCOUNT_ID) continue;
 
-    const cloudName = cloudNameRaw?.trim();
-    const apiKey = process.env[`CLOUDINARY_ACCOUNT_${slug}_API_KEY`]?.trim();
-    const apiSecret =
-      process.env[`CLOUDINARY_ACCOUNT_${slug}_API_SECRET`]?.trim();
+    const cloudName = trimEnvValue(cloudNameRaw);
+    const apiKey = trimEnvValue(
+      process.env[`CLOUDINARY_ACCOUNT_${slug}_API_KEY`]
+    );
+    const apiSecret = trimEnvValue(
+      process.env[`CLOUDINARY_ACCOUNT_${slug}_API_SECRET`]
+    );
     const label =
-      process.env[`CLOUDINARY_ACCOUNT_${slug}_LABEL`]?.trim() ||
+      trimEnvValue(process.env[`CLOUDINARY_ACCOUNT_${slug}_LABEL`]) ||
       accountLabelFromId(id);
 
     if (!cloudName || !apiKey || !apiSecret) {
@@ -117,7 +131,7 @@ export function getCloudinaryAccount(accountId: string): CloudinaryAccount {
 }
 
 export function resolveConfiguredDefaultAccountId(): string {
-  const fromEnv = process.env.CLOUDINARY_DEFAULT_ACCOUNT?.trim();
+  const fromEnv = trimEnvValue(process.env.CLOUDINARY_DEFAULT_ACCOUNT);
   if (fromEnv) {
     getCloudinaryAccount(fromEnv);
     return fromEnv;

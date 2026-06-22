@@ -31,16 +31,17 @@ On Vercel, set the same variables for Production (and Preview if needed), then r
 The app supports more than one Cloudinary account. Each **project** is bound to one account at creation time; existing projects keep their account when you add a new one.
 
 1. Keep your current env vars as the **`default`** account.
-2. Add a second account with prefixed env vars (example id: `studio`):
+2. Add another account with prefixed env vars (example id: `third` → account id `third`):
 
 ```env
-CLOUDINARY_ACCOUNT_STUDIO_CLOUD_NAME=your-new-cloud
-CLOUDINARY_ACCOUNT_STUDIO_API_KEY=...
-CLOUDINARY_ACCOUNT_STUDIO_API_SECRET=...
-CLOUDINARY_ACCOUNT_STUDIO_LABEL=Studio account
+CLOUDINARY_ACCOUNT_THIRD_CLOUD_NAME=your-new-cloud
+CLOUDINARY_ACCOUNT_THIRD_API_KEY=...
+CLOUDINARY_ACCOUNT_THIRD_API_SECRET=...
+CLOUDINARY_ACCOUNT_THIRD_LABEL=Third account
+CLOUDINARY_DEFAULT_ACCOUNT=third
 ```
 
-3. In **Settings → Cloudinary**, choose which account new projects should use (or set `CLOUDINARY_DEFAULT_ACCOUNT=studio` in env).
+3. In **Settings → Cloudinary**, choose which account new projects should use (or set `CLOUDINARY_DEFAULT_ACCOUNT` in env). Existing projects keep the account they were created with.
 
 Run migration `0017_cloudinary_account.sql` so projects store `cloudinary_account`.
 
