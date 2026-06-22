@@ -193,6 +193,26 @@ export async function POST(
     );
   }
 
+  if (project.face_search_enabled) {
+    const { error: markIndexedError } = await supabase
+      .from("photos")
+      .update({ face_indexed_at: new Date().toISOString() })
+      .eq("id", row.id);
+
+    if (markIndexedError) {
+      await supabase.from("photos").delete().eq("id", row.id);
+      try {
+        await deleteCloudinaryImageByUrl(secureUrl);
+      } catch {
+        // Best-effort cleanup when face index marker fails.
+      }
+      return NextResponse.json(
+        { error: markIndexedError.message },
+        { status: 500 }
+      );
+    }
+  }
+
   if (project.face_search_enabled && facesParsed.faces.length > 0) {
     const faceInsert = await insertPhotoFaces(
       supabase,

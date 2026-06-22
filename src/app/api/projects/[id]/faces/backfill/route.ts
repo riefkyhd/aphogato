@@ -65,6 +65,17 @@ export async function POST(
 
   await supabase.from("photo_faces").delete().eq("photo_id", photoId);
 
+  const indexedAt = new Date().toISOString();
+  const { error: markIndexedError } = await supabase
+    .from("photos")
+    .update({ face_indexed_at: indexedAt })
+    .eq("id", photoId)
+    .eq("project_id", project.id);
+
+  if (markIndexedError) {
+    return NextResponse.json({ error: markIndexedError.message }, { status: 500 });
+  }
+
   if (facesParsed.faces.length === 0) {
     return NextResponse.json({ ok: true, faceCount: 0 });
   }

@@ -34,29 +34,15 @@ export async function GET(
     .from("photos")
     .select("id, cloudinary_url, filename")
     .eq("project_id", project.id)
+    .is("face_indexed_at", null)
     .order("created_at", { ascending: false });
 
   if (photosError) {
     return NextResponse.json({ error: photosError.message }, { status: 500 });
   }
 
-  const { data: indexedRows, error: indexedError } = await supabase
-    .from("photo_faces")
-    .select("photo_id")
-    .eq("project_id", project.id);
-
-  if (indexedError) {
-    return NextResponse.json({ error: indexedError.message }, { status: 500 });
-  }
-
-  const indexedIds = new Set(
-    (indexedRows ?? []).map((row) => row.photo_id as string)
-  );
-
-  const unindexed = (photos ?? []).filter((photo) => !indexedIds.has(photo.id));
-
   return NextResponse.json({
-    photos: unindexed.map((photo) => ({
+    photos: (photos ?? []).map((photo) => ({
       id: photo.id,
       cloudinary_url: photo.cloudinary_url,
       filename: photo.filename,

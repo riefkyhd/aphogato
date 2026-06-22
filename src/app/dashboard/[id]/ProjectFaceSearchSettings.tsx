@@ -110,7 +110,7 @@ export function ProjectFaceSearchSettings({
       await loadStatus();
       if (result.errors.length > 0) {
         toast.warning(
-          `Indexed ${result.indexed} photos (${result.skipped} tanpa wajah). ${result.errors.length} gagal.`
+          `Indexed ${result.indexed} photos (${result.skipped} tanpa wajah). ${result.errors.length} gagal: ${result.errors[0]}`
         );
       } else if (result.indexed === 0) {
         toast.error(
