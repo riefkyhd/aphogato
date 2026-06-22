@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { DashboardMain } from "@/components/layout/DashboardShell";
 import { BackNavLink } from "@/components/BackNavLink";
 import { ArrowLeft } from "lucide-react";
@@ -50,6 +50,10 @@ export function ProjectDetailClient({
   const [deleting, setDeleting] = useState(false);
   const [deletingProject, setDeletingProject] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
+
+  useEffect(() => {
+    setProjectState(project);
+  }, [project]);
 
   const setPhotosFromServer = useCallback((next: Photo[]) => {
     setPhotos(next);
@@ -282,6 +286,9 @@ export function ProjectDetailClient({
               cloudinaryUsageLoading={cloudinaryUsageLoading}
               onPhotosSynced={applyServerPhotos}
               onDeleteProject={() => setDeleteProjectOpen(true)}
+              onStatusChange={(status) =>
+                setProjectState((prev) => ({ ...prev, status }))
+              }
               upload={upload}
             />
           </div>

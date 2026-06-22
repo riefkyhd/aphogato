@@ -15,6 +15,7 @@ import {
   buildLinkedExpensePayload,
   saveExpenseApi,
 } from "@/lib/finance/saveExpenseApi";
+import type { ExpenseEntry } from "@/lib/types";
 
 const fieldCompactClass = "input-dark field-compact w-full";
 
@@ -32,7 +33,7 @@ export function ExpenseQuickAdd({
   projectId?: string;
   saving: boolean;
   onSavingChange: (v: boolean) => void;
-  onSaved: () => void;
+  onSaved: (entry: ExpenseEntry) => void;
   onOpenFullForm?: () => void;
 }) {
   const [category, setCategory] = useState<ExpenseCategory>("fuel");
@@ -68,7 +69,7 @@ export function ExpenseQuickAdd({
     setAmount("");
     setCategory("fuel");
     amountRef.current?.focus();
-    onSaved();
+    onSaved(result.entry);
   }
 
   return (

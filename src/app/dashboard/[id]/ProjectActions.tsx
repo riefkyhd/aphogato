@@ -108,6 +108,7 @@ export function ProjectActions({
   cloudinaryUsageLoading,
   onPhotosSynced,
   onDeleteProject,
+  onStatusChange,
   upload,
 }: {
   projectId: string;
@@ -119,6 +120,7 @@ export function ProjectActions({
   cloudinaryUsageLoading: boolean;
   onPhotosSynced: (photos: Photo[]) => void;
   onDeleteProject: () => void;
+  onStatusChange: (status: ProjectStatus) => void;
   upload: ProjectPhotoUpload;
 }) {
   const selectedFilenames = photos
@@ -227,6 +229,7 @@ export function ProjectActions({
         return;
       }
       toast.success(`Status → ${next}`);
+      onStatusChange(next);
       markProjectsStatusDirty();
       router.refresh();
     } finally {

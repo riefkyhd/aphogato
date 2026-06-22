@@ -34,6 +34,13 @@ import type {
   FinanceProjectOption,
 } from "@/lib/finance/financeOptions";
 import { saveExpenseApi } from "@/lib/finance/saveExpenseApi";
+import {
+  removeExpenseById,
+  removeIncomeById,
+  syncFinanceSummary,
+  upsertExpenseInYear,
+  upsertIncomeInYear,
+} from "@/lib/finance/syncClientFinance";
 import { buildFinanceBreakdown } from "@/lib/finance/breakdown";
 import {
   EXPENSE_CATEGORIES,
@@ -57,6 +64,7 @@ import type {
   FinanceSummary,
   IncomeEntry,
 } from "@/lib/types";
+import { normalizeIncome } from "@/lib/finance/normalize";
 import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
 import { cn } from "@/lib/utils";
 
@@ -114,6 +122,66 @@ export function FinanceClient({
   useBodyScrollLock(isLocked);
 
   const reloadSeq = useRef(0);
+  const financeRef = useRef({ income, expenses });
+  financeRef.current = { income, expenses };
+
+  const applyFinanceEntries = useCallback(
+    (nextIncome: IncomeEntry[], nextExpenses: ExpenseEntry[]) => {
+      financeRef.current = { income: nextIncome, expenses: nextExpenses };
+      setIncome(nextIncome);
+      setExpenses(nextExpenses);
+      setSummary(syncFinanceSummary(year, month, nextIncome, nextExpenses, events));
+    },
+    [year, month, events]
+  );
+
+  const applyExpenseEntry = useCallback(
+    (entry: ExpenseEntry) => {
+      const { income: currentIncome, expenses: currentExpenses } =
+        financeRef.current;
+      applyFinanceEntries(
+        currentIncome,
+        upsertExpenseInYear(currentExpenses, entry, year)
+      );
+    },
+    [applyFinanceEntries, year]
+  );
+
+  const removeExpenseEntry = useCallback(
+    (id: string) => {
+      const { income: currentIncome, expenses: currentExpenses } =
+        financeRef.current;
+      applyFinanceEntries(
+        currentIncome,
+        removeExpenseById(currentExpenses, id)
+      );
+    },
+    [applyFinanceEntries]
+  );
+
+  const applyIncomeEntry = useCallback(
+    (entry: IncomeEntry) => {
+      const { income: currentIncome, expenses: currentExpenses } =
+        financeRef.current;
+      applyFinanceEntries(
+        upsertIncomeInYear(currentIncome, entry, year),
+        currentExpenses
+      );
+    },
+    [applyFinanceEntries, year]
+  );
+
+  const removeIncomeEntry = useCallback(
+    (id: string) => {
+      const { income: currentIncome, expenses: currentExpenses } =
+        financeRef.current;
+      applyFinanceEntries(
+        removeIncomeById(currentIncome, id),
+        currentExpenses
+      );
+    },
+    [applyFinanceEntries]
+  );
 
   useEffect(() => {
     const fromUrl = searchParams.get("event")?.trim() ?? "";
@@ -395,7 +463,13 @@ export function FinanceClient({
       </div>
 
       {loading ? (
-        <FinanceYearLoading year={year} />
+        <div
+          className="relative min-h-[320px]"
+          aria-busy="true"
+          aria-label={`Loading ${year} finance data`}
+        >
+          <FinanceDataLoadingOverlay year={year} />
+        </div>
       ) : (
         <>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-[2px] mb-6">
@@ -521,7 +595,7 @@ export function FinanceClient({
                   return;
                 }
                 toast.success("Income removed");
-                void reload(year, month);
+                removeIncomeEntry(row.id);
               },
             }))}
           />
@@ -573,7 +647,7 @@ export function FinanceClient({
                 entryDate={generalExpenseDefaultDate}
                 saving={saving}
                 onSavingChange={setSaving}
-                onSaved={() => void reload(year, month)}
+                onSaved={(entry) => applyExpenseEntry(entry)}
                 onOpenFullForm={() => {
                   setEditingExpense(null);
                   setExpenseModal(true);
@@ -606,7 +680,7 @@ export function FinanceClient({
                     return;
                   }
                   toast.success("Expense removed");
-                  void reload(year, month);
+                  removeExpenseEntry(row.id);
                 },
               }))}
             />
@@ -646,9 +720,9 @@ export function FinanceClient({
               return;
             }
             toast.success(editingIncome ? "Income updated" : "Income added");
+            applyIncomeEntry(normalizeIncome(json));
             setIncomeModal(false);
             setEditingIncome(null);
-            void reload(year, month);
           } finally {
             setSaving(false);
           }
@@ -686,7 +760,7 @@ export function FinanceClient({
           toast.success(
             editingExpense ? "Expense updated" : "Expense added"
           );
-          void reload(year, month);
+          applyExpenseEntry(result.entry);
 
           if (editingExpense || action === "close") {
             setExpenseModal(false);
@@ -740,14 +814,14 @@ export function FinanceClient({
   );
 }
 
-function FinanceYearLoading({ year }: { year: number }) {
+function FinanceDataLoadingOverlay({ year }: { year: number }) {
   return (
-    <div className="space-y-6" aria-busy="true" aria-label={`Loading ${year} finance data`}>
+  <>
       <div className="flex items-center justify-center gap-3 py-4">
-        <Loader2 className="h-6 w-6 animate-spin text-text-muted" aria-hidden />
+        <Loader2 className="h-5 w-5 animate-spin text-text-muted" aria-hidden />
         <p className="text-[13px] text-text-secondary">Loading {year}…</p>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-[2px]">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-[2px] mb-6">
         {[0, 1, 2].map((i) => (
           <div
             key={i}
@@ -772,7 +846,7 @@ function FinanceYearLoading({ year }: { year: number }) {
           ))}
         </div>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
         {[0, 1].map((i) => (
           <div
             key={i}
@@ -780,7 +854,7 @@ function FinanceYearLoading({ year }: { year: number }) {
           />
         ))}
       </div>
-    </div>
+  </>
   );
 }
 
