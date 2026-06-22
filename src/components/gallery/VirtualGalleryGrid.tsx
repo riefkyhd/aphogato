@@ -47,8 +47,6 @@ export function VirtualGalleryGrid({
   return (
     <>
       <MasonryColumnGrid
-        layoutMode="gallery"
-        className="gap-[3px] sm:gap-1"
         items={visiblePhotos}
         getKey={(ph) => ph.id}
         renderItem={(ph) => {
