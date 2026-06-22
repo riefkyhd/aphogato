@@ -515,8 +515,13 @@ export function GallerySelector({
             </p>
           ) : (
             <>
-              <p className="mb-3 hidden text-[11px] text-text-muted leading-relaxed max-w-3xl sm:mb-4 sm:block">
-                Tap a photo to select it for editing.
+              <p className="mb-3 text-[11px] text-text-muted leading-relaxed max-w-3xl sm:mb-4">
+                <span className="sm:hidden">
+                  Ketuk foto untuk pratinjau, lalu pilih yang ingin diedit.
+                </span>
+                <span className="hidden sm:inline">
+                  Tap a photo to preview, then select the shots you want edited.
+                </span>
               </p>
               <PhotoGallerySection
                 photos={photos}

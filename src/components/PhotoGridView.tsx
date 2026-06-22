@@ -1,7 +1,11 @@
+"use client";
+
+import { useState } from "react";
+import { GalleryPhotoLightbox } from "@/components/gallery/GalleryPhotoLightbox";
+import { VirtualGalleryGrid } from "@/components/gallery/VirtualGalleryGrid";
 import { MasonryColumnGrid } from "@/components/MasonryColumnGrid";
 import { MasonryPhoto } from "@/components/MasonryPhoto";
 import { ManagePhotoGrid } from "@/components/ManagePhotoGrid";
-import { SelectablePhotoCell } from "@/components/SelectablePhotoCell";
 import { SelectionOverlay } from "@/components/SelectionOverlay";
 import type { ManagePhotoActivateMeta } from "@/lib/managePhotoActivate";
 import type { Photo } from "@/lib/types";
@@ -27,6 +31,8 @@ export function PhotoGridView({
   onManagePhotoMarquee?: (ids: string[], mergeBase?: string[]) => void;
   onClearManageSelection?: () => void;
 }) {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
   const manageMode =
     mode === "dashboard" &&
     Boolean(
@@ -38,32 +44,24 @@ export function PhotoGridView({
 
   if (mode === "gallery" && onToggleSelect) {
     return (
-      <MasonryColumnGrid
-        layoutMode="gallery"
-        className="gap-[3px] sm:gap-1"
-        items={photos}
-        getKey={(ph) => ph.id}
-        renderItem={(ph) => {
-          const isSelected = selectedIds.has(ph.id);
-          const selectBlocked = selectionLimitReached && !isSelected;
-          return (
-            <SelectablePhotoCell
-              selected={isSelected}
-              selectDisabled={selectBlocked}
-              onToggle={() => onToggleSelect(ph.id)}
-              aria-label={`${isSelected ? "Deselect" : "Select"} ${ph.filename}`}
-            >
-              <MasonryPhoto
-                src={ph.cloudinary_url}
-                alt=""
-                variant="gallery"
-                className="pointer-events-none select-none transition duration-200 group-hover:brightness-105"
-              />
-              {isSelected && <SelectionOverlay />}
-            </SelectablePhotoCell>
-          );
-        }}
-      />
+      <>
+        <VirtualGalleryGrid
+          photos={photos}
+          selectedIds={selectedIds}
+          onOpenPhoto={setLightboxIndex}
+        />
+        {lightboxIndex !== null ? (
+          <GalleryPhotoLightbox
+            photos={photos}
+            index={lightboxIndex}
+            selectedIds={selectedIds}
+            selectionLimitReached={selectionLimitReached}
+            onToggleSelect={onToggleSelect}
+            onClose={() => setLightboxIndex(null)}
+            onIndexChange={setLightboxIndex}
+          />
+        ) : null}
+      </>
     );
   }
 
