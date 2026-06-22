@@ -23,7 +23,7 @@ export function GalleryPhotoCell({
       <button
         type="button"
         className={cn(
-          "relative w-full touch-manipulation overflow-hidden text-left",
+          "relative block w-full touch-manipulation overflow-hidden text-left leading-none",
           "group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
         )}
         aria-label={`Preview ${filename}${selected ? " (selected)" : ""}`}
