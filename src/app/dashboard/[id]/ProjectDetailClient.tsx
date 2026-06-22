@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { preloadFaceIndexWorker } from "@/lib/faces/faceIndexClient";
 import { DashboardMain } from "@/components/layout/DashboardShell";
 import { BackNavLink } from "@/components/BackNavLink";
 import { ArrowLeft } from "lucide-react";
@@ -56,6 +57,12 @@ export function ProjectDetailClient({
     setProjectState(project);
   }, [project]);
 
+  useEffect(() => {
+    if (projectState.face_search_enabled) {
+      preloadFaceIndexWorker();
+    }
+  }, [projectState.face_search_enabled]);
+
   const setPhotosFromServer = useCallback((next: Photo[]) => {
     setPhotos(next);
   }, []);
@@ -77,7 +84,8 @@ export function ProjectDetailClient({
   const upload = useProjectPhotoUpload(
     projectState.id,
     setPhotosFromServer,
-    refreshProjectPhotos
+    refreshProjectPhotos,
+    projectState.face_search_enabled
   );
 
   const photoIds = useMemo(() => photos.map((p) => p.id), [photos]);

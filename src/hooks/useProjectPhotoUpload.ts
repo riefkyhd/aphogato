@@ -15,7 +15,8 @@ type UploadJob = {
 export function useProjectPhotoUpload(
   projectId: string,
   onPhotosUpdated: (photos: Photo[]) => void,
-  onBatchComplete?: () => void
+  onBatchComplete?: () => void,
+  faceSearchEnabled = false
 ) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState<UploadProgressState | null>(null);
@@ -24,6 +25,8 @@ export function useProjectPhotoUpload(
   const queueRef = useRef<UploadJob[]>([]);
   const workerActiveRef = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
+  const faceSearchEnabledRef = useRef(faceSearchEnabled);
+  faceSearchEnabledRef.current = faceSearchEnabled;
 
   const updateQueuedBatches = useCallback((count: number) => {
     setProgress((current) =>
@@ -59,7 +62,8 @@ export function useProjectPhotoUpload(
           },
           (photos) => onPhotosUpdated(photos),
           job.controller.signal,
-          setUploadedCount
+          setUploadedCount,
+          { faceSearchEnabled: faceSearchEnabledRef.current }
         );
 
         if (cancelled) {

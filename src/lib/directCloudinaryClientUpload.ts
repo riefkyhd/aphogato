@@ -1,5 +1,7 @@
 import type { Photo, ProjectReference } from "@/lib/types";
 import { CLOUDINARY_MAX_UPLOAD_BYTES } from "@/lib/imageUploadLimits";
+import { indexFacesFromFile } from "@/lib/faces/faceIndexClient";
+import type { PhotoFaceInput } from "@/lib/faces/types";
 import { prepareImageForUpload } from "@/lib/prepareImageForUpload";
 import { UploadCancelledError } from "@/lib/uploadCancelled";
 
@@ -171,7 +173,8 @@ async function completeSignedUpload<T>(
   completeUrl: string,
   cloudinaryResult: CloudinaryUploadResponse,
   originalFilename: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  faces: PhotoFaceInput[] = []
 ): Promise<T> {
   throwIfAborted(signal);
 
@@ -186,6 +189,7 @@ async function completeSignedUpload<T>(
       height: cloudinaryResult.height,
       bytes: cloudinaryResult.bytes,
       format: cloudinaryResult.format,
+      ...(faces.length > 0 ? { faces } : {}),
     }),
     signal,
   });
@@ -208,32 +212,47 @@ async function completeSignedUpload<T>(
   return payload;
 }
 
+type UploadViaSignedCloudinaryOptions = {
+  faceSearchEnabled?: boolean;
+  onPreparing?: () => void;
+  onIndexingFaces?: () => void;
+};
+
 async function uploadViaSignedCloudinary<T>(
   signUrl: string,
   completeUrl: string,
   file: File,
   onProgress: (filePercent: number) => void,
   signal?: AbortSignal,
-  onPreparing?: () => void
+  options?: UploadViaSignedCloudinaryOptions
 ): Promise<T> {
   if (file.size > CLOUDINARY_MAX_UPLOAD_BYTES) {
-    onPreparing?.();
+    options?.onPreparing?.();
   }
   const originalFilename = file.name;
   const prepared = await prepareImageForUpload(file, signal);
-  const signed = await requestUploadSign(signUrl, prepared, signal);
-  onProgress(0);
-  const cloudinaryResult = await uploadFileToCloudinary(
-    prepared,
-    signed,
-    onProgress,
-    signal
-  );
+
+  const facesPromise = options?.faceSearchEnabled
+    ? (options.onIndexingFaces?.(), indexFacesFromFile(prepared, signal))
+    : Promise.resolve<PhotoFaceInput[]>([]);
+
+  const uploadPromise = (async () => {
+    const signed = await requestUploadSign(signUrl, prepared, signal);
+    onProgress(0);
+    return uploadFileToCloudinary(prepared, signed, onProgress, signal);
+  })();
+
+  const [cloudinaryResult, faces] = await Promise.all([
+    uploadPromise,
+    facesPromise,
+  ]);
+
   return completeSignedUpload<T>(
     completeUrl,
     cloudinaryResult,
     originalFilename,
-    signal
+    signal,
+    faces
   );
 }
 
@@ -242,7 +261,11 @@ export async function uploadProjectPhotoViaCloudinary(
   file: File,
   onProgress: (filePercent: number) => void,
   signal?: AbortSignal,
-  onPreparing?: () => void
+  options?: {
+    onPreparing?: () => void;
+    onIndexingFaces?: () => void;
+    faceSearchEnabled?: boolean;
+  }
 ): Promise<{ ok: boolean; result: UploadBatchResult; cancelled?: boolean }> {
   try {
     const result = await uploadViaSignedCloudinary<UploadBatchResult>(
@@ -251,7 +274,11 @@ export async function uploadProjectPhotoViaCloudinary(
       file,
       onProgress,
       signal,
-      onPreparing
+      {
+        faceSearchEnabled: options?.faceSearchEnabled,
+        onPreparing: options?.onPreparing,
+        onIndexingFaces: options?.onIndexingFaces,
+      }
     );
 
     return { ok: true, result };

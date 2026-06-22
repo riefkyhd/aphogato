@@ -8,6 +8,7 @@ export type UploadProgressState = {
   fileName: string;
   filePercent: number;
   preparing?: boolean;
+  indexingFaces?: boolean;
   queuedBatches?: number;
 };
 
@@ -68,7 +69,11 @@ export function PhotoUploadProgress({
       >
         {progress.fileName}
         <span className="text-text-muted ml-2 tabular-nums">
-          {progress.preparing ? "(compressing…)" : `(${progress.filePercent}%)`}
+          {progress.preparing
+            ? "(compressing…)"
+            : progress.indexingFaces
+              ? "(indexing faces…)"
+              : `(${progress.filePercent}%)`}
         </span>
       </p>
       <div

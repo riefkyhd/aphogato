@@ -40,3 +40,7 @@ next-env.d.ts
 /bridge/dist
 /bridge/src-tauri/target
 /bridge/src-tauri/gen
+
+# face-api weights copied on postinstall
+/public/models/face-api/*
+!/public/models/face-api/.gitkeep

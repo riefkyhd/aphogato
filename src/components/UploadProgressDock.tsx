@@ -99,7 +99,9 @@ export function UploadProgressDock({
               <span className="text-text-muted ml-2 tabular-nums">
                 {progress.preparing
                   ? "compressing…"
-                  : `${progress.filePercent}%`}
+                  : progress.indexingFaces
+                    ? "indexing faces…"
+                    : `${progress.filePercent}%`}
               </span>
             </p>
           </div>

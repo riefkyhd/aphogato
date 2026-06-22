@@ -14,7 +14,12 @@ export type UploadProgressCallback = (progress: {
   fileName: string;
   filePercent: number;
   preparing?: boolean;
+  indexingFaces?: boolean;
 }) => void;
+
+export type UploadProjectPhotoOptions = {
+  faceSearchEnabled?: boolean;
+};
 
 export type UploadPhotosUpdatedCallback = (photos: Photo[]) => void;
 
@@ -24,14 +29,18 @@ export function uploadProjectPhoto(
   file: File,
   onProgress: (filePercent: number) => void,
   signal?: AbortSignal,
-  onPreparing?: () => void
+  options?: {
+    onPreparing?: () => void;
+    onIndexingFaces?: () => void;
+    faceSearchEnabled?: boolean;
+  }
 ): Promise<{ ok: boolean; result: UploadBatchResult; cancelled?: boolean }> {
   return uploadProjectPhotoViaCloudinary(
     projectId,
     file,
     onProgress,
     signal,
-    onPreparing
+    options
   );
 }
 
@@ -42,7 +51,8 @@ export async function uploadProjectPhotos(
   onProgress: UploadProgressCallback,
   onPhotosUpdated?: UploadPhotosUpdatedCallback,
   signal?: AbortSignal,
-  onUploadedCountChange?: (count: number) => void
+  onUploadedCountChange?: (count: number) => void,
+  options?: UploadProjectPhotoOptions
 ): Promise<UploadBatchResult> {
   const errors: string[] = [];
   let uploaded = 0;
@@ -71,17 +81,32 @@ export async function uploadProjectPhotos(
           fileName: file.name,
           filePercent,
           preparing: false,
+          indexingFaces: false,
         });
       },
       signal,
-      () => {
-        onProgress({
-          currentIndex: i + 1,
-          total: files.length,
-          fileName: file.name,
-          filePercent: 0,
-          preparing: true,
-        });
+      {
+        faceSearchEnabled: options?.faceSearchEnabled,
+        onPreparing: () => {
+          onProgress({
+            currentIndex: i + 1,
+            total: files.length,
+            fileName: file.name,
+            filePercent: 0,
+            preparing: true,
+            indexingFaces: false,
+          });
+        },
+        onIndexingFaces: () => {
+          onProgress({
+            currentIndex: i + 1,
+            total: files.length,
+            fileName: file.name,
+            filePercent: 0,
+            preparing: false,
+            indexingFaces: true,
+          });
+        },
       }
     );
 
