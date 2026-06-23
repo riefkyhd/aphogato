@@ -1,4 +1,4 @@
-import { faceIndexImageUrl } from "@/lib/cloudinaryUrls";
+import { faceIndexImageUrl } from "@/lib/mediaUrls";
 import {
   indexFacesFromImageUrl,
   preloadFaceIndexWorker,

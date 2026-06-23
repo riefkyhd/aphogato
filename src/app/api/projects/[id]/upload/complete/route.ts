@@ -19,11 +19,14 @@ import {
 } from "@/lib/photos/fetchProjectPhotos";
 import { insertPhotoFaces } from "@/lib/faces/insertPhotoFaces";
 import { parsePhotoFacesInput } from "@/lib/faces/validation";
+import { completeImageKitPhotoUpload } from "@/lib/imagekit/completeUpload";
+import { getProjectStorageProvider } from "@/lib/storage/provider";
 
 export const runtime = "nodejs";
 
 type CompleteBody = {
   publicId?: string;
+  fileId?: string;
   secureUrl?: string;
   originalFilename?: string;
   width?: number;
@@ -50,16 +53,12 @@ export async function POST(
 
   const publicId = body.publicId?.trim() ?? "";
   const secureUrl = body.secureUrl?.trim() ?? "";
-  if (!publicId || !secureUrl) {
-    return NextResponse.json(
-      { error: "publicId and secureUrl are required" },
-      { status: 400 }
-    );
-  }
 
   const { data: project, error: projectError } = await supabase
     .from("projects")
-    .select("id, cloudinary_folder, cloudinary_account, face_search_enabled")
+    .select(
+      "id, cloudinary_folder, cloudinary_account, face_search_enabled, storage_provider"
+    )
     .eq("id", params.id)
     .single();
 
@@ -74,6 +73,23 @@ export async function POST(
   if (facesParsed.faces.length > 0 && !project.face_search_enabled) {
     return NextResponse.json(
       { error: "Face search is not enabled for this project" },
+      { status: 400 }
+    );
+  }
+
+  if (getProjectStorageProvider(project) === "imagekit") {
+    const result = await completeImageKitPhotoUpload(
+      supabase,
+      project,
+      body,
+      facesParsed
+    );
+    return NextResponse.json(result.body, { status: result.status });
+  }
+
+  if (!publicId || !secureUrl) {
+    return NextResponse.json(
+      { error: "publicId and secureUrl are required" },
       { status: 400 }
     );
   }

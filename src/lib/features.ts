@@ -68,6 +68,9 @@ export const FEATURES = {
   /** Cloudinary account picker, usage bars, and project usage badges */
   cloudinarySettings: true,
 
+  /** ImageKit as an alternate storage provider for new projects */
+  imagekitStorage: true,
+
   /** Domain verification / DNS security guide at /dashboard/settings/domain-verification */
   domainVerification: true,
 } as const;

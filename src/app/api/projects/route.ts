@@ -7,6 +7,8 @@ import { parseFaceSearchEnabledInput } from "@/lib/faces/validation";
 import { resolveUniqueCloudinaryFolder } from "@/lib/resolveCloudinaryFolder";
 import { getCloudinaryAccount } from "@/lib/cloudinary/accounts";
 import { getDefaultCloudinaryAccountId } from "@/lib/cloudinary/settings";
+import { isImageKitConfigured } from "@/lib/imagekit/config";
+import { normalizeStorageProvider } from "@/lib/storage/provider";
 
 export const runtime = "nodejs";
 
@@ -20,6 +22,7 @@ export async function POST(request: Request) {
     client_name?: string;
     max_photo_selection?: unknown;
     cloudinary_account?: string;
+    storage_provider?: string;
     face_search_enabled?: unknown;
   };
   try {
@@ -58,13 +61,25 @@ export async function POST(request: Request) {
 
   const gallery_token = nanoid();
   const clientName = body.client_name?.trim() || null;
+  const storage_provider = normalizeStorageProvider(body.storage_provider);
+
+  if (storage_provider === "imagekit" && !isImageKitConfigured()) {
+    return NextResponse.json(
+      { error: "ImageKit is not configured in the environment" },
+      { status: 400 }
+    );
+  }
 
   let cloudinary_account: string;
   try {
-    const requested = body.cloudinary_account?.trim();
-    cloudinary_account = requested
-      ? getCloudinaryAccount(requested).id
-      : await getDefaultCloudinaryAccountId();
+    if (storage_provider === "imagekit") {
+      cloudinary_account = "default";
+    } else {
+      const requested = body.cloudinary_account?.trim();
+      cloudinary_account = requested
+        ? getCloudinaryAccount(requested).id
+        : await getDefaultCloudinaryAccountId();
+    }
   } catch (err) {
     return NextResponse.json(
       {
@@ -96,6 +111,7 @@ export async function POST(request: Request) {
       client_name: clientName,
       cloudinary_folder,
       cloudinary_account,
+      storage_provider,
       gallery_token,
       status: "pending",
       max_photo_selection: maxParsed.value,

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { PhotoUploadButton } from "@/components/PhotoUploadButton";
 import type { ProjectPhotoUpload } from "@/hooks/useProjectPhotoUpload";
 import type { Photo } from "@/lib/types";
+import type { StorageProvider } from "@/lib/storage/provider";
 import type {
   CloudinaryAccountPublic,
   CloudinaryAccountUsagePublic,
@@ -108,6 +109,7 @@ export function ProjectActions({
   cloudinaryAccount,
   cloudinaryUsage,
   cloudinaryUsageLoading,
+  storageProvider = "cloudinary",
   onPhotosSynced,
   onDeleteProject,
   onStatusChange,
@@ -122,6 +124,7 @@ export function ProjectActions({
   cloudinaryAccount: CloudinaryAccountPublic | null;
   cloudinaryUsage: CloudinaryAccountUsagePublic | null;
   cloudinaryUsageLoading: boolean;
+  storageProvider?: StorageProvider;
   onPhotosSynced: (photos: Photo[]) => void;
   onDeleteProject: () => void;
   onStatusChange: (status: ProjectStatus) => void;
@@ -488,6 +491,7 @@ export function ProjectActions({
         account={cloudinaryAccount}
         usage={cloudinaryUsage}
         loading={cloudinaryUsageLoading}
+        storageProvider={storageProvider}
         faceSearch={
           FEATURES.faceSearch && faceSearchEnabled ? faceSearchStatus : null
         }

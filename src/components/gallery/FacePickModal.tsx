@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ModalShell } from "@/components/ui/ModalShell";
-import { faceIndexImageUrl } from "@/lib/cloudinaryUrls";
+import { faceIndexImageUrl } from "@/lib/mediaUrls";
 import { indexFacesFromImageUrl } from "@/lib/faces/faceIndexClient";
 import type { PhotoFaceInput } from "@/lib/faces/types";
 import type { Photo } from "@/lib/types";

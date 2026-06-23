@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/api/requireAuth";
 import { listFolder, publicIdFromUrl } from "@/lib/cloudinary";
 import { getProjectCloudinaryAccountId } from "@/lib/cloudinary/accounts";
+import { syncImageKitProject } from "@/lib/imagekit/syncProject";
+import { getProjectStorageProvider } from "@/lib/storage/provider";
 import {
   backfillMissingHashes,
   computeHashFromCloudinaryUrl,
@@ -27,12 +29,17 @@ export async function POST(
 
   const { data: project, error: projectError } = await supabase
     .from("projects")
-    .select("id, cloudinary_folder, cloudinary_account")
+    .select("id, cloudinary_folder, cloudinary_account, storage_provider")
     .eq("id", params.id)
     .single();
 
   if (projectError || !project) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  }
+
+  if (getProjectStorageProvider(project) === "imagekit") {
+    const result = await syncImageKitProject(supabase, project);
+    return NextResponse.json(result.body, { status: result.status });
   }
 
   const accountId = getProjectCloudinaryAccountId(project);

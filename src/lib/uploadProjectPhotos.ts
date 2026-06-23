@@ -1,4 +1,6 @@
 import { uploadProjectPhotoViaCloudinary } from "@/lib/directCloudinaryClientUpload";
+import { uploadProjectPhotoViaImageKit } from "@/lib/directImageKitClientUpload";
+import type { StorageProvider } from "@/lib/storage/provider";
 import type { Photo } from "@/lib/types";
 
 export type UploadBatchResult = {
@@ -19,11 +21,12 @@ export type UploadProgressCallback = (progress: {
 
 export type UploadProjectPhotoOptions = {
   faceSearchEnabled?: boolean;
+  storageProvider?: StorageProvider;
 };
 
 export type UploadPhotosUpdatedCallback = (photos: Photo[]) => void;
 
-/** Upload one file directly to Cloudinary, then register it in the project. */
+/** Upload one file to the project's storage provider, then register it. */
 export function uploadProjectPhoto(
   projectId: string,
   file: File,
@@ -33,15 +36,15 @@ export function uploadProjectPhoto(
     onPreparing?: () => void;
     onIndexingFaces?: () => void;
     faceSearchEnabled?: boolean;
+    storageProvider?: StorageProvider;
   }
 ): Promise<{ ok: boolean; result: UploadBatchResult; cancelled?: boolean }> {
-  return uploadProjectPhotoViaCloudinary(
-    projectId,
-    file,
-    onProgress,
-    signal,
-    options
-  );
+  const upload =
+    options?.storageProvider === "imagekit"
+      ? uploadProjectPhotoViaImageKit
+      : uploadProjectPhotoViaCloudinary;
+
+  return upload(projectId, file, onProgress, signal, options);
 }
 
 /** Upload many files sequentially so progress reflects each file and the batch. */
@@ -107,6 +110,7 @@ export async function uploadProjectPhotos(
             indexingFaces: true,
           });
         },
+        storageProvider: options?.storageProvider,
       }
     );
 

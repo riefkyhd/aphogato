@@ -10,5 +10,7 @@ export function normalizeProject(row: Project | Record<string, unknown>): Projec
     face_search_enabled: Boolean(p.face_search_enabled),
     cover_photo_id:
       typeof p.cover_photo_id === "string" ? p.cover_photo_id : null,
+    storage_provider:
+      p.storage_provider === "imagekit" ? "imagekit" : "cloudinary",
   };
 }

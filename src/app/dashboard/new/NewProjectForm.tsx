@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { PageLoadingOverlay } from "@/components/PageLoadingOverlay";
 import { ClientNameInput } from "@/components/clients/ClientNameInput";
 import { NewProjectCloudinaryField } from "@/components/cloudinary/NewProjectCloudinaryField";
+import { NewProjectStorageField } from "@/components/imagekit/NewProjectStorageField";
+import type { StorageProvider } from "@/lib/storage/provider";
 import { Button } from "@/components/ui/Button";
 import { FormActions } from "@/components/ui/FormActions";
 import { Input } from "@/components/ui/Input";
@@ -26,6 +28,8 @@ export function NewProjectForm() {
   );
   const [maxSelectionInitialized, setMaxSelectionInitialized] = useState(false);
   const [cloudinaryAccount, setCloudinaryAccount] = useState("");
+  const [storageProvider, setStorageProvider] =
+    useState<StorageProvider>("cloudinary");
   const [faceSearchEnabled, setFaceSearchEnabled] = useState(false);
   const [phase, setPhase] = useState<CreatePhase>("idle");
 
@@ -54,6 +58,7 @@ export function NewProjectForm() {
           client_name: clientName,
           max_photo_selection: Number(maxSelection),
           cloudinary_account: cloudinaryAccount || undefined,
+          storage_provider: storageProvider,
           face_search_enabled: FEATURES.faceSearch && faceSearchEnabled,
         }),
       });
@@ -94,10 +99,16 @@ export function NewProjectForm() {
         value={clientName}
         onChange={setClientName}
       />
-      <NewProjectCloudinaryField
-        value={cloudinaryAccount}
-        onChange={setCloudinaryAccount}
+      <NewProjectStorageField
+        value={storageProvider}
+        onChange={setStorageProvider}
       />
+      {storageProvider === "cloudinary" ? (
+        <NewProjectCloudinaryField
+          value={cloudinaryAccount}
+          onChange={setCloudinaryAccount}
+        />
+      ) : null}
       <div>
         <Label htmlFor="max-selection">Max photos client can select</Label>
         <Input

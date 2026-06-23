@@ -3,6 +3,7 @@ import { ContentColumn } from "@/components/layout/ContentColumn";
 import { DashboardMain } from "@/components/layout/DashboardShell";
 import { FEATURES } from "@/lib/features";
 import { CloudinarySettings } from "@/app/dashboard/settings/CloudinarySettings";
+import { ImageKitSettings } from "@/app/dashboard/settings/ImageKitSettings";
 import { DomainSecurityInfo } from "@/app/dashboard/settings/DomainSecurityInfo";
 import { GoogleCalendarSettings } from "@/app/dashboard/settings/GoogleCalendarSettings";
 import { PreferencesSettings } from "@/app/dashboard/settings/PreferencesSettings";
@@ -37,6 +38,7 @@ export default async function SettingsPage() {
         ) : null}
         <PreferencesSettings />
         {FEATURES.cloudinarySettings ? <CloudinarySettings /> : null}
+        {FEATURES.imagekitStorage ? <ImageKitSettings /> : null}
         {FEATURES.todayShootsReminder ? <TodayReminderSettings /> : null}
         {FEATURES.privacyLock ? <PrivacySettings /> : null}
         {FEATURES.domainVerification ? <DomainSecurityInfo /> : null}

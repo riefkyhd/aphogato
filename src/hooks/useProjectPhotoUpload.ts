@@ -6,6 +6,7 @@ import type { UploadProgressState } from "@/components/PhotoUploadProgress";
 import { filterImageUploadFiles } from "@/lib/imageUploadFiles";
 import { uploadProjectPhotos } from "@/lib/uploadProjectPhotos";
 import type { Photo } from "@/lib/types";
+import type { StorageProvider } from "@/lib/storage/provider";
 
 type UploadJob = {
   files: File[];
@@ -16,7 +17,8 @@ export function useProjectPhotoUpload(
   projectId: string,
   onPhotosUpdated: (photos: Photo[]) => void,
   onBatchComplete?: () => void,
-  faceSearchEnabled = false
+  faceSearchEnabled = false,
+  storageProvider: StorageProvider = "cloudinary"
 ) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState<UploadProgressState | null>(null);
@@ -27,6 +29,8 @@ export function useProjectPhotoUpload(
   const abortRef = useRef<AbortController | null>(null);
   const faceSearchEnabledRef = useRef(faceSearchEnabled);
   faceSearchEnabledRef.current = faceSearchEnabled;
+  const storageProviderRef = useRef(storageProvider);
+  storageProviderRef.current = storageProvider;
 
   const updateQueuedBatches = useCallback((count: number) => {
     setProgress((current) =>
@@ -63,7 +67,7 @@ export function useProjectPhotoUpload(
           (photos) => onPhotosUpdated(photos),
           job.controller.signal,
           setUploadedCount,
-          { faceSearchEnabled: faceSearchEnabledRef.current }
+          { faceSearchEnabled: faceSearchEnabledRef.current, storageProvider: storageProviderRef.current }
         );
 
         if (cancelled) {

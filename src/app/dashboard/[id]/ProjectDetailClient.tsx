@@ -25,7 +25,10 @@ import { DeliverablesChecklist } from "@/components/DeliverablesChecklist";
 import { ProjectReferencesSection } from "@/components/ProjectReferencesSection";
 import { ProjectCloudinaryUsageBadge } from "@/components/cloudinary/ProjectCloudinaryUsageBadge";
 import { ProjectCloudinaryAccountNote } from "@/components/cloudinary/ProjectCloudinaryAccountNote";
+import { ProjectImageKitBadge } from "@/components/imagekit/ProjectImageKitBadge";
+import { ProjectImageKitStorageNote } from "@/components/imagekit/ProjectImageKitStorageNote";
 import { useProjectCloudinaryUsage } from "@/hooks/useProjectCloudinaryUsage";
+import { isImageKitProject } from "@/lib/storage/provider";
 import { ProjectMaxSelection } from "./ProjectMaxSelection";
 import { ProjectFaceSearchSettings } from "./ProjectFaceSearchSettings";
 import { ProjectRename } from "./ProjectRename";
@@ -91,7 +94,8 @@ export function ProjectDetailClient({
     projectState.id,
     setPhotosFromServer,
     refreshProjectPhotos,
-    faceSearchActive
+    faceSearchActive,
+    projectState.storage_provider === "imagekit" ? "imagekit" : "cloudinary"
   );
 
   const photoIds = useMemo(() => photos.map((p) => p.id), [photos]);
@@ -120,11 +124,15 @@ export function ProjectDetailClient({
     normalizeMaxPhotoSelection(projectState.max_photo_selection)
   );
 
+  const imageKitProject = isImageKitProject(projectState);
+
   const {
     account: cloudinaryAccount,
     usage: cloudinaryUsage,
     loading: cloudinaryUsageLoading,
-  } = useProjectCloudinaryUsage(projectState.cloudinary_account);
+  } = useProjectCloudinaryUsage(
+    imageKitProject ? null : projectState.cloudinary_account
+  );
 
   const clientSelectedIds = useMemo(
     () => new Set(photos.filter((ph) => ph.is_selected).map((ph) => ph.id)),
@@ -322,7 +330,9 @@ export function ProjectDetailClient({
                   {clientSelectedCount} client pick
                   {clientSelectedCount === 1 ? "" : "s"}
                 </span>
-                {FEATURES.cloudinarySettings ? (
+                {imageKitProject ? (
+                  <ProjectImageKitBadge />
+                ) : FEATURES.cloudinarySettings ? (
                   <ProjectCloudinaryUsageBadge
                     account={cloudinaryAccount}
                     usage={cloudinaryUsage}
@@ -330,7 +340,9 @@ export function ProjectDetailClient({
                   />
                 ) : null}
               </div>
-              {FEATURES.cloudinarySettings ? (
+              {imageKitProject ? (
+                <ProjectImageKitStorageNote photoCount={photos.length} />
+              ) : FEATURES.cloudinarySettings ? (
                 <ProjectCloudinaryAccountNote
                   account={cloudinaryAccount}
                   usage={cloudinaryUsage}
@@ -347,6 +359,7 @@ export function ProjectDetailClient({
               cloudinaryAccount={cloudinaryAccount}
               cloudinaryUsage={cloudinaryUsage}
               cloudinaryUsageLoading={cloudinaryUsageLoading}
+              storageProvider={projectState.storage_provider === "imagekit" ? "imagekit" : "cloudinary"}
               onPhotosSynced={applyServerPhotos}
               onDeleteProject={() => setDeleteProjectOpen(true)}
               onStatusChange={(status) =>

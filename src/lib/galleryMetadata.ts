@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { socialShareImageUrl } from "@/lib/cloudinaryUrls";
+import { socialShareImageUrl } from "@/lib/mediaUrls";
 import { loadGalleryByToken } from "@/lib/gallery";
 import { resolveProjectCoverUrl } from "@/lib/projectCover";
 import { getSiteUrl } from "@/lib/siteUrl";

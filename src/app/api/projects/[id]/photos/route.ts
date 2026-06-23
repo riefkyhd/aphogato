@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { deleteCloudinaryImageByUrl } from "@/lib/cloudinary";
 import { requireAuth } from "@/lib/api/requireAuth";
+import { deleteMediaAsset } from "@/lib/storage/deleteMediaAsset";
 import { fetchAllProjectPhotos } from "@/lib/photos/fetchProjectPhotos";
 import type { Photo } from "@/lib/types";
 
@@ -55,11 +55,11 @@ export async function DELETE(
   const errors: string[] = [];
   for (const photo of photos) {
     try {
-      await deleteCloudinaryImageByUrl(photo.cloudinary_url);
+      await deleteMediaAsset(photo);
     } catch (err) {
       errors.push(
         `${photo.filename}: ${
-          err instanceof Error ? err.message : "Cloudinary delete failed"
+          err instanceof Error ? err.message : "Media delete failed"
         }`
       );
     }

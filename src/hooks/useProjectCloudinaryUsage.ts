@@ -9,12 +9,19 @@ type CloudinarySettingsResponse = {
   usage: CloudinaryAccountUsagePublic[];
 };
 
-export function useProjectCloudinaryUsage(cloudinaryAccountId: string) {
+export function useProjectCloudinaryUsage(cloudinaryAccountId: string | null) {
   const [account, setAccount] = useState<CloudinaryAccountPublic | null>(null);
   const [usage, setUsage] = useState<CloudinaryAccountUsagePublic | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(cloudinaryAccountId));
 
   useEffect(() => {
+    if (!cloudinaryAccountId) {
+      setAccount(null);
+      setUsage(null);
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
 
     async function load() {

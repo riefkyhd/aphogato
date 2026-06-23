@@ -15,7 +15,8 @@ import {
 } from "@/lib/cloudinary/display";
 import { cn } from "@/lib/utils";
 import { FEATURES } from "@/lib/features";
-import { masonryImageUrl } from "@/lib/cloudinaryUrls";
+import { masonryImageUrl } from "@/lib/mediaUrls";
+import type { StorageProvider } from "@/lib/storage/provider";
 import type { FaceSearchStatus } from "@/lib/faces/types";
 
 function faceSearchShareLine(faceSearch: FaceSearchStatus): string | null {
@@ -48,6 +49,7 @@ export function ShareGalleryLinkDialog({
   loading,
   faceSearch,
   faceSearchLoading,
+  storageProvider = "cloudinary",
   onClose,
   onCopy,
 }: {
@@ -59,6 +61,7 @@ export function ShareGalleryLinkDialog({
   loading?: boolean;
   faceSearch?: FaceSearchStatus | null;
   faceSearchLoading?: boolean;
+  storageProvider?: StorageProvider;
   onClose: () => void;
   onCopy: () => void;
 }) {
@@ -85,8 +88,10 @@ export function ShareGalleryLinkDialog({
     (part): part is string => Boolean(part)
   );
 
+  const isImageKit = storageProvider === "imagekit";
   const showUsageWarning =
-    usage?.level === "warning" || usage?.level === "critical";
+    !isImageKit &&
+    (usage?.level === "warning" || usage?.level === "critical");
 
   return (
     <ModalShell
@@ -121,16 +126,18 @@ export function ShareGalleryLinkDialog({
         {photoCount.toLocaleString()} photo{photoCount === 1 ? "" : "s"} will
         be delivered from{" "}
         <span className="text-text-primary">
-          {account?.label ?? "this project's Cloudinary account"}
+          {isImageKit
+            ? "ImageKit"
+            : (account?.label ?? "this project's Cloudinary account")}
         </span>
-        {account ? (
+        {!isImageKit && account ? (
           <>
             {" "}
             (<code className="text-[12px]">{account.cloudName}</code>)
           </>
         ) : null}
-        . When your client opens the link, browsing uses bandwidth and
-        transforms on that account.
+        . When your client opens the link, browsing uses{" "}
+        {isImageKit ? "bandwidth on your ImageKit account" : "bandwidth and transforms on that account"}.
       </p>
 
       {faceSearchLoading ? (
@@ -146,11 +153,11 @@ export function ShareGalleryLinkDialog({
         })()
       ) : null}
 
-      {loading ? (
+      {!isImageKit && loading ? (
         <p className="mt-4 text-[13px] text-text-muted">Loading usage…</p>
-      ) : usage?.error ? (
+      ) : !isImageKit && usage?.error ? (
         <p className="mt-4 text-[13px] text-status-cancelled">{usage.error}</p>
-      ) : usage && metricParts.length > 0 ? (
+      ) : !isImageKit && usage && metricParts.length > 0 ? (
         <div
           className={cn(
             "mt-4 border px-4 py-3 text-[13px] leading-relaxed",

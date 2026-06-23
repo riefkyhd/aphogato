@@ -3,6 +3,9 @@ import { requireAuth } from "@/lib/api/requireAuth";
 import { buildPhotoFilename } from "@/lib/cloudinary/filenames";
 import { buildSignedCloudinaryUpload } from "@/lib/cloudinary/signedDirectUpload";
 import { getProjectCloudinaryAccountId } from "@/lib/cloudinary/accounts";
+import { buildImageKitUploadAuth } from "@/lib/imagekit/auth";
+import { assertImageKitConfigured } from "@/lib/imagekit/config";
+import { getProjectStorageProvider } from "@/lib/storage/provider";
 import { validateImageUploadMeta } from "@/lib/imageUploadValidation";
 
 export const runtime = "nodejs";
@@ -32,7 +35,7 @@ export async function POST(
 
   const { data: project, error: projectError } = await supabase
     .from("projects")
-    .select("id, cloudinary_folder, cloudinary_account")
+    .select("id, cloudinary_folder, cloudinary_account, storage_provider")
     .eq("id", params.id)
     .single();
 
@@ -55,13 +58,36 @@ export async function POST(
     );
   }
 
+  const storageProvider = getProjectStorageProvider(project);
+
+  if (storageProvider === "imagekit") {
+    try {
+      assertImageKitConfigured();
+      const auth = buildImageKitUploadAuth();
+      const folder = `/${project.cloudinary_folder.replace(/^\/+|\/+$/g, "")}`;
+      return NextResponse.json({
+        provider: "imagekit" as const,
+        ...auth,
+        folder,
+        fileName: storedFilename,
+      });
+    } catch (err) {
+      return NextResponse.json(
+        {
+          error: err instanceof Error ? err.message : "Could not prepare upload",
+        },
+        { status: 500 }
+      );
+    }
+  }
+
   try {
     const signed = buildSignedCloudinaryUpload(
       project.cloudinary_folder,
       filename,
       getProjectCloudinaryAccountId(project)
     );
-    return NextResponse.json(signed);
+    return NextResponse.json({ provider: "cloudinary" as const, ...signed });
   } catch (err) {
     return NextResponse.json(
       {

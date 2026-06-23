@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Loader2, X } from "lucide-react";
 import { IconButton } from "@/components/ui/IconButton";
 import { Tooltip } from "@/components/ui/Tooltip";
-import { previewLargeUrl } from "@/lib/cloudinaryUrls";
+import { previewLargeUrl } from "@/lib/mediaUrls";
 import type { Photo } from "@/lib/types";
 
 export function ManagePhotoLightbox({

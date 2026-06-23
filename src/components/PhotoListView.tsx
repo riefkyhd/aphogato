@@ -5,7 +5,7 @@ import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useLongPress } from "@/hooks/useLongPress";
 import { cn } from "@/lib/utils";
-import { listThumbUrl, previewLargeUrl } from "@/lib/cloudinaryUrls";
+import { listThumbUrl, previewLargeUrl } from "@/lib/mediaUrls";
 import type { ManagePhotoActivateMeta } from "@/lib/managePhotoActivate";
 import type { Photo } from "@/lib/types";
 

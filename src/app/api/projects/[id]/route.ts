@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { deleteCloudinaryImageByUrl } from "@/lib/cloudinary";
 import { requireAuth } from "@/lib/api/requireAuth";
+import { deleteMediaAsset } from "@/lib/storage/deleteMediaAsset";
 import { fetchAllProjectPhotoRows } from "@/lib/photos/fetchProjectPhotos";
 import { parseMaxPhotoSelectionInput } from "@/lib/photoSelectionLimit";
 import { renameProject } from "@/lib/renameProject";
@@ -164,10 +164,10 @@ export async function DELETE(
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
-  let photos: { id: string; cloudinary_url: string }[];
+  let photos: { id: string; cloudinary_url: string; imagekit_file_id: string | null }[];
   try {
     photos = await fetchAllProjectPhotoRows(supabase, params.id, {
-      columns: "id, cloudinary_url",
+      columns: "id, cloudinary_url, imagekit_file_id",
     });
   } catch (err) {
     return NextResponse.json(
@@ -176,13 +176,13 @@ export async function DELETE(
     );
   }
 
-  const cloudinaryErrors: string[] = [];
+  const mediaErrors: string[] = [];
   for (const photo of photos) {
     try {
-      await deleteCloudinaryImageByUrl(photo.cloudinary_url);
+      await deleteMediaAsset(photo);
     } catch (err) {
-      cloudinaryErrors.push(
-        err instanceof Error ? err.message : "Cloudinary delete failed"
+      mediaErrors.push(
+        err instanceof Error ? err.message : "Media delete failed"
       );
     }
   }
@@ -202,6 +202,7 @@ export async function DELETE(
   return NextResponse.json({
     ok: true,
     photosDeleted: photos?.length ?? 0,
-    cloudinaryErrors,
+    mediaErrors,
+    cloudinaryErrors: mediaErrors,
   });
 }

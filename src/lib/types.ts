@@ -6,6 +6,7 @@ export interface Project {
   client_name: string | null;
   cloudinary_folder: string;
   cloudinary_account: string;
+  storage_provider: string;
   gallery_token: string;
   created_at: string;
   status: ProjectStatus;
@@ -19,6 +20,7 @@ export interface Photo {
   project_id: string;
   filename: string;
   cloudinary_url: string;
+  imagekit_file_id?: string | null;
   is_selected: boolean;
   created_at: string;
   shot_at?: string | null;

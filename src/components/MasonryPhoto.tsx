@@ -5,7 +5,7 @@ import {
   galleryGridSrcSet,
   galleryGridWidthForColumns,
   masonryImageUrl,
-} from "@/lib/cloudinaryUrls";
+} from "@/lib/mediaUrls";
 
 type MasonryPhotoProps = {
   src: string;
