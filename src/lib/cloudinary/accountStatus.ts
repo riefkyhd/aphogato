@@ -1,0 +1,69 @@
+/**
+ * Classify Cloudinary Admin API / delivery failures when an account is
+ * disabled, inactivated, or otherwise unreachable.
+ */
+
+import type { CloudinaryAccountHealth } from "@/lib/cloudinary/types";
+
+export type { CloudinaryAccountHealth };
+
+export const CLOUDINARY_DISABLED_HEADLINE = "Account disabled";
+
+export const CLOUDINARY_DISABLED_MESSAGE =
+  "This Cloudinary account is disabled or inactive. Photos cannot load until it is re-enabled in the Cloudinary console (usually by fixing billing or upgrading the plan).";
+
+/** Shown inside individual photo cells when delivery fails. */
+export const MEDIA_UNAVAILABLE_CELL_LABEL = "Unavailable";
+
+/** Dashboard / admin gallery banner when many images fail to load. */
+export const MEDIA_UNAVAILABLE_BANNER_ADMIN =
+  "Photos can’t load — the Cloudinary account for this project appears to be disabled or inactive. Re-enable it in the Cloudinary console to restore delivery.";
+
+/** Client-facing gallery banner (less internal jargon). */
+export const MEDIA_UNAVAILABLE_BANNER_GALLERY =
+  "Photos aren’t available right now — the storage account for this gallery is disabled or inactive. Please check back later, or contact the photographer.";
+
+export function classifyCloudinaryAccountError(err: unknown): {
+  health: Exclude<CloudinaryAccountHealth, "active">;
+  headline: string;
+  message: string;
+} {
+  const raw = err instanceof Error ? err.message : String(err ?? "");
+  const lower = raw.toLowerCase();
+
+  const disabled =
+    lower.includes("disabled") ||
+    lower.includes("inactive") ||
+    lower.includes("inactivated") ||
+    lower.includes("not enabled") ||
+    lower.includes("suspended") ||
+    lower.includes("cloud_name is disabled") ||
+    lower.includes("account is locked");
+
+  if (disabled) {
+    return {
+      health: "disabled",
+      headline: CLOUDINARY_DISABLED_HEADLINE,
+      message: CLOUDINARY_DISABLED_MESSAGE,
+    };
+  }
+
+  return {
+    health: "unreachable",
+    headline: "Could not load usage",
+    message: raw.trim() || "Failed to reach Cloudinary",
+  };
+}
+
+export function isCloudinaryAccountDisabled(usage: {
+  level?: string;
+  accountHealth?: CloudinaryAccountHealth;
+  error?: string;
+} | null | undefined): boolean {
+  if (!usage) return false;
+  if (usage.accountHealth === "disabled" || usage.level === "disabled") {
+    return true;
+  }
+  if (!usage.error) return false;
+  return classifyCloudinaryAccountError(usage.error).health === "disabled";
+}

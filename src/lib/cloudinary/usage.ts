@@ -6,6 +6,7 @@ import {
   listCloudinaryAccounts,
   type CloudinaryAccount,
 } from "@/lib/cloudinary/accounts";
+import { classifyCloudinaryAccountError } from "@/lib/cloudinary/accountStatus";
 import type {
   CloudinaryAccountUsagePublic,
   CloudinaryUsageLevel,
@@ -272,6 +273,7 @@ export async function getCloudinaryAccountUsage(
     usageCache.set(accountId, { usage, fetchedAt: Date.now() });
     return usage;
   } catch (err) {
+    const classified = classifyCloudinaryAccountError(err);
     const fallback: CloudinaryAccountUsagePublic = {
       accountId,
       plan: null,
@@ -280,10 +282,11 @@ export async function getCloudinaryAccountUsage(
       storage: { usage: null, limit: null, usedPercent: null },
       bandwidth: { usage: null, limit: null, usedPercent: null },
       transformations: { usage: null, limit: null, usedPercent: null },
-      level: "unknown",
-      headline: "Could not load usage",
+      level: classified.health === "disabled" ? "disabled" : "unknown",
+      headline: classified.headline,
       storageLabel: null,
-      error: err instanceof Error ? err.message : "Failed to load usage",
+      error: classified.message,
+      accountHealth: classified.health,
     };
     usageCache.set(accountId, { usage: fallback, fetchedAt: Date.now() });
     return fallback;
@@ -308,7 +311,13 @@ export function pickAccountWithMostHeadroom(
   usage: CloudinaryAccountUsagePublic[]
 ): string | null {
   const ranked = usage
-    .filter((entry) => !entry.error && entry.level !== "critical")
+    .filter(
+      (entry) =>
+        !entry.error &&
+        entry.level !== "critical" &&
+        entry.level !== "disabled" &&
+        entry.accountHealth !== "disabled"
+    )
     .map((entry) => {
       const percents = [
         entry.storage.usedPercent,
@@ -345,6 +354,20 @@ export function buildNewProjectUsageHint(options: {
       defaultUsage,
       suggestedAccountId: null,
       message: null,
+    };
+  }
+
+  if (defaultUsage.level === "disabled" || defaultUsage.accountHealth === "disabled") {
+    return {
+      defaultUsage,
+      suggestedAccountId:
+        suggestedAccountId && suggestedAccountId !== options.defaultAccountId
+          ? suggestedAccountId
+          : null,
+      message:
+        suggestedAccountId && suggestedAccountId !== options.defaultAccountId
+          ? "Default Cloudinary account is disabled or inactive. Switch to another account before creating projects, or re-enable the default in the Cloudinary console."
+          : "Default Cloudinary account is disabled or inactive. Re-enable it in the Cloudinary console (billing/plan) before creating projects — photos will not load while it stays disabled.",
     };
   }
 

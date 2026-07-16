@@ -1,3 +1,9 @@
+"use client";
+
+import { useState } from "react";
+import { MediaUnavailableCell } from "@/components/media/MediaUnavailable";
+import { useReportMediaLoadFailure } from "@/components/media/MediaLoadStatus";
+import { MEDIA_UNAVAILABLE_CELL_LABEL } from "@/lib/cloudinary/accountStatus";
 import { cn } from "@/lib/utils";
 import {
   galleryGridImageUrl,
@@ -24,6 +30,24 @@ export function MasonryPhoto({
   variant = "dashboard",
   galleryColumnCount = 2,
 }: MasonryPhotoProps) {
+  const [failed, setFailed] = useState(false);
+  const reportFailure = useReportMediaLoadFailure();
+
+  function handleError() {
+    if (failed) return;
+    setFailed(true);
+    reportFailure?.();
+  }
+
+  if (failed) {
+    return (
+      <MediaUnavailableCell
+        label={MEDIA_UNAVAILABLE_CELL_LABEL}
+        className={className}
+      />
+    );
+  }
+
   if (variant === "gallery") {
     const width = galleryGridWidthForColumns(galleryColumnCount);
     const url = galleryGridImageUrl(src, width);
@@ -41,6 +65,7 @@ export function MasonryPhoto({
         loading="lazy"
         decoding="async"
         draggable={false}
+        onError={handleError}
       />
     );
   }
@@ -57,6 +82,7 @@ export function MasonryPhoto({
       loading="lazy"
       decoding="async"
       draggable={false}
+      onError={handleError}
     />
   );
 }

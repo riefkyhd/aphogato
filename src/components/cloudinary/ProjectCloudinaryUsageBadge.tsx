@@ -5,6 +5,7 @@ import type {
   CloudinaryAccountPublic,
   CloudinaryAccountUsagePublic,
 } from "@/lib/cloudinary/types";
+import { isCloudinaryAccountDisabled } from "@/lib/cloudinary/accountStatus";
 import {
   usageLevelBorderClass,
   usageLevelClass,
@@ -31,7 +32,8 @@ export function ProjectCloudinaryUsageBadge({
 
   if (!account) return null;
 
-  const peakMetric = usage ? usagePeakMetricShort(usage) : null;
+  const disabled = isCloudinaryAccountDisabled(usage);
+  const peakMetric = !disabled && usage ? usagePeakMetricShort(usage) : null;
   const level = usage?.level ?? "unknown";
 
   return (
@@ -39,12 +41,14 @@ export function ProjectCloudinaryUsageBadge({
       href="/dashboard/settings"
       className={cn(
         "inline-flex items-center gap-1 border px-2 py-0.5 text-[10px] uppercase tracking-label transition-opacity hover:opacity-80",
-        usageLevelBorderClass(level)
+        usageLevelBorderClass(disabled ? "disabled" : level)
       )}
       title={
-        usage?.headline
-          ? `Cloudinary ${account.cloudName} · ${usage.headline}`
-          : `Cloudinary ${account.cloudName}`
+        disabled
+          ? `Cloudinary ${account.cloudName} · Account disabled`
+          : usage?.headline
+            ? `Cloudinary ${account.cloudName} · ${usage.headline}`
+            : `Cloudinary ${account.cloudName}`
       }
     >
       <span className="text-text-muted">Cloudinary</span>
@@ -52,7 +56,12 @@ export function ProjectCloudinaryUsageBadge({
       <span className="text-text-primary truncate max-w-[8rem]">
         {account.label}
       </span>
-      {peakMetric ? (
+      {disabled ? (
+        <>
+          <span className="text-text-secondary">·</span>
+          <span className={usageLevelClass("disabled")}>Disabled</span>
+        </>
+      ) : peakMetric ? (
         <>
           <span className="text-text-secondary">·</span>
           <span className={cn("tabular-nums", usageLevelClass(level))}>

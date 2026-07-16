@@ -5,6 +5,10 @@ import type {
   CloudinaryAccountPublic,
   CloudinaryAccountUsagePublic,
 } from "@/lib/cloudinary/types";
+import {
+  CLOUDINARY_DISABLED_MESSAGE,
+  isCloudinaryAccountDisabled,
+} from "@/lib/cloudinary/accountStatus";
 import { FEATURES } from "@/lib/features";
 
 export function ProjectCloudinaryAccountNote({
@@ -19,6 +23,22 @@ export function ProjectCloudinaryAccountNote({
   photoCount: number;
 }) {
   if (loading || !account) return null;
+
+  if (isCloudinaryAccountDisabled(usage)) {
+    return (
+      <p className="mt-2 text-[12px] text-status-cancelled leading-relaxed max-w-2xl">
+        {CLOUDINARY_DISABLED_MESSAGE}{" "}
+        {FEATURES.cloudinarySettings && FEATURES.settings ? (
+          <Link
+            href="/dashboard/settings"
+            className="underline underline-offset-2 text-text-secondary hover:text-text-primary"
+          >
+            Cloudinary settings
+          </Link>
+        ) : null}
+      </p>
+    );
+  }
 
   return (
     <p className="mt-2 text-[12px] text-text-muted leading-relaxed max-w-2xl">

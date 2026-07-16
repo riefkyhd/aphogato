@@ -8,6 +8,11 @@ import { PhotoViewToggle } from "@/components/PhotoViewToggle";
 import { PhotoGridView } from "@/components/PhotoGridView";
 import { PhotoListView } from "@/components/PhotoListView";
 import {
+  MediaLoadStatusProvider,
+  useMediaLoadFailedCount,
+} from "@/components/media/MediaLoadStatus";
+import { MediaUnavailableBanner } from "@/components/media/MediaUnavailable";
+import {
   readPhotoFilterPreference,
   writePhotoFilterPreference,
 } from "@/lib/photoFilterStorage";
@@ -24,6 +29,10 @@ import {
 import { ManagePhotoLightbox } from "@/components/ManagePhotoLightbox";
 import { Button } from "@/components/ui/Button";
 import { useTouchLike } from "@/hooks/useTouchLike";
+import {
+  MEDIA_UNAVAILABLE_BANNER_ADMIN,
+  MEDIA_UNAVAILABLE_BANNER_GALLERY,
+} from "@/lib/cloudinary/accountStatus";
 import type { ManagePhotoActivateMeta } from "@/lib/managePhotoActivate";
 import { partitionPhotosSelectedFirst } from "@/lib/reorderPhotos";
 import { DEFAULT_SORT_DIRECTION, sortPhotos } from "@/lib/sortPhotos";
@@ -207,7 +216,139 @@ export function PhotoGallerySection({
       : "absolute inset-0 flex flex-col overflow-hidden invisible pointer-events-none";
 
   return (
+    <MediaLoadStatusProvider>
+      <PhotoGallerySectionBody
+        showManageActions={showManageActions}
+        showMobileLightbox={showMobileLightbox}
+        previewPhoto={previewPhoto}
+        onCloseManagePreview={onCloseManagePreview}
+        manageCount={manageCount}
+        onClearManageSelection={onClearManageSelection}
+        canSetCover={canSetCover}
+        onSetCover={onSetCover}
+        onDeletePhotos={onDeletePhotos}
+        isGallery={isGallery}
+        sortPreference={sortPreference}
+        setSortPreference={setSortPreference}
+        viewStorageId={viewStorageId}
+        mode={mode}
+        selectedFirst={selectedFirst}
+        handleFilterChange={handleFilterChange}
+        activeView={activeView}
+        handleViewChange={handleViewChange}
+        layoutKey={layoutKey}
+        viewportClass={viewportClass}
+        gridLayerClass={gridLayerClass}
+        listLayerClass={listLayerClass}
+        displayPhotos={displayPhotos}
+        selectedIds={selectedIds}
+        onToggleSelect={onToggleSelect}
+        selectionLimitReached={selectionLimitReached}
+        manageSelectedIds={manageSelectedIds}
+        onManagePhotoActivate={onManagePhotoActivate}
+        onManagePhotoMarquee={onManagePhotoMarquee}
+        managePreviewId={managePreviewId}
+        coverPhotoId={coverPhotoId}
+        facePickMode={facePickMode}
+        onFacePickPhoto={onFacePickPhoto}
+        showListDivider={showListDivider}
+        selectedCount={selectedCount}
+        photoCount={photos.length}
+      />
+    </MediaLoadStatusProvider>
+  );
+}
+
+function PhotoGallerySectionBody({
+  showManageActions,
+  showMobileLightbox,
+  previewPhoto,
+  onCloseManagePreview,
+  manageCount,
+  onClearManageSelection,
+  canSetCover,
+  onSetCover,
+  onDeletePhotos,
+  isGallery,
+  sortPreference,
+  setSortPreference,
+  viewStorageId,
+  mode,
+  selectedFirst,
+  handleFilterChange,
+  activeView,
+  handleViewChange,
+  layoutKey,
+  viewportClass,
+  gridLayerClass,
+  listLayerClass,
+  displayPhotos,
+  selectedIds,
+  onToggleSelect,
+  selectionLimitReached,
+  manageSelectedIds,
+  onManagePhotoActivate,
+  onManagePhotoMarquee,
+  managePreviewId,
+  coverPhotoId,
+  facePickMode,
+  onFacePickPhoto,
+  showListDivider,
+  selectedCount,
+  photoCount,
+}: {
+  showManageActions: boolean;
+  showMobileLightbox: boolean;
+  previewPhoto: Photo | null;
+  onCloseManagePreview?: () => void;
+  manageCount: number;
+  onClearManageSelection?: () => void;
+  canSetCover: boolean;
+  onSetCover?: () => void;
+  onDeletePhotos?: () => void;
+  isGallery: boolean;
+  sortPreference: PhotoSortPreference;
+  setSortPreference: (preference: PhotoSortPreference) => void;
+  viewStorageId: string;
+  mode: "gallery" | "dashboard";
+  selectedFirst: boolean;
+  handleFilterChange: (active: boolean) => void;
+  activeView: PhotoViewMode;
+  handleViewChange: (next: PhotoViewMode) => void;
+  layoutKey: string;
+  viewportClass: string;
+  gridLayerClass: string;
+  listLayerClass: string;
+  displayPhotos: Photo[];
+  selectedIds: Set<string>;
+  onToggleSelect?: (id: string) => void;
+  selectionLimitReached: boolean;
+  manageSelectedIds?: Set<string>;
+  onManagePhotoActivate?: (id: string, meta: ManagePhotoActivateMeta) => void;
+  onManagePhotoMarquee?: (ids: string[], mergeBase?: string[]) => void;
+  managePreviewId?: string | null;
+  coverPhotoId?: string | null;
+  facePickMode: boolean;
+  onFacePickPhoto?: (photo: Photo) => void;
+  showListDivider: boolean;
+  selectedCount: number;
+  photoCount: number;
+}) {
+  const failedCount = useMediaLoadFailedCount();
+  const showUnavailableBanner =
+    failedCount >= 2 || (failedCount >= 1 && photoCount === 1);
+
+  return (
     <div className={cn(showManageActions && "max-sm:pb-[4.5rem]")}>
+      {showUnavailableBanner ? (
+        <MediaUnavailableBanner
+          message={
+            isGallery
+              ? MEDIA_UNAVAILABLE_BANNER_GALLERY
+              : MEDIA_UNAVAILABLE_BANNER_ADMIN
+          }
+        />
+      ) : null}
       {showMobileLightbox && onCloseManagePreview && (
         <ManagePhotoLightbox photo={previewPhoto} onClose={onCloseManagePreview} />
       )}

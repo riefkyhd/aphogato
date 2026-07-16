@@ -3,11 +3,47 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { useReportMediaLoadFailure } from "@/components/media/MediaLoadStatus";
+import { MEDIA_UNAVAILABLE_CELL_LABEL } from "@/lib/cloudinary/accountStatus";
 import { useLongPress } from "@/hooks/useLongPress";
 import { cn } from "@/lib/utils";
 import { listThumbUrl, previewLargeUrl } from "@/lib/mediaUrls";
 import type { ManagePhotoActivateMeta } from "@/lib/managePhotoActivate";
 import type { Photo } from "@/lib/types";
+
+function ListThumb({ src }: { src: string }) {
+  const [failed, setFailed] = useState(false);
+  const reportFailure = useReportMediaLoadFailure();
+
+  if (failed) {
+    return (
+      <div
+        className="flex h-[60px] w-[60px] shrink-0 items-center justify-center bg-bg-elevated px-1"
+        role="img"
+        aria-label={MEDIA_UNAVAILABLE_CELL_LABEL}
+      >
+        <span className="text-center text-[9px] uppercase tracking-label text-text-muted leading-tight">
+          {MEDIA_UNAVAILABLE_CELL_LABEL}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt=""
+      width={60}
+      height={60}
+      className="h-[60px] w-[60px] shrink-0 object-cover bg-bg-elevated"
+      onError={() => {
+        setFailed(true);
+        reportFailure?.();
+      }}
+    />
+  );
+}
 
 function formatIndex(index: number, total: number): string {
   const pad = String(total).length;
@@ -72,9 +108,11 @@ function ListPreview({
   deselectLabel?: string;
 }) {
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     setLoading(true);
+    setFailed(false);
   }, [photo?.id]);
 
   if (!photo) {
@@ -94,24 +132,33 @@ function ListPreview({
   return (
     <div className="flex flex-1 min-h-[280px] lg:min-h-0 flex-col bg-bg-primary">
       <div className="relative flex flex-1 items-center justify-center min-h-[240px] p-4">
-        {loading && (
+        {loading && !failed && (
           <Loader2
             className="absolute h-8 w-8 animate-spin text-text-muted"
             aria-hidden
           />
         )}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={src}
-          alt={photo.filename}
-          className={cn(
-            "max-h-full max-w-full object-contain transition-opacity",
-            loading ? "opacity-0" : "opacity-100",
-            isSelected && "ring-2 ring-text-primary ring-offset-2 ring-offset-bg-primary"
-          )}
-          onLoad={() => setLoading(false)}
-          onError={() => setLoading(false)}
-        />
+        {failed ? (
+          <p className="text-[11px] uppercase tracking-label text-text-muted text-center px-4 leading-relaxed">
+            Photo unavailable — Cloudinary account may be disabled
+          </p>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={src}
+            alt={photo.filename}
+            className={cn(
+              "max-h-full max-w-full object-contain transition-opacity",
+              loading ? "opacity-0" : "opacity-100",
+              isSelected && "ring-2 ring-text-primary ring-offset-2 ring-offset-bg-primary"
+            )}
+            onLoad={() => setLoading(false)}
+            onError={() => {
+              setLoading(false);
+              setFailed(true);
+            }}
+          />
+        )}
       </div>
       <div className="px-4 pb-4 flex flex-col items-center gap-3">
         <p className="w-full text-[11px] uppercase tracking-label text-text-secondary text-center truncate">
@@ -435,14 +482,7 @@ export function PhotoListView({
                   setFocusedIndex={setFocusedIndex}
                   rowRefs={rowRefs}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={listThumbUrl(ph.cloudinary_url)}
-                    alt=""
-                    width={60}
-                    height={60}
-                    className="h-[60px] w-[60px] shrink-0 object-cover bg-bg-elevated"
-                  />
+                  <ListThumb src={listThumbUrl(ph.cloudinary_url)} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[14px] text-text-primary">
                       {ph.filename}

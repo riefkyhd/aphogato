@@ -10,7 +10,7 @@ import { FEATURES } from "@/lib/features";
 import { cn } from "@/lib/utils";
 
 function bannerClass(level: CloudinaryUsageLevel | undefined): string {
-  if (level === "critical") {
+  if (level === "critical" || level === "disabled") {
     return "border-status-cancelled/40 bg-status-cancelled/10 text-text-primary";
   }
   if (level === "warning") {

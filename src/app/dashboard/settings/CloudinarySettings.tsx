@@ -14,6 +14,7 @@ import {
   usageLevelClass,
   usagePeakPercent,
 } from "@/lib/cloudinary/display";
+import { isCloudinaryAccountDisabled } from "@/lib/cloudinary/accountStatus";
 import { cn } from "@/lib/utils";
 
 type CloudinarySettingsResponse = {
@@ -61,8 +62,18 @@ function AccountUsageCard({
         ) : null}
       </div>
 
-      {usage?.error ? (
-        <p className="text-[12px] text-status-cancelled mt-3">{usage.error}</p>
+      {usage?.error || isCloudinaryAccountDisabled(usage) ? (
+        <div className="mt-3 space-y-1.5">
+          <p className="text-[11px] uppercase tracking-label text-status-cancelled">
+            {isCloudinaryAccountDisabled(usage)
+              ? "Account disabled"
+              : "Unavailable"}
+          </p>
+          <p className="text-[12px] text-status-cancelled leading-relaxed">
+            {usage?.error ??
+              "This Cloudinary account is disabled or inactive."}
+          </p>
+        </div>
       ) : usage ? (
         <div className="mt-3 space-y-2">
           <div className="flex items-center justify-between gap-3 text-[12px]">

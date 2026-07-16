@@ -6,7 +6,14 @@ export type CloudinaryAccountPublic = {
   cloudName: string;
 };
 
-export type CloudinaryUsageLevel = "ok" | "warning" | "critical" | "unknown";
+export type CloudinaryUsageLevel =
+  | "ok"
+  | "warning"
+  | "critical"
+  | "unknown"
+  | "disabled";
+
+export type CloudinaryAccountHealth = "active" | "disabled" | "unreachable";
 
 export type CloudinaryUsageMetric = {
   usage: number | null;
@@ -25,5 +32,8 @@ export type CloudinaryAccountUsagePublic = {
   level: CloudinaryUsageLevel;
   headline: string;
   storageLabel: string | null;
+  /** Present when Admin API usage fetch failed or account is disabled. */
   error?: string;
+  /** Set when usage could not be loaded (disabled vs generic failure). */
+  accountHealth?: CloudinaryAccountHealth;
 };

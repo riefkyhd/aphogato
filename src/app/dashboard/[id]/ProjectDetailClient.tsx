@@ -27,6 +27,11 @@ import { ProjectCloudinaryUsageBadge } from "@/components/cloudinary/ProjectClou
 import { ProjectCloudinaryAccountNote } from "@/components/cloudinary/ProjectCloudinaryAccountNote";
 import { ProjectImageKitBadge } from "@/components/imagekit/ProjectImageKitBadge";
 import { ProjectImageKitStorageNote } from "@/components/imagekit/ProjectImageKitStorageNote";
+import { MediaUnavailableBanner } from "@/components/media/MediaUnavailable";
+import {
+  CLOUDINARY_DISABLED_MESSAGE,
+  isCloudinaryAccountDisabled,
+} from "@/lib/cloudinary/accountStatus";
 import { useProjectCloudinaryUsage } from "@/hooks/useProjectCloudinaryUsage";
 import { isImageKitProject } from "@/lib/storage/provider";
 import { ProjectMaxSelection } from "./ProjectMaxSelection";
@@ -460,6 +465,9 @@ export function ProjectDetailClient({
               if (manage.count > 0) e.preventDefault();
             }}
           >
+            {!imageKitProject && isCloudinaryAccountDisabled(cloudinaryUsage) ? (
+              <MediaUnavailableBanner message={CLOUDINARY_DISABLED_MESSAGE} />
+            ) : null}
             <PhotoGallerySection
               photos={photos}
               mode="dashboard"

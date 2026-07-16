@@ -13,6 +13,10 @@ import {
   usageLevelBorderClass,
   usageLevelClass,
 } from "@/lib/cloudinary/display";
+import {
+  CLOUDINARY_DISABLED_MESSAGE,
+  isCloudinaryAccountDisabled,
+} from "@/lib/cloudinary/accountStatus";
 import { cn } from "@/lib/utils";
 import { FEATURES } from "@/lib/features";
 import { masonryImageUrl } from "@/lib/mediaUrls";
@@ -31,7 +35,7 @@ function faceSearchShareLine(faceSearch: FaceSearchStatus): string | null {
 }
 
 function usageCalloutClass(level: CloudinaryAccountUsagePublic["level"]): string {
-  if (level === "critical") {
+  if (level === "critical" || level === "disabled") {
     return "border-status-cancelled/40 bg-status-cancelled/10 text-text-primary";
   }
   if (level === "warning") {
@@ -91,6 +95,7 @@ export function ShareGalleryLinkDialog({
   const isImageKit = storageProvider === "imagekit";
   const showUsageWarning =
     !isImageKit &&
+    !isCloudinaryAccountDisabled(usage) &&
     (usage?.level === "warning" || usage?.level === "critical");
 
   return (
@@ -155,8 +160,26 @@ export function ShareGalleryLinkDialog({
 
       {!isImageKit && loading ? (
         <p className="mt-4 text-[13px] text-text-muted">Loading usage…</p>
-      ) : !isImageKit && usage?.error ? (
-        <p className="mt-4 text-[13px] text-status-cancelled">{usage.error}</p>
+      ) : !isImageKit && (usage?.error || isCloudinaryAccountDisabled(usage)) ? (
+        <div
+          className={cn(
+            "mt-4 border px-4 py-3 text-[13px] leading-relaxed",
+            usageLevelBorderClass("disabled")
+          )}
+        >
+          <p className={usageLevelClass("disabled")}>
+            {isCloudinaryAccountDisabled(usage)
+              ? "Account disabled"
+              : "Cloudinary unavailable"}
+          </p>
+          <p className="mt-1.5 text-[12px] text-text-secondary">
+            {usage?.error ?? CLOUDINARY_DISABLED_MESSAGE}
+          </p>
+          <p className="mt-2 text-[12px] text-text-secondary">
+            Client galleries will show broken photos until this account is
+            re-enabled in Cloudinary.
+          </p>
+        </div>
       ) : !isImageKit && usage && metricParts.length > 0 ? (
         <div
           className={cn(

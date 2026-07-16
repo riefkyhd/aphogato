@@ -15,9 +15,11 @@ export function ManagePhotoLightbox({
   onClose: () => void;
 }) {
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     setLoading(true);
+    setFailed(false);
   }, [photo?.id]);
 
   useEffect(() => {
@@ -49,19 +51,29 @@ export function ManagePhotoLightbox({
         </Tooltip>
       </div>
       <div className="relative flex flex-1 items-center justify-center p-4 min-h-0">
-        {loading && (
+        {loading && !failed && (
           <Loader2
             className="absolute h-8 w-8 animate-spin text-text-muted"
             aria-hidden
           />
         )}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={previewLargeUrl(photo.cloudinary_url)}
-          alt={photo.filename}
-          className="max-h-full max-w-full object-contain"
-          onLoad={() => setLoading(false)}
-        />
+        {failed ? (
+          <p className="text-[11px] uppercase tracking-label text-text-muted text-center px-4 leading-relaxed">
+            Photo unavailable — Cloudinary account may be disabled
+          </p>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={previewLargeUrl(photo.cloudinary_url)}
+            alt={photo.filename}
+            className="max-h-full max-w-full object-contain"
+            onLoad={() => setLoading(false)}
+            onError={() => {
+              setLoading(false);
+              setFailed(true);
+            }}
+          />
+        )}
       </div>
       <p className="shrink-0 px-4 pb-4 text-center text-[11px] text-text-muted">
         Long-press photos to select for delete

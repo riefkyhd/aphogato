@@ -7,6 +7,7 @@ import type {
 export function usageLevelClass(level: CloudinaryUsageLevel): string {
   switch (level) {
     case "critical":
+    case "disabled":
       return "text-status-cancelled";
     case "warning":
       return "text-status-editing";
@@ -20,6 +21,7 @@ export function usageLevelClass(level: CloudinaryUsageLevel): string {
 export function usageLevelBorderClass(level: CloudinaryUsageLevel): string {
   switch (level) {
     case "critical":
+    case "disabled":
       return "border-status-cancelled/40 bg-status-cancelled/10";
     case "warning":
       return "border-status-editing/30 bg-status-editing/10";
@@ -33,6 +35,7 @@ export function usageLevelBorderClass(level: CloudinaryUsageLevel): string {
 export function usageBarClass(level: CloudinaryUsageLevel): string {
   switch (level) {
     case "critical":
+    case "disabled":
       return "bg-status-cancelled";
     case "warning":
       return "bg-status-editing";
