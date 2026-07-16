@@ -8,11 +8,63 @@ import { DashboardMain } from "@/components/layout/DashboardShell";
 import { ProjectBoardColumn } from "@/components/projects/ProjectBoardColumn";
 import { ProjectsPageHeader } from "@/components/projects/ProjectsPageHeader";
 import {
+  MediaLoadStatusProvider,
+  useMediaLoadFailedCount,
+} from "@/components/media/MediaLoadStatus";
+import { MediaUnavailableBanner } from "@/components/media/MediaUnavailable";
+import {
+  isCloudinaryAccountDisabled,
+  MEDIA_UNAVAILABLE_BANNER_ADMIN,
+} from "@/lib/cloudinary/accountStatus";
+import type { CloudinaryAccountUsagePublic } from "@/lib/cloudinary/types";
+import { FEATURES } from "@/lib/features";
+import {
   BOARD_COLUMNS,
   groupProjectsByStatus,
   type BoardProject,
 } from "@/lib/projects/board";
 import type { ProjectStatus } from "@/lib/types";
+
+function BoardStorageBanner() {
+  const failedCount = useMediaLoadFailedCount();
+  const [accountDisabled, setAccountDisabled] = useState(false);
+
+  useEffect(() => {
+    if (!FEATURES.cloudinarySettings) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/settings/cloudinary");
+        if (!res.ok) return;
+        const json = (await res.json()) as {
+          usage?: CloudinaryAccountUsagePublic[];
+        };
+        if (cancelled) return;
+        setAccountDisabled(
+          (json.usage ?? []).some((entry) => isCloudinaryAccountDisabled(entry))
+        );
+      } catch {
+        // Cover failures still surface the banner.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!accountDisabled && failedCount < 2) return null;
+
+  return (
+    <MediaUnavailableBanner
+      message={
+        accountDisabled
+          ? "One or more Cloudinary accounts are disabled or inactive. Project covers and photos cannot load until those accounts are re-enabled in the Cloudinary console."
+          : MEDIA_UNAVAILABLE_BANNER_ADMIN
+      }
+      className="mb-4"
+    />
+  );
+}
 
 export function ProjectBoardClient({
   initialProjects,
@@ -102,55 +154,59 @@ export function ProjectBoardClient({
     <DashboardMain className="flex flex-col min-h-[calc(100dvh-3.5rem)] md:min-h-[calc(100vh-60px)]">
       <ProjectsPageHeader title="Pipeline" />
 
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <p className="text-[12px] text-text-secondary max-w-xl">
-          <span className="sm:hidden">
-            Swipe columns, change stage on each card, tap to open the gallery.
-          </span>
-          <span className="hidden sm:inline">
-            Drag cards between columns, or use the stage menu on each card. Open
-            a card to work in the gallery.
-          </span>
-        </p>
-        <label className="inline-flex items-center gap-2 text-[11px] uppercase tracking-label text-text-secondary cursor-pointer shrink-0">
-          <input
-            type="checkbox"
-            checked={hideDelivered}
-            onChange={(e) => setHideDelivered(e.target.checked)}
-            className="accent-text-primary"
-          />
-          Hide delivered
-        </label>
-      </div>
+      <MediaLoadStatusProvider>
+        <BoardStorageBanner />
 
-      {projects.length === 0 ? (
-        <div className="border border-border bg-bg-secondary p-12 text-center">
-          <p className="text-[14px] text-text-secondary">No projects yet.</p>
-          <p className="mt-2 text-[11px] uppercase tracking-label text-text-muted">
-            Create a project to see it on the pipeline.
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <p className="text-[12px] text-text-secondary max-w-xl">
+            <span className="sm:hidden">
+              Swipe columns, change stage on each card, tap to open the gallery.
+            </span>
+            <span className="hidden sm:inline">
+              Drag cards between columns, or use the stage menu on each card. Open
+              a card to work in the gallery.
+            </span>
           </p>
+          <label className="inline-flex items-center gap-2 text-[11px] uppercase tracking-label text-text-secondary cursor-pointer shrink-0">
+            <input
+              type="checkbox"
+              checked={hideDelivered}
+              onChange={(e) => setHideDelivered(e.target.checked)}
+              className="accent-text-primary"
+            />
+            Hide delivered
+          </label>
         </div>
-      ) : (
-        <div className="flex-1 overflow-x-auto pb-4 snap-x snap-mandatory overscroll-x-contain [-webkit-overflow-scrolling:touch]">
-          <div className="flex gap-3 w-max min-w-full justify-center h-full pr-1">
-            {columns.map((col) => (
-              <ProjectBoardColumn
-                key={col.status}
-                status={col.status}
-                label={col.label}
-                hint={col.hint}
-                projects={grouped[col.status]}
-                dragOver={dragOverColumn === col.status}
-                movingId={movingId}
-                onDragOver={setDragOverColumn}
-                onDragLeave={() => setDragOverColumn(null)}
-                onDrop={handleDrop}
-                onStatusChange={moveProject}
-              />
-            ))}
+
+        {projects.length === 0 ? (
+          <div className="border border-border bg-bg-secondary p-12 text-center">
+            <p className="text-[14px] text-text-secondary">No projects yet.</p>
+            <p className="mt-2 text-[11px] uppercase tracking-label text-text-muted">
+              Create a project to see it on the pipeline.
+            </p>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="flex-1 overflow-x-auto pb-4 snap-x snap-mandatory overscroll-x-contain [-webkit-overflow-scrolling:touch]">
+            <div className="flex gap-3 w-max min-w-full justify-center h-full pr-1">
+              {columns.map((col) => (
+                <ProjectBoardColumn
+                  key={col.status}
+                  status={col.status}
+                  label={col.label}
+                  hint={col.hint}
+                  projects={grouped[col.status]}
+                  dragOver={dragOverColumn === col.status}
+                  movingId={movingId}
+                  onDragOver={setDragOverColumn}
+                  onDragLeave={() => setDragOverColumn(null)}
+                  onDrop={handleDrop}
+                  onStatusChange={moveProject}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </MediaLoadStatusProvider>
     </DashboardMain>
   );
 }

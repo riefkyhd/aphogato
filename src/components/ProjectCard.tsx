@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
-import { cloudinaryLoader } from "@/lib/cloudinaryLoader";
+import { ProjectCoverImage } from "@/components/projects/ProjectCoverImage";
 import { StatusDot, type ProjectStatus } from "@/components/StatusDot";
 import { cn } from "@/lib/utils";
 import type { Project, Photo } from "@/lib/types";
@@ -31,14 +30,12 @@ export function ProjectCard({ project }: { project: ProjectCardData }) {
     >
       {project.cover ? (
         <div className="absolute inset-0 overflow-hidden">
-          <Image
-            loader={cloudinaryLoader}
+          <ProjectCoverImage
             src={project.cover.cloudinary_url}
-            alt={project.name}
-            fill
+            alt=""
             sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
             className={cn(
-              "object-cover transition-transform duration-500 ease-out",
+              "transition-transform duration-500 ease-out",
               isNavigating
                 ? "scale-105 brightness-75"
                 : "group-hover:scale-110 group-hover:brightness-110"

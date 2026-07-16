@@ -12,8 +12,11 @@ export const CLOUDINARY_DISABLED_HEADLINE = "Account disabled";
 export const CLOUDINARY_DISABLED_MESSAGE =
   "This Cloudinary account is disabled or inactive. Photos cannot load until it is re-enabled in the Cloudinary console (usually by fixing billing or upgrading the plan).";
 
-/** Shown inside individual photo cells when delivery fails. */
+/** Shown on project covers / thumbs when delivery fails. */
 export const MEDIA_UNAVAILABLE_CELL_LABEL = "Unavailable";
+
+/** Shorter cover copy for project cards (under gradient). */
+export const MEDIA_UNAVAILABLE_COVER_LABEL = "Cover unavailable";
 
 /** Dashboard / admin gallery banner when many images fail to load. */
 export const MEDIA_UNAVAILABLE_BANNER_ADMIN =

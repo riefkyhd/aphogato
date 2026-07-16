@@ -1,10 +1,9 @@
 "use client";
 
 import { format, parseISO } from "date-fns";
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { cloudinaryLoader } from "@/lib/cloudinaryLoader";
+import { ProjectCoverImage } from "@/components/projects/ProjectCoverImage";
 import {
   BOARD_COLUMNS,
   type BoardProject,
@@ -111,14 +110,11 @@ export function ProjectBoardCard({
         <div className="flex gap-3 pointer-events-none">
           <div className="relative h-14 w-20 shrink-0 bg-bg-elevated overflow-hidden">
             {project.cover_url ? (
-              <Image
-                loader={cloudinaryLoader}
+              <ProjectCoverImage
                 src={project.cover_url}
                 alt=""
-                fill
                 sizes="80px"
-                draggable={false}
-                className="object-cover"
+                variant="thumb"
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center text-[9px] uppercase tracking-label text-text-muted text-center px-1">

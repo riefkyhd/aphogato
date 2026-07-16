@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ModalShell } from "@/components/ui/ModalShell";
 import type {
@@ -16,12 +16,41 @@ import {
 import {
   CLOUDINARY_DISABLED_MESSAGE,
   isCloudinaryAccountDisabled,
+  MEDIA_UNAVAILABLE_CELL_LABEL,
 } from "@/lib/cloudinary/accountStatus";
 import { cn } from "@/lib/utils";
 import { FEATURES } from "@/lib/features";
 import { masonryImageUrl } from "@/lib/mediaUrls";
 import type { StorageProvider } from "@/lib/storage/provider";
 import type { FaceSearchStatus } from "@/lib/faces/types";
+
+function ShareCoverPreview({ src }: { src: string }) {
+  const [failed, setFailed] = useState(false);
+
+  return (
+    <div className="mt-4 overflow-hidden border border-border bg-bg-primary/40">
+      {failed ? (
+        <div className="flex h-40 items-center justify-center bg-bg-elevated px-4">
+          <p className="text-center text-[11px] uppercase tracking-label text-text-muted">
+            {MEDIA_UNAVAILABLE_CELL_LABEL}
+          </p>
+        </div>
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={masonryImageUrl(src, 640, 75)}
+          alt=""
+          className="block w-full max-h-40 object-cover"
+          onError={() => setFailed(true)}
+        />
+      )}
+      <p className="px-4 py-2 text-[11px] text-text-muted leading-relaxed border-t border-border">
+        This cover appears in link previews when you share the gallery with your
+        client.
+      </p>
+    </div>
+  );
+}
 
 function faceSearchShareLine(faceSearch: FaceSearchStatus): string | null {
   if (!faceSearch.enabled) return null;
@@ -113,18 +142,7 @@ export function ShareGalleryLinkDialog({
       </h2>
 
       {coverImageUrl ? (
-        <div className="mt-4 overflow-hidden border border-border bg-bg-primary/40">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={masonryImageUrl(coverImageUrl, 640, 75)}
-            alt=""
-            className="block w-full max-h-40 object-cover"
-          />
-          <p className="px-4 py-2 text-[11px] text-text-muted leading-relaxed border-t border-border">
-            This cover appears in link previews when you share the gallery with
-            your client.
-          </p>
-        </div>
+        <ShareCoverPreview src={coverImageUrl} />
       ) : null}
 
       <p className="mt-3 text-[14px] text-text-secondary leading-relaxed">
