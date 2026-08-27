@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, ExternalLink, Menu, X } from "lucide-react";
+import { Bell, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -10,9 +10,8 @@ import { SignOutButton } from "@/components/SignOutButton";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { FEATURES } from "@/lib/features";
 import { navIsActive } from "@/lib/nav";
+import { getDashboardNavItems } from "@/lib/navConfig";
 import { cn } from "@/lib/utils";
-
-const PORTFOLIO_URL = "https://muhammad-hadid.com";
 
 const linkClass =
   "block py-3 text-[13px] uppercase tracking-label border-b border-border last:border-0 transition-colors";
@@ -55,6 +54,7 @@ function NavLink({
 export function NavbarMenu({ shootsToday }: { shootsToday: number }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const navItems = getDashboardNavItems();
 
   useEffect(() => {
     setOpen(false);
@@ -63,7 +63,7 @@ export function NavbarMenu({ shootsToday }: { shootsToday: number }) {
   useBodyScrollLock(open);
 
   return (
-    <div className="ml-auto md:hidden">
+    <div className="ml-auto lg:hidden">
       <Tooltip label={open ? "Close menu" : "Open menu"}>
         <button
           type="button"
@@ -85,78 +85,52 @@ export function NavbarMenu({ shootsToday }: { shootsToday: number }) {
         <>
           <button
             type="button"
-            className="fixed inset-0 top-14 z-40 bg-black/70"
+            className="fixed inset-0 top-14 md:top-[60px] z-40 bg-black/70"
             aria-label="Close menu"
             onClick={() => setOpen(false)}
           />
           <nav
             id="mobile-nav"
-            className="fixed left-0 right-0 top-14 z-50 max-h-[calc(100dvh-3.5rem)] overflow-y-auto border-b border-border bg-bg-primary px-4 py-2 shadow-lg"
+            className="fixed left-0 right-0 top-14 md:top-[60px] z-50 max-h-[calc(100dvh-3.5rem)] md:max-h-[calc(100dvh-60px)] overflow-y-auto border-b border-border bg-bg-primary px-4 py-2 shadow-lg"
           >
-            {FEATURES.projectsGrid ? (
-              <NavLink href="/dashboard" className={linkClass} onActiveTap={() => setOpen(false)}>
-                Projects
-              </NavLink>
-            ) : null}
-            {FEATURES.finance ? (
-              <PrivacyFinanceLink
-                className={cn(linkClass, "flex items-center gap-2")}
-                onActiveTap={() => setOpen(false)}
-              />
-            ) : null}
-            {FEATURES.calendar ? (
-            <NavLink
-              href="/dashboard/calendar"
-              className={cn(linkClass, "flex items-center gap-2")}
-              onActiveTap={() => setOpen(false)}
-            >
-              Calendar
-              {shootsToday > 0 && (
-                <span className="inline-flex items-center text-status-editing">
-                  <Bell className="h-3.5 w-3.5" aria-hidden />
-                  <span className="sr-only">
-                    {shootsToday} shoot{shootsToday === 1 ? "" : "s"} today
-                  </span>
-                </span>
-              )}
-            </NavLink>
-            ) : null}
-            <a
-              href={PORTFOLIO_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={cn(linkClass, "flex items-center gap-2")}
-            >
-              Portfolio
-              <ExternalLink className="h-3.5 w-3.5 opacity-70" aria-hidden />
-            </a>
-            {FEATURES.clients ? (
-              <NavLink
-                href="/dashboard/clients"
-                className={linkClass}
-                onActiveTap={() => setOpen(false)}
-              >
-                Clients
-              </NavLink>
-            ) : null}
-            {FEATURES.quotations || FEATURES.invoices ? (
-              <NavLink
-                href="/dashboard/quotations"
-                className={linkClass}
-                onActiveTap={() => setOpen(false)}
-              >
-                Quotes & invoices
-              </NavLink>
-            ) : null}
-            {FEATURES.settings ? (
-              <NavLink
-                href="/dashboard/settings"
-                className={linkClass}
-                onActiveTap={() => setOpen(false)}
-              >
-                Settings
-              </NavLink>
-            ) : null}
+            {navItems.map((item) => {
+              if (item.id === "finance") {
+                return FEATURES.finance ? (
+                  <PrivacyFinanceLink
+                    key={item.id}
+                    className={cn(linkClass, "flex items-center gap-2")}
+                    onActiveTap={() => setOpen(false)}
+                  />
+                ) : null;
+              }
+
+              const showBell =
+                item.showCalendarBell &&
+                FEATURES.todayShootsReminder &&
+                shootsToday > 0;
+
+              return (
+                <NavLink
+                  key={item.id}
+                  href={item.href}
+                  className={cn(
+                    linkClass,
+                    showBell && "flex items-center gap-2"
+                  )}
+                  onActiveTap={() => setOpen(false)}
+                >
+                  {item.label}
+                  {showBell ? (
+                    <span className="inline-flex items-center text-status-editing">
+                      <Bell className="h-3.5 w-3.5" aria-hidden />
+                      <span className="sr-only">
+                        {shootsToday} shoot{shootsToday === 1 ? "" : "s"} today
+                      </span>
+                    </span>
+                  ) : null}
+                </NavLink>
+              );
+            })}
             <div className="py-4">
               <SignOutButton />
             </div>

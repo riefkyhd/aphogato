@@ -1,12 +1,18 @@
-import { Suspense } from "react";
 import { Logo } from "@/components/Logo";
+import { sanitizeNextPath } from "@/lib/security/safeRedirect";
 import { LoginForm } from "./LoginForm";
 
 export const metadata = {
   title: "Sign in — Gallery of Muhammad Hadid",
 };
 
-export default function LoginPage() {
+export default function LoginPage({
+  searchParams,
+}: {
+  searchParams?: { next?: string };
+}) {
+  const next = sanitizeNextPath(searchParams?.next);
+
   return (
     <main className="min-h-screen flex items-center justify-center bg-bg-primary px-6">
       <div className="w-full max-w-[360px]">
@@ -18,9 +24,7 @@ export default function LoginPage() {
             Gallery of Muhammad Hadid
           </p>
         </div>
-        <Suspense fallback={null}>
-          <LoginForm />
-        </Suspense>
+        <LoginForm next={next} />
       </div>
     </main>
   );

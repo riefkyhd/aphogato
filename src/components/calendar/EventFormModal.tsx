@@ -22,6 +22,14 @@ import { cn } from "@/lib/utils";
 
 const selectClass = "input-dark w-full";
 
+export type EventFormPrefill = {
+  title?: string;
+  clientName?: string;
+  shootDate?: string;
+  location?: string;
+  notes?: string;
+};
+
 export function EventFormModal({
   open,
   initialDate,
@@ -29,6 +37,7 @@ export function EventFormModal({
   projects,
   saving,
   initialIncomeAmount,
+  prefill,
   onSave,
   onClose,
 }: {
@@ -37,6 +46,7 @@ export function EventFormModal({
   event?: CalendarEvent | null;
   projects: CalendarProject[];
   initialIncomeAmount?: string;
+  prefill?: EventFormPrefill | null;
   saving: boolean;
   onSave: (payload: Record<string, unknown>) => void;
   onClose: () => void;
@@ -69,6 +79,23 @@ export function EventFormModal({
       setNotes(event.notes ?? "");
       setProjectId(event.project_id ?? "");
       setIncomeAmount(initialIncomeAmount ?? "");
+    } else if (prefill) {
+      setTitle(prefill.title ?? "");
+      setClientName(prefill.clientName ?? "");
+      setShootType("other");
+      setLocation(prefill.location ?? "");
+      setShootDate(
+        prefill.shootDate ||
+          (initialDate
+            ? format(initialDate, "yyyy-MM-dd")
+            : format(new Date(), "yyyy-MM-dd"))
+      );
+      setShootTime("09:00");
+      setShootEndTime("11:00");
+      setStatus("scheduled");
+      setNotes(prefill.notes ?? "");
+      setProjectId("");
+      setIncomeAmount("");
     } else {
       setTitle("");
       setClientName("");
@@ -86,7 +113,7 @@ export function EventFormModal({
       setProjectId("");
       setIncomeAmount("");
     }
-  }, [open, event, initialDate, initialIncomeAmount]);
+  }, [open, event, initialDate, initialIncomeAmount, prefill]);
 
   const handleStartTimeChange = useCallback(
     (value: string) => {

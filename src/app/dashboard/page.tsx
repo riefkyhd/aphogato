@@ -1,24 +1,9 @@
-import { Suspense } from "react";
-import { FEATURES } from "@/lib/features";
-import { DashboardMain } from "@/components/layout/DashboardShell";
-import { ProjectsGridSkeleton } from "@/components/loading/dashboard-skeletons";
-import { ProjectsPageHeader } from "@/components/projects/ProjectsPageHeader";
-import { ProjectsGridSection } from "@/app/dashboard/ProjectsGridSection";
+import { HomeClient } from "@/app/dashboard/HomeClient";
+import { loadHomeData } from "@/lib/home/loadHomeData";
 
 export const dynamic = "force-dynamic";
 
-export default function DashboardPage() {
-  return (
-    <DashboardMain>
-      {FEATURES.projectsGrid ? (
-        <>
-          <ProjectsPageHeader />
-
-          <Suspense fallback={<ProjectsGridSkeleton />}>
-            <ProjectsGridSection />
-          </Suspense>
-        </>
-      ) : null}
-    </DashboardMain>
-  );
+export default async function DashboardPage() {
+  const data = await loadHomeData();
+  return <HomeClient data={data} />;
 }

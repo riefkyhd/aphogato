@@ -9,7 +9,7 @@ import {
   subMonths,
 } from "date-fns";
 import { ChevronLeft, ChevronRight, Download, Info } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useUserPreferencesContext } from "@/components/preferences/UserPreferencesProvider";
 import { toast } from "sonner";
@@ -24,7 +24,10 @@ import {
   EventDetailPanel,
   type CalendarProject,
 } from "@/components/calendar/EventDetailPanel";
-import { EventFormModal } from "@/components/calendar/EventFormModal";
+import {
+  EventFormModal,
+  type EventFormPrefill,
+} from "@/components/calendar/EventFormModal";
 import { Button } from "@/components/ui/Button";
 import {
   PageToolbarActions,
@@ -53,6 +56,7 @@ export function CalendarClient({
   isOAuthConfigured: boolean;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { guardSensitiveAction } = usePrivacyLockContext();
   const { preferences, loaded: prefsLoaded } = useUserPreferencesContext();
   const [events, setEvents] = useState<CalendarEvent[]>(initialEvents);
@@ -80,6 +84,7 @@ export function CalendarClient({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [formInitialDate, setFormInitialDate] = useState<Date | null>(null);
+  const [formPrefill, setFormPrefill] = useState<EventFormPrefill | null>(null);
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -153,12 +158,36 @@ export function CalendarClient({
 
   const openNewEvent = useCallback((date?: Date) => {
     setEditingEvent(null);
+    setFormPrefill(null);
     setFormInitialDate(date ?? null);
     setModalOpen(true);
   }, []);
 
+  useEffect(() => {
+    if (searchParams.get("new") !== "1") return;
+
+    const duration = searchParams.get("duration")?.trim();
+    const noteParts = [
+      searchParams.get("notes")?.trim(),
+      duration ? `Duration: ${duration}` : "",
+    ].filter(Boolean);
+
+    setEditingEvent(null);
+    setFormInitialDate(null);
+    setFormPrefill({
+      title: searchParams.get("title")?.trim() ?? "",
+      clientName: searchParams.get("client")?.trim() ?? "",
+      shootDate: searchParams.get("date")?.trim() ?? "",
+      location: searchParams.get("location")?.trim() ?? "",
+      notes: noteParts.join("\n"),
+    });
+    setModalOpen(true);
+    router.replace("/dashboard/calendar", { scroll: false });
+  }, [router, searchParams]);
+
   const openEditEvent = useCallback(() => {
     if (!panelEvent) return;
+    setFormPrefill(null);
     setEditingEvent(panelEvent);
     setFormInitialDate(null);
     setModalOpen(true);
@@ -591,12 +620,14 @@ export function CalendarClient({
         event={editingEvent}
         projects={projects}
         initialIncomeAmount={editIncomeAmount}
+        prefill={formPrefill}
         saving={saving}
         onSave={handleSave}
         onClose={() => {
           if (!saving) {
             setModalOpen(false);
             setEditingEvent(null);
+            setFormPrefill(null);
           }
         }}
       />

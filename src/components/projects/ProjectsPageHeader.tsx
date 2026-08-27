@@ -15,11 +15,11 @@ export function ProjectsPageHeader({
         </h1>
         {FEATURES.newProject ? (
           <NavigatingLink
-            href="/dashboard/new"
+            href="/dashboard/galleries/new"
             className="btn-primary w-full sm:w-auto justify-center shrink-0"
             loadingLabel="Opening…"
           >
-            New project
+            New gallery
           </NavigatingLink>
         ) : null}
       </div>

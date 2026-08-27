@@ -7,11 +7,14 @@ import { toast } from "sonner";
 import { FEATURES } from "@/lib/features";
 import { DashboardMain } from "@/components/layout/DashboardShell";
 import { ClientEventTools } from "@/components/quotations/ClientEventTools";
+import { ClientNameInput } from "@/components/clients/ClientNameInput";
+import { buildCalendarPrefillUrl } from "@/lib/quotations/calendarPrefill";
 import { QuotationArchive } from "@/components/quotations/QuotationArchive";
 import { QuotationConfirmDialog } from "@/components/quotations/QuotationConfirmDialog";
 import { QuotationPageFrame } from "@/components/quotations/QuotationPageFrame";
 import { QuotationPreview } from "@/components/quotations/QuotationPreview";
 import { BackNavLink } from "@/components/BackNavLink";
+import { SalesSectionNav } from "@/components/sales/SalesSectionNav";
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
 import { Input } from "@/components/ui/Input";
@@ -441,8 +444,10 @@ export function QuotationClient({
         className="inline-flex items-center gap-2 text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors mb-6"
       >
         <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
-        All projects
+        Home
       </BackNavLink>
+
+      <SalesSectionNav className="mb-6" />
 
       <header className="mb-8 border-b border-border pb-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -601,15 +606,13 @@ export function QuotationClient({
                 Client
               </p>
             </div>
-            <div>
-              <Label htmlFor="client-name">Name</Label>
-              <Input
-                id="client-name"
-                value={draft.clientName}
-                onChange={(e) => updateDraft({ clientName: e.target.value })}
-                placeholder="Andrew & Katherine"
-              />
-            </div>
+            <ClientNameInput
+              id="client-name"
+              label="Name"
+              value={draft.clientName}
+              onChange={(value) => updateDraft({ clientName: value })}
+              placeholder="Andrew & Katherine"
+            />
             <div>
               <Label htmlFor="client-phone">Phone</Label>
               <Input
@@ -681,6 +684,23 @@ export function QuotationClient({
                 />
               </div>
             </div>
+            {FEATURES.calendar ? (
+              <div className="mt-4">
+                {buildCalendarPrefillUrl(draft) ? (
+                  <Link
+                    href={buildCalendarPrefillUrl(draft)!}
+                    className="text-[12px] uppercase tracking-label text-text-secondary hover:text-text-primary underline underline-offset-2 transition-colors"
+                  >
+                    Add to calendar
+                  </Link>
+                ) : (
+                  <p className="text-[12px] text-text-muted leading-relaxed">
+                    Add event name and date to open the calendar with details
+                    prefilled.
+                  </p>
+                )}
+              </div>
+            ) : null}
             </div>
           </section>
 

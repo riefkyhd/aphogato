@@ -1,13 +1,4 @@
-const DASHBOARD_SECTION_PREFIXES = [
-  "/dashboard/calendar",
-  "/dashboard/finance",
-  "/dashboard/clients",
-  "/dashboard/pricing",
-  "/dashboard/quotations",
-  "/dashboard/invoices",
-  "/dashboard/settings",
-  "/dashboard/new",
-];
+const PROJECT_DETAIL_PATTERN = /^\/dashboard\/[0-9a-f-]{36}$/i;
 
 export function financeIsActive(pathname: string): boolean {
   return (
@@ -21,8 +12,27 @@ export function quotesIsActive(pathname: string): boolean {
     pathname === "/dashboard/quotations" ||
     pathname.startsWith("/dashboard/quotations/") ||
     pathname === "/dashboard/invoices" ||
-    pathname.startsWith("/dashboard/invoices/")
+    pathname.startsWith("/dashboard/invoices/") ||
+    pathname === "/dashboard/pricing" ||
+    pathname.startsWith("/dashboard/pricing/")
   );
+}
+
+export function galleriesIsActive(pathname: string): boolean {
+  if (pathname === "/dashboard/galleries" || pathname.startsWith("/dashboard/galleries/")) {
+    return true;
+  }
+  if (pathname === "/dashboard/board" || pathname.startsWith("/dashboard/board/")) {
+    return true;
+  }
+  if (pathname === "/dashboard/new" || pathname.startsWith("/dashboard/new/")) {
+    return true;
+  }
+  return PROJECT_DETAIL_PATTERN.test(pathname);
+}
+
+export function homeIsActive(pathname: string): boolean {
+  return pathname === "/dashboard";
 }
 
 export function navIsActive(pathname: string, href: string): boolean {
@@ -34,15 +44,18 @@ export function navIsActive(pathname: string, href: string): boolean {
     return quotesIsActive(pathname);
   }
 
+  if (href === "/dashboard/galleries") {
+    return galleriesIsActive(pathname);
+  }
+
   if (href === "/dashboard") {
-    if (pathname === "/dashboard" || pathname === "/dashboard/board") {
-      return true;
-    }
-    if (!pathname.startsWith("/dashboard/")) return false;
-    return !DASHBOARD_SECTION_PREFIXES.some(
-      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
-    );
+    return homeIsActive(pathname);
   }
 
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+/** @deprecated Legacy helper — prefer galleriesIsActive */
+export function projectsIsActive(pathname: string): boolean {
+  return galleriesIsActive(pathname);
 }

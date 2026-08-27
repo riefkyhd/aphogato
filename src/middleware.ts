@@ -1,4 +1,4 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import {
   checkRateLimit,
@@ -10,6 +10,11 @@ import {
   getSupabasePublishableKey,
   getSupabaseUrl,
 } from "./lib/supabase/env";
+import {
+  hasSupabaseAuthCookie,
+  isAuthGuardRoute,
+  readMiddlewareSessionUser,
+} from "./lib/supabase/middlewareAuth";
 
 function rateLimitedResponse(
   request: NextRequest,
@@ -34,6 +39,26 @@ function rateLimitedResponse(
   );
 }
 
+function nextResponse(request: NextRequest) {
+  return NextResponse.next({ request: { headers: request.headers } });
+}
+
+function createReadonlyMiddlewareSupabase(request: NextRequest) {
+  return createServerClient(getSupabaseUrl(), getSupabasePublishableKey(), {
+    cookies: {
+      get(name: string) {
+        return request.cookies.get(name)?.value;
+      },
+      set() {
+        // Redirect-only routes; session refresh happens in dashboard layout.
+      },
+      remove() {
+        // Redirect-only routes; session refresh happens in dashboard layout.
+      },
+    },
+  });
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -53,54 +78,47 @@ export async function middleware(request: NextRequest) {
     if (limited) return limited;
   }
 
-  let response = NextResponse.next({ request: { headers: request.headers } });
-
-  const supabase = createServerClient(
-    getSupabaseUrl(),
-    getSupabasePublishableKey(),
-    {
-      cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value;
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({ name, value, ...options });
-          response = NextResponse.next({
-            request: { headers: request.headers },
-          });
-          response.cookies.set({ name, value, ...options });
-        },
-        remove(name: string, options: CookieOptions) {
-          request.cookies.set({ name, value: "", ...options });
-          response = NextResponse.next({
-            request: { headers: request.headers },
-          });
-          response.cookies.set({ name, value: "", ...options });
-        },
-      },
-    }
-  );
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  if (!isAuthGuardRoute(pathname)) {
+    return applySecurityHeaders(nextResponse(request));
+  }
 
   const url = request.nextUrl;
-  const isHome = url.pathname === "/";
-  const isDashboard = url.pathname.startsWith("/dashboard");
-  const isLogin = url.pathname === "/login";
+  const isHome = pathname === "/";
+  const isDashboard = pathname.startsWith("/dashboard");
+  const isLogin = pathname === "/login";
+  const hasAuthCookie = hasSupabaseAuthCookie(request);
+
+  if (isLogin && !hasAuthCookie) {
+    return applySecurityHeaders(nextResponse(request));
+  }
+
+  if (isHome && !hasAuthCookie) {
+    const redirectUrl = url.clone();
+    redirectUrl.pathname = "/login";
+    redirectUrl.search = "";
+    return applySecurityHeaders(NextResponse.redirect(redirectUrl));
+  }
+
+  if (isDashboard && !hasAuthCookie) {
+    const redirectUrl = url.clone();
+    redirectUrl.pathname = "/login";
+    redirectUrl.searchParams.set("next", url.pathname);
+    return applySecurityHeaders(NextResponse.redirect(redirectUrl));
+  }
+
+  // Dashboard: pass through when cookies exist; layout validates + refreshes session.
+  if (isDashboard) {
+    return applySecurityHeaders(nextResponse(request));
+  }
+
+  // Home / login with cookies: read session locally (no Auth server round trip).
+  const supabase = createReadonlyMiddlewareSupabase(request);
+  const user = await readMiddlewareSessionUser(supabase);
 
   if (isHome) {
     const redirectUrl = url.clone();
     redirectUrl.pathname = user ? "/dashboard" : "/login";
     redirectUrl.search = "";
-    return applySecurityHeaders(NextResponse.redirect(redirectUrl));
-  }
-
-  if (isDashboard && !user) {
-    const redirectUrl = url.clone();
-    redirectUrl.pathname = "/login";
-    redirectUrl.searchParams.set("next", url.pathname);
     return applySecurityHeaders(NextResponse.redirect(redirectUrl));
   }
 
@@ -111,7 +129,7 @@ export async function middleware(request: NextRequest) {
     return applySecurityHeaders(NextResponse.redirect(redirectUrl));
   }
 
-  return applySecurityHeaders(response);
+  return applySecurityHeaders(nextResponse(request));
 }
 
 export const config = {

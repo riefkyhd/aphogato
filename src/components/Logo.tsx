@@ -5,9 +5,9 @@ import { cn } from "@/lib/utils";
 const LOGO_SRC = "/images/logo/MH_logo.png";
 
 const sizes = {
-  sm: "h-7 w-7",
-  md: "h-10 w-10",
-  lg: "h-[72px] w-[72px]",
+  sm: { box: "h-7 w-7", px: 28 },
+  md: { box: "h-10 w-10", px: 40 },
+  lg: { box: "h-[72px] w-[72px]", px: 72 },
 } as const;
 
 export function Logo({
@@ -21,14 +21,15 @@ export function Logo({
   className?: string;
   priority?: boolean;
 }) {
+  const { box, px } = sizes[size];
   const image = (
     <Image
       src={LOGO_SRC}
       alt="Muhammad Hadid"
-      width={612}
-      height={612}
+      width={px}
+      height={px}
       priority={priority}
-      className={cn(sizes[size], "object-contain", className)}
+      className={cn(box, "object-contain", className)}
     />
   );
 

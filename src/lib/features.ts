@@ -8,10 +8,10 @@ export const FEATURES = {
   /** Projects grid list at /dashboard */
   projectsGrid: true,
 
-  /** Kanban pipeline board at /dashboard/board */
+  /** Kanban pipeline board at /dashboard/galleries/board */
   projectPipeline: true,
 
-  /** Create-new-project form at /dashboard/new */
+  /** Create-new-gallery form at /dashboard/galleries/new */
   newProject: true,
 
   /** Single-project admin page at /dashboard/[id] (gallery, actions, tools) */
@@ -73,6 +73,9 @@ export const FEATURES = {
 
   /** Domain verification / DNS security guide at /dashboard/settings/domain-verification */
   domainVerification: true,
+
+  /** Hide storage badges/banners in main flows; collapse storage in Settings */
+  photographerFirstUi: true,
 } as const;
 
 export type FeatureKey = keyof typeof FEATURES;

@@ -10,6 +10,20 @@ const securityHeaders = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async redirects() {
+    return [
+      {
+        source: "/dashboard/board",
+        destination: "/dashboard/galleries/board",
+        permanent: false,
+      },
+      {
+        source: "/dashboard/new",
+        destination: "/dashboard/galleries/new",
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     return [
       {

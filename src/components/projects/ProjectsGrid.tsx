@@ -49,7 +49,9 @@ function ProjectsGridInner({ projects }: { projects: ProjectCardData[] }) {
     };
   }, []);
 
-  const showBanner = accountDisabled || failedCount >= 2;
+  const showBanner =
+    !FEATURES.photographerFirstUi &&
+    (accountDisabled || failedCount >= 2);
 
   return (
     <>

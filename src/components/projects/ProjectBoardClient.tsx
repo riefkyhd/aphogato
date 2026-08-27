@@ -52,18 +52,20 @@ function BoardStorageBanner() {
     };
   }, []);
 
-  if (!accountDisabled && failedCount < 2) return null;
+  if (!FEATURES.photographerFirstUi && (accountDisabled || failedCount >= 2)) {
+    return (
+      <MediaUnavailableBanner
+        message={
+          accountDisabled
+            ? "One or more Cloudinary accounts are disabled or inactive. Project covers and photos cannot load until those accounts are re-enabled in the Cloudinary console."
+            : MEDIA_UNAVAILABLE_BANNER_ADMIN
+        }
+        className="mb-4"
+      />
+    );
+  }
 
-  return (
-    <MediaUnavailableBanner
-      message={
-        accountDisabled
-          ? "One or more Cloudinary accounts are disabled or inactive. Project covers and photos cannot load until those accounts are re-enabled in the Cloudinary console."
-          : MEDIA_UNAVAILABLE_BANNER_ADMIN
-      }
-      className="mb-4"
-    />
-  );
+  return null;
 }
 
 export function ProjectBoardClient({

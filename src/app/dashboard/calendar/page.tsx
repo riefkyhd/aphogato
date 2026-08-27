@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { CalendarClient } from "@/app/dashboard/calendar/CalendarClient";
 import { FEATURES } from "@/lib/features";
 import { isGoogleOAuthConfigured } from "@/lib/calendar/googleOAuthConfig";
@@ -28,11 +29,13 @@ export default async function CalendarPage() {
   const projects = projectsRes.data ?? [];
 
   return FEATURES.calendar ? (
-    <CalendarClient
-      initialEvents={initialEvents}
-      projects={projects}
-      isGoogleConnected={isGoogleConnected}
-      isOAuthConfigured={isOAuthConfigured}
-    />
+    <Suspense fallback={null}>
+      <CalendarClient
+        initialEvents={initialEvents}
+        projects={projects}
+        isGoogleConnected={isGoogleConnected}
+        isOAuthConfigured={isOAuthConfigured}
+      />
+    </Suspense>
   ) : null;
 }

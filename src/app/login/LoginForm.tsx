@@ -1,17 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { createBrowserSupabase } from "@/lib/supabase/browser";
-import { sanitizeNextPath } from "@/lib/security/safeRedirect";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 
-export function LoginForm() {
+export function LoginForm({ next }: { next: string }) {
   const router = useRouter();
-  const params = useSearchParams();
-  const next = sanitizeNextPath(params.get("next"));
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,6 +19,7 @@ export function LoginForm() {
     setError(null);
     setLoading(true);
     try {
+      const { createBrowserSupabase } = await import("@/lib/supabase/browser");
       const supabase = createBrowserSupabase();
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,

@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 
 /** Shared horizontal bounds for navbar, banners, and dashboard pages on large screens. */
 export const dashboardShellClass =
-  "mx-auto w-full max-w-[1400px] px-4 sm:px-6 md:px-10";
+  "mx-auto w-full max-w-[1400px] px-4 sm:px-6 lg:px-10";
 
 export function DashboardShell({
   children,
@@ -22,7 +22,7 @@ export function DashboardMain({
   className?: string;
 }) {
   return (
-    <main className={cn("py-6 sm:py-10", className)}>
+    <main className={cn("py-5 sm:py-8 lg:py-10", className)}>
       <DashboardShell>{children}</DashboardShell>
     </main>
   );

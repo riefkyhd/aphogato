@@ -2,7 +2,8 @@
 
 import { format, parseISO } from "date-fns";
 import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { DashboardMain } from "@/components/layout/DashboardShell";
 import { BackNavLink } from "@/components/BackNavLink";
@@ -16,9 +17,15 @@ import { ClientSocialAccountsEditor } from "@/components/clients/ClientSocialAcc
 import { ClientSocialLinks } from "@/components/clients/ClientSocialLinks";
 import { parseJsonResponse } from "@/lib/clients/parseJsonResponse";
 import { normalizeClientSocialAccounts } from "@/lib/clients/socialAccounts";
-import type { Client, ClientSocialAccount } from "@/lib/types";
+import type { ClientBookEntry } from "@/lib/clients/clientBookStats";
+import type { ClientSocialAccount } from "@/lib/types";
 
-export function ClientsClient({ initialClients }: { initialClients: Client[] }) {
+export function ClientsClient({
+  initialClients,
+}: {
+  initialClients: ClientBookEntry[];
+}) {
+  const router = useRouter();
   const [clients, setClients] = useState(initialClients);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -28,7 +35,7 @@ export function ClientsClient({ initialClients }: { initialClients: Client[] }) 
     []
   );
   const [saving, setSaving] = useState(false);
-  const [editing, setEditing] = useState<Client | null>(null);
+  const [editing, setEditing] = useState<ClientBookEntry | null>(null);
 
   const resetForm = () => {
     setName("");
@@ -39,13 +46,13 @@ export function ClientsClient({ initialClients }: { initialClients: Client[] }) 
     setEditing(null);
   };
 
-  const reload = useCallback(async () => {
-    const res = await fetch("/api/clients");
-    const json = await parseJsonResponse<Client[] | { error?: string }>(res);
-    if (res.ok && Array.isArray(json)) {
-      setClients(json);
-    }
-  }, []);
+  useEffect(() => {
+    setClients(initialClients);
+  }, [initialClients]);
+
+  const refreshClients = useCallback(() => {
+    router.refresh();
+  }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -70,7 +77,7 @@ export function ClientsClient({ initialClients }: { initialClients: Client[] }) 
       if (!res.ok) throw new Error(json.error ?? "Failed to save client");
       toast.success(editing ? "Client updated" : "Client added");
       resetForm();
-      await reload();
+      refreshClients();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to save");
     } finally {
@@ -78,7 +85,7 @@ export function ClientsClient({ initialClients }: { initialClients: Client[] }) 
     }
   }
 
-  function startEdit(client: Client) {
+  function startEdit(client: ClientBookEntry) {
     setEditing(client);
     setName(client.name);
     setPhone(client.phone ?? "");
@@ -87,7 +94,7 @@ export function ClientsClient({ initialClients }: { initialClients: Client[] }) 
     setSocialAccounts(normalizeClientSocialAccounts(client.social_accounts));
   }
 
-  async function removeClient(client: Client) {
+  async function removeClient(client: ClientBookEntry) {
     if (!window.confirm(`Remove ${client.name} from the client book?`)) return;
     try {
       const res = await fetch(`/api/clients/${client.id}`, { method: "DELETE" });
@@ -95,7 +102,7 @@ export function ClientsClient({ initialClients }: { initialClients: Client[] }) 
       if (!res.ok) throw new Error(json.error ?? "Failed to delete");
       toast.success("Client removed");
       if (editing?.id === client.id) resetForm();
-      await reload();
+      refreshClients();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to delete");
     }
@@ -108,7 +115,7 @@ export function ClientsClient({ initialClients }: { initialClients: Client[] }) 
         className="inline-flex items-center gap-2 text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors mb-6"
       >
         <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
-        All projects
+        Home
       </BackNavLink>
 
       <header className="mb-8 border-b border-border pb-6">
@@ -212,7 +219,13 @@ export function ClientsClient({ initialClients }: { initialClients: Client[] }) 
                       </p>
                     )}
                     <p className="mt-2 text-[10px] uppercase tracking-label text-text-muted">
-                      Added {format(parseISO(client.created_at), "MMM d, yyyy")}
+                      {client.projectCount} galler
+                      {client.projectCount === 1 ? "y" : "ies"}
+                      {client.lastEventDate
+                        ? ` · Last shoot ${format(parseISO(client.lastEventDate), "MMM d, yyyy")}`
+                        : ""}
+                      {" · Added "}
+                      {format(parseISO(client.created_at), "MMM d, yyyy")}
                     </p>
                   </div>
                   <div className="flex shrink-0">

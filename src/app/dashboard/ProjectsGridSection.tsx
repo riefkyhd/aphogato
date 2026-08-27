@@ -9,17 +9,17 @@ export async function ProjectsGridSection() {
   if (projects.length === 0) {
     return (
       <div className="border border-border bg-bg-secondary p-16 text-center">
-        <p className="text-text-secondary text-[14px]">No projects yet.</p>
+        <p className="text-text-secondary text-[14px]">No galleries yet.</p>
         <p className="mt-2 text-[11px] uppercase tracking-label text-text-muted">
-          Create your first project to get started.
+          Create your first gallery to get started.
         </p>
         {FEATURES.newProject ? (
           <NavigatingLink
-            href="/dashboard/new"
+            href="/dashboard/galleries/new"
             className="btn-primary inline-flex mt-8"
             loadingLabel="Opening…"
           >
-            New project
+            New gallery
           </NavigatingLink>
         ) : null}
       </div>

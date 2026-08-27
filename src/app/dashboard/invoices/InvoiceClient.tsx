@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { BackNavLink } from "@/components/BackNavLink";
+import { SalesSectionNav } from "@/components/sales/SalesSectionNav";
 import { InvoicePreview } from "@/components/invoices/InvoicePreview";
 import { QuotationPageFrame } from "@/components/quotations/QuotationPageFrame";
 import { DashboardMain } from "@/components/layout/DashboardShell";
@@ -17,7 +18,6 @@ import {
 } from "@/components/ui/PageToolbarActions";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { formatMoney, parseMoneyInput } from "@/lib/finance/formatMoney";
-import { FEATURES } from "@/lib/features";
 import { createBlankInvoice } from "@/lib/invoices/defaults";
 import { exportInvoicePdf } from "@/lib/invoices/exportInvoicePdf";
 import { invoiceFromQuotation } from "@/lib/invoices/fromQuotation";
@@ -110,15 +110,15 @@ export function InvoiceClient({
 
   return (
     <DashboardMain>
-      {FEATURES.quotations ? (
       <BackNavLink
-        href="/dashboard/quotations"
+        href="/dashboard"
         className="inline-flex items-center gap-2 text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors mb-6"
       >
         <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
-        Quotations
+        Home
       </BackNavLink>
-      ) : null}
+
+      <SalesSectionNav className="mb-6" />
 
       <header className="mb-8 border-b border-border pb-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

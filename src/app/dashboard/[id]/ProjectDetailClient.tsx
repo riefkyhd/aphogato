@@ -310,11 +310,11 @@ export function ProjectDetailClient({
 
       <DashboardMain>
         <BackNavLink
-          href="/dashboard"
+          href="/dashboard/galleries"
           className="inline-flex items-center gap-2 text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors mb-6"
         >
           <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
-          All projects
+          All galleries
         </BackNavLink>
 
         <header className="mb-8">
@@ -337,7 +337,7 @@ export function ProjectDetailClient({
                 </span>
                 {imageKitProject ? (
                   <ProjectImageKitBadge />
-                ) : FEATURES.cloudinarySettings ? (
+                ) : FEATURES.cloudinarySettings && !FEATURES.photographerFirstUi ? (
                   <ProjectCloudinaryUsageBadge
                     account={cloudinaryAccount}
                     usage={cloudinaryUsage}
@@ -347,7 +347,7 @@ export function ProjectDetailClient({
               </div>
               {imageKitProject ? (
                 <ProjectImageKitStorageNote photoCount={photos.length} />
-              ) : FEATURES.cloudinarySettings ? (
+              ) : FEATURES.cloudinarySettings && !FEATURES.photographerFirstUi ? (
                 <ProjectCloudinaryAccountNote
                   account={cloudinaryAccount}
                   usage={cloudinaryUsage}
@@ -465,7 +465,9 @@ export function ProjectDetailClient({
               if (manage.count > 0) e.preventDefault();
             }}
           >
-            {!imageKitProject && isCloudinaryAccountDisabled(cloudinaryUsage) ? (
+            {!imageKitProject &&
+            !FEATURES.photographerFirstUi &&
+            isCloudinaryAccountDisabled(cloudinaryUsage) ? (
               <MediaUnavailableBanner message={CLOUDINARY_DISABLED_MESSAGE} />
             ) : null}
             <PhotoGallerySection

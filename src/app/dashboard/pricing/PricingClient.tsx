@@ -16,6 +16,7 @@ import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { DashboardMain } from "@/components/layout/DashboardShell";
 import { BackNavLink } from "@/components/BackNavLink";
+import { SalesSectionNav } from "@/components/sales/SalesSectionNav";
 import { Button } from "@/components/ui/Button";
 import { FormActions } from "@/components/ui/FormActions";
 import {
@@ -204,8 +205,10 @@ export function PricingClient({
         className="inline-flex items-center gap-2 text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors mb-6"
       >
         <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
-        All projects
+        Home
       </BackNavLink>
+
+      <SalesSectionNav className="mb-6" />
 
       <header className="mb-8 border-b border-border pb-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
