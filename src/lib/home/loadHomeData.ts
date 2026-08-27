@@ -13,7 +13,7 @@ export type HomeAttentionProject = Pick<
 >;
 
 export type HomeRecentProject = HomeAttentionProject & {
-  updated_at?: string | null;
+  created_at?: string | null;
 };
 
 export type HomeRecentClient = {
@@ -99,12 +99,12 @@ export async function loadHomeData(): Promise<HomeData> {
       .from("projects")
       .select("id, name, client_name, status")
       .in("status", ATTENTION_STATUSES)
-      .order("updated_at", { ascending: false })
+      .order("created_at", { ascending: false })
       .limit(5),
     supabase
       .from("projects")
-      .select("id, name, client_name, status, updated_at")
-      .order("updated_at", { ascending: false })
+      .select("id, name, client_name, status, created_at")
+      .order("created_at", { ascending: false })
       .limit(5),
     supabase
       .from("clients")

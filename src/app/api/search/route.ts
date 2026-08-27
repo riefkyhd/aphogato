@@ -31,7 +31,7 @@ export async function GET(request: Request) {
           .from("projects")
           .select("id, name, client_name, status")
           .or(`name.ilike.${pattern},client_name.ilike.${pattern}`)
-          .order("updated_at", { ascending: false })
+          .order("created_at", { ascending: false })
           .limit(5),
         supabase
           .from("clients")
