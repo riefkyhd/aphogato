@@ -1,7 +1,7 @@
 "use client";
 
 import { format, parseISO } from "date-fns";
-import { GitBranchPlus, Receipt, Trash2 } from "lucide-react";
+import { Archive, GitBranchPlus, Receipt, Trash2 } from "lucide-react";
 import { IconButton } from "@/components/ui/IconButton";
 import { Tooltip } from "@/components/ui/Tooltip";
 import type { SavedQuotation } from "@/lib/quotations/db";
@@ -36,9 +36,16 @@ export function QuotationArchive({
 }) {
   if (items.length === 0) {
     return (
-      <p className="text-[12px] text-text-muted">
-        No saved quotations yet. Use Save to archive a quote for administration.
-      </p>
+      <div className="border border-dashed border-border p-6 text-center">
+        <Archive
+          className="h-6 w-6 mx-auto text-text-muted mb-2"
+          aria-hidden
+        />
+        <p className="text-[13px] text-text-primary">No saved quotes yet</p>
+        <p className="mt-1 text-[12px] text-text-secondary leading-relaxed">
+          Draft a quote on the right, then press Save to archive it here.
+        </p>
+      </div>
     );
   }
 

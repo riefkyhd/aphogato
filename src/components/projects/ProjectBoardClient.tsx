@@ -1,5 +1,7 @@
 "use client";
 
+import { Images } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -181,11 +183,23 @@ export function ProjectBoardClient({
         </div>
 
         {projects.length === 0 ? (
-          <div className="border border-border bg-bg-secondary p-12 text-center">
-            <p className="text-[14px] text-text-secondary">No projects yet.</p>
-            <p className="mt-2 text-[11px] uppercase tracking-label text-text-muted">
-              Create a project to see it on the pipeline.
+          <div className="border border-dashed border-border p-12 text-center">
+            <Images
+              className="h-8 w-8 mx-auto text-text-muted mb-3"
+              aria-hidden
+            />
+            <p className="text-[14px] text-text-primary">No projects yet</p>
+            <p className="mt-2 text-[13px] text-text-secondary max-w-sm mx-auto leading-relaxed">
+              Create your first gallery to start tracking it through the pipeline.
             </p>
+            {FEATURES.newProject ? (
+              <Link
+                href="/dashboard/galleries/new"
+                className="btn-primary inline-flex items-center justify-center mt-5"
+              >
+                New gallery
+              </Link>
+            ) : null}
           </div>
         ) : (
           <div className="flex-1 overflow-x-auto pb-4 snap-x snap-mandatory overscroll-x-contain [-webkit-overflow-scrolling:touch]">

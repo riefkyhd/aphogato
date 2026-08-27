@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { DashboardTodayReminder } from "@/app/dashboard/DashboardTodayReminder";
+import { CommandPalette } from "@/components/CommandPalette";
 import { Navbar } from "@/components/Navbar";
+import { OfflineBanner } from "@/components/OfflineBanner";
 import { FEATURES } from "@/lib/features";
 import type { CalendarEvent } from "@/lib/types";
 
@@ -43,6 +45,8 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
         ) : null}
         {children}
       </div>
+      <CommandPalette />
+      <OfflineBanner />
     </>
   );
 }

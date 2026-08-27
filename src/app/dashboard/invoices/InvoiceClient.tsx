@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowLeft, FileDown } from "lucide-react";
+import { ArrowLeft, FileDown, FileText } from "lucide-react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -163,10 +164,25 @@ export function InvoiceClient({
               </span>
             </div>
             {initialSavedQuotations.length === 0 ? (
-              <p className="text-[12px] text-text-muted">
-                Save a quotation first, then return here to generate the final
-                invoice.
-              </p>
+              <div className="border border-dashed border-border p-6 text-center">
+                <FileText
+                  className="h-6 w-6 mx-auto text-text-muted mb-2"
+                  aria-hidden
+                />
+                <p className="text-[13px] text-text-primary">
+                  No saved quotations yet
+                </p>
+                <p className="mt-1 text-[12px] text-text-secondary leading-relaxed max-w-sm mx-auto">
+                  Save a quotation first, then return here to generate the
+                  final invoice.
+                </p>
+                <Link
+                  href="/dashboard/quotations"
+                  className="btn-primary inline-flex items-center justify-center mt-4"
+                >
+                  Draft a quotation
+                </Link>
+              </div>
             ) : (
               <ul className="divide-y divide-border border border-border">
                 {initialSavedQuotations.map((item) => (

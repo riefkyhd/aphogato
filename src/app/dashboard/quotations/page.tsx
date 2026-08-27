@@ -1,5 +1,6 @@
 import { QuotationClient } from "@/app/dashboard/quotations/QuotationClient";
 import { FEATURES } from "@/lib/features";
+import { FeatureDisabled } from "@/components/FeatureDisabled";
 import { normalizeQuotation } from "@/lib/quotations/db";
 import { createServerSupabase } from "@/lib/supabase/server";
 import type { PriceListItem } from "@/lib/types";
@@ -18,6 +19,9 @@ function normalizeItem(row: Record<string, unknown>): PriceListItem {
 }
 
 export default async function QuotationsPage() {
+  if (!FEATURES.quotations) {
+    return <FeatureDisabled label="Quotations" />;
+  }
   const supabase = createServerSupabase();
   const [priceResult, quotationResult] = await Promise.all([
     supabase
@@ -40,10 +44,10 @@ export default async function QuotationsPage() {
     normalizeQuotation(row as Record<string, unknown>)
   );
 
-  return FEATURES.quotations ? (
+  return (
     <QuotationClient
       priceListItems={items}
       initialSavedQuotations={savedQuotations}
     />
-  ) : null;
+  );
 }

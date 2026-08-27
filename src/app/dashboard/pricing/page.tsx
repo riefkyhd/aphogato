@@ -1,5 +1,6 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import { FEATURES } from "@/lib/features";
+import { FeatureDisabled } from "@/components/FeatureDisabled";
 import type { PriceListItem } from "@/lib/types";
 import { PricingClient } from "./PricingClient";
 
@@ -13,6 +14,9 @@ function normalizeItem(row: Record<string, unknown>): PriceListItem {
 }
 
 export default async function PricingPage() {
+  if (!FEATURES.pricing) {
+    return <FeatureDisabled label="Price list" />;
+  }
   const supabase = createServerSupabase();
   const { data } = await supabase
     .from("price_list_items")
@@ -24,7 +28,5 @@ export default async function PricingPage() {
     normalizeItem(row as Record<string, unknown>)
   );
 
-  return FEATURES.pricing ? (
-    <PricingClient initialItems={items} />
-  ) : null;
+  return <PricingClient initialItems={items} />;
 }

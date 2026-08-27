@@ -6,6 +6,7 @@ import { SettingsAccordionSection } from "@/components/settings/SettingsAccordio
 import { FEATURES } from "@/lib/features";
 import { PORTFOLIO_URL } from "@/lib/navConfig";
 import { CloudinarySettings } from "@/app/dashboard/settings/CloudinarySettings";
+import { DataExportSettings } from "@/app/dashboard/settings/DataExportSettings";
 import { ImageKitSettings } from "@/app/dashboard/settings/ImageKitSettings";
 import { DomainSecurityInfo } from "@/app/dashboard/settings/DomainSecurityInfo";
 import { GoogleCalendarSettings } from "@/app/dashboard/settings/GoogleCalendarSettings";
@@ -73,6 +74,14 @@ export default async function SettingsPage() {
               <DomainSecurityInfo />
             </SettingsAccordionSection>
           ) : null}
+
+          <SettingsAccordionSection
+            title="Data"
+            description="Back up or export your studio data."
+            defaultOpen={false}
+          >
+            <DataExportSettings />
+          </SettingsAccordionSection>
         </div>
 
         <footer className="mt-8 sm:mt-10 pt-5 sm:pt-6 border-t border-border">

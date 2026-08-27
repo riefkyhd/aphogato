@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { FormActions } from "@/components/ui/FormActions";
@@ -28,16 +29,39 @@ function Field({
   value,
   onChange,
   type = "text",
+  error,
+  id,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   type?: string;
+  error?: string | null;
+  id?: string;
 }) {
+  const fieldId = id ?? `field-${label.replace(/\s+/g, "-").toLowerCase()}`;
   return (
     <div>
-      <Label>{label}</Label>
-      <Input type={type} value={value} onChange={(e) => onChange(e.target.value)} />
+      <Label htmlFor={fieldId}>{label}</Label>
+      <Input
+        id={fieldId}
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${fieldId}-error` : undefined}
+        className={
+          error ? "!border-status-editing focus:!border-status-editing" : undefined
+        }
+      />
+      {error ? (
+        <p
+          id={`${fieldId}-error`}
+          className="mt-1 text-[11px] uppercase tracking-label text-status-editing"
+        >
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -100,6 +124,7 @@ export function ExpenseFormModal({
   const [eventId, setEventId] = useState("");
   const [projectId, setProjectId] = useState("");
   const [notes, setNotes] = useState("");
+  const [amountError, setAmountError] = useState<string | null>(null);
   const isEdit = Boolean(entry);
 
   useEffect(() => {
@@ -121,6 +146,7 @@ export function ExpenseFormModal({
       setProjectId(defaultProjectId);
       setNotes("");
     }
+    setAmountError(null);
   }, [open, entry, defaultDate, defaultEventId, defaultProjectId]);
 
   const titleId = "expense-form-title";
@@ -128,8 +154,11 @@ export function ExpenseFormModal({
   function buildPayload(): Record<string, unknown> | null {
     const parsed = parseMoneyInput(amount);
     if (parsed === null || parsed <= 0) {
+      setAmountError("Enter a valid amount greater than zero.");
+      toast.error("Enter a valid amount greater than zero.");
       return null;
     }
+    setAmountError(null);
     return {
       amount: parsed,
       entry_date: entryDate,
@@ -179,7 +208,16 @@ export function ExpenseFormModal({
           void handleSubmit("close");
         }}
       >
-        <Field label="Amount (IDR)" value={amount} onChange={setAmount} />
+        <Field
+          id="expense-amount"
+          label="Amount (IDR)"
+          value={amount}
+          onChange={(v) => {
+            setAmount(v);
+            if (amountError) setAmountError(null);
+          }}
+          error={amountError}
+        />
         <Field label="Date" value={entryDate} onChange={setEntryDate} type="date" />
         <div>
           <Label>Category</Label>

@@ -31,6 +31,7 @@ import {
   createEmptyLineItem,
   QUOTATION_STORAGE_KEY,
 } from "@/lib/quotations/defaults";
+import { useUnsavedChangesGuard } from "@/lib/hooks/useUnsavedChangesGuard";
 import { peekNextBaseQuoteNumber, peekNextRevisionQuoteNumber } from "@/lib/quotations/quoteNumber";
 import {
   blankQuotationSession,
@@ -99,6 +100,11 @@ export function QuotationClient({
   const needsDiscardConfirm = useCallback(
     () => savedId !== null || hasDraftContent(draft),
     [draft, savedId]
+  );
+
+  useUnsavedChangesGuard(
+    hydrated && savedId === null && hasDraftContent(draft),
+    "You have an unsaved quotation draft. Leave this page?"
   );
 
   const loadSavedItem = useCallback((item: SavedQuotation) => {
@@ -917,6 +923,34 @@ export function QuotationClient({
           </QuotationPageFrame>
         </div>
       </div>
+      {canSave || exporting ? (
+        <div className="lg:hidden sticky bottom-0 -mx-4 sm:-mx-6 mt-8 border-t border-border bg-bg-primary/95 backdrop-blur px-4 sm:px-6 py-3 flex gap-2 z-30 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="flex-1"
+            loading={exporting}
+            onClick={() => void handleExportPdf()}
+            aria-label="Export PDF"
+          >
+            <FileDown className="h-3.5 w-3.5 mr-1.5" aria-hidden />
+            PDF
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            className="flex-1"
+            loading={saving}
+            disabled={!canSave}
+            onClick={() => void handleSave()}
+            aria-label="Save quotation"
+          >
+            <Save className="h-3.5 w-3.5 mr-1.5" aria-hidden />
+            Save
+          </Button>
+        </div>
+      ) : null}
     </DashboardMain>
   );
 }

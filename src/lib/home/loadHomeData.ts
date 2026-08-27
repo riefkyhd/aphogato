@@ -4,12 +4,24 @@ import { loadTodayEvents } from "@/lib/calendar/loadTodayEvents";
 import { getTodayDateString } from "@/lib/calendar/todayEvents";
 import { normalizeQuotation, type SavedQuotation } from "@/lib/quotations/db";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { unwrapQuery } from "@/lib/api/supabaseQuery";
 import type { CalendarEvent, Project, ProjectStatus } from "@/lib/types";
 
 export type HomeAttentionProject = Pick<
   Project,
   "id" | "name" | "client_name" | "status"
 >;
+
+export type HomeRecentProject = HomeAttentionProject & {
+  updated_at?: string | null;
+};
+
+export type HomeRecentClient = {
+  id: string;
+  name: string;
+  phone?: string | null;
+  updated_at?: string | null;
+};
 
 export type HomeData = {
   today: string;
@@ -19,6 +31,14 @@ export type HomeData = {
   monthNet: number;
   recentQuotations: SavedQuotation[];
   attentionProjects: HomeAttentionProject[];
+  recentProjects: HomeRecentProject[];
+  recentClients: HomeRecentClient[];
+  totalCounts: {
+    clients: number;
+    projects: number;
+    quotations: number;
+    events: number;
+  };
 };
 
 const ATTENTION_STATUSES: ProjectStatus[] = ["selected", "editing"];
@@ -51,6 +71,12 @@ export async function loadHomeData(): Promise<HomeData> {
     expenseRes,
     quotationsRes,
     attentionRes,
+    recentProjectsRes,
+    recentClientsRes,
+    clientCountRes,
+    projectCountRes,
+    quotationCountRes,
+    eventCountRes,
   ] = await Promise.all([
     loadTodayEvents(supabase),
     supabase
@@ -75,10 +101,49 @@ export async function loadHomeData(): Promise<HomeData> {
       .in("status", ATTENTION_STATUSES)
       .order("updated_at", { ascending: false })
       .limit(5),
+    supabase
+      .from("projects")
+      .select("id, name, client_name, status, updated_at")
+      .order("updated_at", { ascending: false })
+      .limit(5),
+    supabase
+      .from("clients")
+      .select("id, name, phone, updated_at")
+      .order("updated_at", { ascending: false })
+      .limit(5),
+    supabase.from("clients").select("id", { count: "exact", head: true }),
+    supabase.from("projects").select("id", { count: "exact", head: true }),
+    supabase.from("quotations").select("id", { count: "exact", head: true }),
+    supabase.from("events").select("id", { count: "exact", head: true }),
   ]);
 
-  const monthIncome = sumAmounts(incomeRes.data ?? []);
-  const monthExpenses = sumAmounts(expenseRes.data ?? []);
+  const incomeRows = unwrapQuery<{ amount: string | number }[]>(
+    "home.income",
+    incomeRes
+  );
+  const expenseRows = unwrapQuery<{ amount: string | number }[]>(
+    "home.expenses",
+    expenseRes
+  );
+  const quotationRows = unwrapQuery<Array<Record<string, unknown>>>(
+    "home.quotations",
+    quotationsRes
+  );
+  const attentionRows = unwrapQuery<HomeAttentionProject[]>(
+    "home.attention",
+    attentionRes
+  );
+  const recentProjectRows = unwrapQuery<HomeRecentProject[]>(
+    "home.recentProjects",
+    recentProjectsRes
+  );
+  const recentClientRows = unwrapQuery<HomeRecentClient[]>(
+    "home.recentClients",
+    recentClientsRes
+  );
+
+  const monthIncome = sumAmounts(incomeRows);
+  const monthExpenses = sumAmounts(expenseRows);
 
   return {
     today,
@@ -86,9 +151,15 @@ export async function loadHomeData(): Promise<HomeData> {
     monthIncome,
     monthExpenses,
     monthNet: monthIncome - monthExpenses,
-    recentQuotations: (quotationsRes.data ?? []).map((row) =>
-      normalizeQuotation(row as Record<string, unknown>)
-    ),
-    attentionProjects: (attentionRes.data ?? []) as HomeAttentionProject[],
+    recentQuotations: quotationRows.map((row) => normalizeQuotation(row)),
+    attentionProjects: attentionRows,
+    recentProjects: recentProjectRows,
+    recentClients: recentClientRows,
+    totalCounts: {
+      clients: clientCountRes.count ?? 0,
+      projects: projectCountRes.count ?? 0,
+      quotations: quotationCountRes.count ?? 0,
+      events: eventCountRes.count ?? 0,
+    },
   };
 }

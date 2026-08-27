@@ -5,9 +5,13 @@ import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Skeleton } from "@/components/loading/Skeleton";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { uploadProjectReferenceViaCloudinary } from "@/lib/directCloudinaryClientUpload";
 import { filterImageUploadFiles } from "@/lib/imageUploadFiles";
+import { useConfirmAction } from "@/lib/hooks/useConfirmAction";
+import { useUndoableDelete } from "@/lib/hooks/useUndoableDelete";
 import { exportMoodboardPdf } from "@/lib/references/exportMoodboardPdf";
 import type { ProjectReference } from "@/lib/types";
 
@@ -27,6 +31,8 @@ export function ProjectReferencesSection({
   const [uploading, setUploading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const confirmAction = useConfirmAction();
+  const undoableDelete = useUndoableDelete();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -96,20 +102,36 @@ export function ProjectReferencesSection({
     }
   }
 
-  async function removeReference(ref: ProjectReference) {
-    setReferences((prev) => prev.filter((r) => r.id !== ref.id));
-    try {
-      const res = await fetch(
-        `/api/projects/${projectId}/references/${ref.id}`,
-        { method: "DELETE" }
-      );
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Failed to delete");
-      toast.success("Reference removed");
-    } catch (err) {
-      void load();
-      toast.error(err instanceof Error ? err.message : "Failed to delete");
-    }
+  function requestRemoveReference(ref: ProjectReference) {
+    confirmAction.request({
+      title: "Remove reference?",
+      description:
+        "This image will be removed from the moodboard. You'll have 5 seconds to undo before it's deleted permanently.",
+      confirmLabel: "Remove",
+      destructive: true,
+      run: () => performRemoveReference(ref),
+    });
+  }
+
+  function performRemoveReference(ref: ProjectReference) {
+    const previous = references;
+    undoableDelete.trigger({
+      message: "Reference removed",
+      optimisticRemove: () =>
+        setReferences((prev) => prev.filter((r) => r.id !== ref.id)),
+      restore: () => setReferences(previous),
+      commit: async () => {
+        const res = await fetch(
+          `/api/projects/${projectId}/references/${ref.id}`,
+          { method: "DELETE" }
+        );
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error ?? "Failed to delete");
+      },
+      onError: () => {
+        void load();
+      },
+    });
   }
 
   async function handleExportPdf() {
@@ -131,6 +153,16 @@ export function ProjectReferencesSection({
 
   return (
     <div className={compact ? "space-y-3" : "space-y-4"}>
+      <ConfirmDialog
+        open={confirmAction.open}
+        title={confirmAction.title}
+        description={confirmAction.description}
+        confirmLabel={confirmAction.confirmLabel}
+        destructive={confirmAction.destructive}
+        confirming={confirmAction.confirming}
+        onClose={confirmAction.close}
+        onConfirm={confirmAction.confirm}
+      />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-[11px] uppercase tracking-label text-text-muted">
           References / moodboard
@@ -177,7 +209,15 @@ export function ProjectReferencesSection({
       />
 
       {loading ? (
-        <p className="text-[12px] text-text-muted">Loading…</p>
+        <div
+          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2"
+          aria-busy="true"
+          aria-label="Loading references"
+        >
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="aspect-[4/3] w-full" />
+          ))}
+        </div>
       ) : references.length === 0 ? (
         <p className="text-[12px] text-text-secondary">
           Upload inspiration and reference images for this shoot. Export as a PDF
@@ -200,8 +240,8 @@ export function ProjectReferencesSection({
               <Tooltip label="Remove reference">
                 <button
                   type="button"
-                  onClick={() => void removeReference(ref)}
-                  className="absolute top-1 right-1 p-1.5 bg-bg-primary/90 text-text-muted hover:text-status-editing opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                  onClick={() => requestRemoveReference(ref)}
+                  className="absolute top-1 right-1 p-1.5 bg-bg-primary/90 text-text-muted hover:text-status-editing transition-opacity opacity-90 md:opacity-0 md:group-hover:opacity-100 md:focus:opacity-100 md:focus-within:opacity-100"
                   aria-label="Remove reference"
                 >
                   <Trash2 className="h-3.5 w-3.5" aria-hidden />

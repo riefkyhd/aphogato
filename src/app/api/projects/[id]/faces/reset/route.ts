@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/api/requireAuth";
+import { withErrorHandler } from "@/lib/api/logError";
 
 export const runtime = "nodejs";
 
-export async function POST(
+export const POST = withErrorHandler("projects.faces.reset", async (
   _request: Request,
   { params }: { params: { id: string } }
-) {
+) => {
   const auth = await requireAuth();
   if (!auth.ok) return auth.response;
   const { supabase } = auth;
@@ -49,4 +50,4 @@ export async function POST(
   }
 
   return NextResponse.json({ ok: true });
-}
+});

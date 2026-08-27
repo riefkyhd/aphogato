@@ -593,7 +593,11 @@ export function CalendarClient({
               onDayClick={(date) => openNewEvent(date)}
             />
           ) : (
-            <CalendarListView events={events} onEventClick={openEvent} />
+            <CalendarListView
+              events={events}
+              onEventClick={openEvent}
+              onCreateEvent={() => openNewEvent()}
+            />
           )}
         </div>
         <EventDetailPanel

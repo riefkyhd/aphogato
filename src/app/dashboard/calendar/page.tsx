@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { CalendarClient } from "@/app/dashboard/calendar/CalendarClient";
 import { FEATURES } from "@/lib/features";
+import { FeatureDisabled } from "@/components/FeatureDisabled";
 import { isGoogleOAuthConfigured } from "@/lib/calendar/googleOAuthConfig";
 import { isGoogleCalendarConnected } from "@/lib/calendar/googleSettings";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -9,6 +10,10 @@ import type { CalendarEvent } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 export default async function CalendarPage() {
+  if (!FEATURES.calendar) {
+    return <FeatureDisabled label="Calendar" />;
+  }
+
   const supabase = createServerSupabase();
 
   const [eventsRes, projectsRes, isGoogleConnected, isOAuthConfigured] =
@@ -28,7 +33,7 @@ export default async function CalendarPage() {
   const initialEvents = (eventsRes.data ?? []) as CalendarEvent[];
   const projects = projectsRes.data ?? [];
 
-  return FEATURES.calendar ? (
+  return (
     <Suspense fallback={null}>
       <CalendarClient
         initialEvents={initialEvents}
@@ -37,5 +42,5 @@ export default async function CalendarPage() {
         isOAuthConfigured={isOAuthConfigured}
       />
     </Suspense>
-  ) : null;
+  );
 }

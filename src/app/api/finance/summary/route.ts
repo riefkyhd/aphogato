@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/api/requireAuth";
+import { withErrorHandler } from "@/lib/api/logError";
 import { buildFinanceBreakdown } from "@/lib/finance/breakdown";
 import { buildFinanceSummary } from "@/lib/finance/summary";
 import type { ExpenseEntry, IncomeEntry } from "@/lib/types";
 
 export const runtime = "nodejs";
 
-export async function GET(request: Request) {
+export const GET = withErrorHandler("finance.summary", async (request: Request) => {
   const auth = await requireAuth();
   if (!auth.ok) return auth.response;
   const { supabase } = auth;
@@ -80,4 +81,4 @@ export async function GET(request: Request) {
   );
 
   return NextResponse.json({ ...summary, breakdown });
-}
+});

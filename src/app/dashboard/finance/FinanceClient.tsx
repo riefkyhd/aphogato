@@ -17,6 +17,7 @@ import { ShootProfitabilityTable } from "@/components/finance/ShootProfitability
 import { MaskedMoney } from "@/components/privacy/MaskedMoney";
 import { usePrivacyLockContext } from "@/components/privacy/PrivacyLockProvider";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { FormActions } from "@/components/ui/FormActions";
 import {
   PageToolbarActions,
@@ -66,6 +67,8 @@ import type {
 } from "@/lib/types";
 import { normalizeIncome } from "@/lib/finance/normalize";
 import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
+import { useConfirmAction } from "@/lib/hooks/useConfirmAction";
+import { useUndoableDelete } from "@/lib/hooks/useUndoableDelete";
 import { cn } from "@/lib/utils";
 
 const MONTH_LABELS = [
@@ -120,6 +123,9 @@ export function FinanceClient({
   } = usePrivacyLockContext();
 
   useBodyScrollLock(isLocked);
+
+  const confirmAction = useConfirmAction();
+  const undoableDelete = useUndoableDelete();
 
   const reloadSeq = useRef(0);
   const financeRef = useRef({ income, expenses });
@@ -181,6 +187,60 @@ export function FinanceClient({
       );
     },
     [applyFinanceEntries]
+  );
+
+  const requestDeleteIncome = useCallback(
+    (row: IncomeEntry) => {
+      confirmAction.request({
+        title: "Delete income entry?",
+        description: `You'll have 5 seconds to undo before this income record is permanently removed.`,
+        confirmLabel: "Delete income",
+        destructive: true,
+        run: () => {
+          const snapshot = financeRef.current;
+          undoableDelete.trigger({
+            message: "Income removed",
+            optimisticRemove: () => removeIncomeEntry(row.id),
+            restore: () =>
+              applyFinanceEntries(snapshot.income, snapshot.expenses),
+            commit: async () => {
+              const res = await fetch(`/api/finance/income/${row.id}`, {
+                method: "DELETE",
+              });
+              if (!res.ok) throw new Error("Failed to delete");
+            },
+          });
+        },
+      });
+    },
+    [confirmAction, undoableDelete, removeIncomeEntry, applyFinanceEntries]
+  );
+
+  const requestDeleteExpense = useCallback(
+    (row: ExpenseEntry) => {
+      confirmAction.request({
+        title: "Delete expense entry?",
+        description: `You'll have 5 seconds to undo before this expense record is permanently removed.`,
+        confirmLabel: "Delete expense",
+        destructive: true,
+        run: () => {
+          const snapshot = financeRef.current;
+          undoableDelete.trigger({
+            message: "Expense removed",
+            optimisticRemove: () => removeExpenseEntry(row.id),
+            restore: () =>
+              applyFinanceEntries(snapshot.income, snapshot.expenses),
+            commit: async () => {
+              const res = await fetch(`/api/finance/expenses/${row.id}`, {
+                method: "DELETE",
+              });
+              if (!res.ok) throw new Error("Failed to delete");
+            },
+          });
+        },
+      });
+    },
+    [confirmAction, undoableDelete, removeExpenseEntry, applyFinanceEntries]
   );
 
   useEffect(() => {
@@ -339,6 +399,16 @@ export function FinanceClient({
 
   return (
     <DashboardMain className="relative">
+      <ConfirmDialog
+        open={confirmAction.open}
+        title={confirmAction.title}
+        description={confirmAction.description}
+        confirmLabel={confirmAction.confirmLabel}
+        destructive={confirmAction.destructive}
+        confirming={confirmAction.confirming}
+        onClose={confirmAction.close}
+        onConfirm={confirmAction.confirm}
+      />
       <div
         className={cn(
           "transition-[filter] duration-200",
@@ -586,17 +656,7 @@ export function FinanceClient({
                 setEditingIncome(row);
                 setIncomeModal(true);
               },
-              onDelete: async () => {
-                const res = await fetch(`/api/finance/income/${row.id}`, {
-                  method: "DELETE",
-                });
-                if (!res.ok) {
-                  toast.error("Failed to delete");
-                  return;
-                }
-                toast.success("Income removed");
-                removeIncomeEntry(row.id);
-              },
+              onDelete: () => requestDeleteIncome(row),
             }))}
           />
           <section className="border border-border bg-bg-secondary">
@@ -671,17 +731,7 @@ export function FinanceClient({
                   setEditingExpense(row);
                   setExpenseModal(true);
                 },
-                onDelete: async () => {
-                  const res = await fetch(`/api/finance/expenses/${row.id}`, {
-                    method: "DELETE",
-                  });
-                  if (!res.ok) {
-                    toast.error("Failed to delete");
-                    return;
-                  }
-                  toast.success("Expense removed");
-                  removeExpenseEntry(row.id);
-                },
+                onDelete: () => requestDeleteExpense(row),
               }))}
             />
           </section>
@@ -774,7 +824,7 @@ export function FinanceClient({
 
       {isLocked ? (
         <div
-          className="fixed inset-0 z-[115] flex items-center justify-center p-6 pt-[max(4rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]"
+          className="fixed inset-x-0 bottom-0 top-14 md:top-[60px] z-[45] flex items-center justify-center p-6 pb-[max(1rem,env(safe-area-inset-bottom))]"
           role="dialog"
           aria-modal="true"
           aria-labelledby="finance-lock-title"
@@ -794,19 +844,29 @@ export function FinanceClient({
             <p className="mt-2 text-[13px] text-text-secondary">
               Enter your privacy PIN to view amounts and manage finance.
             </p>
-            <Button
-              type="button"
-              className="mt-5 w-full"
-              onClick={() =>
-                requestUnlock({
-                  title: "Unlock finance",
-                  description:
-                    "Enter your privacy PIN to view finance and perform sensitive actions.",
-                })
-              }
-            >
-              Enter PIN
-            </Button>
+            <FormActions className="mt-5 flex-col sm:flex-row sm:[&_button]:flex-1">
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full"
+                onClick={() => router.push("/dashboard")}
+              >
+                Back to Home
+              </Button>
+              <Button
+                type="button"
+                className="w-full"
+                onClick={() =>
+                  requestUnlock({
+                    title: "Unlock finance",
+                    description:
+                      "Enter your privacy PIN to view finance and perform sensitive actions.",
+                  })
+                }
+              >
+                Enter PIN
+              </Button>
+            </FormActions>
           </div>
         </div>
       ) : null}
@@ -1010,6 +1070,7 @@ function IncomeFormModal({
   const [description, setDescription] = useState("");
   const [eventId, setEventId] = useState("");
   const [notes, setNotes] = useState("");
+  const [amountError, setAmountError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -1028,6 +1089,7 @@ function IncomeFormModal({
       setEventId("");
       setNotes("");
     }
+    setAmountError(null);
   }, [open, entry, defaultDate]);
 
   const titleId = "income-form-title";
@@ -1044,8 +1106,15 @@ function IncomeFormModal({
         className="space-y-4"
         onSubmit={(e) => {
           e.preventDefault();
+          const parsedAmount = Number(amount.replace(/[^\d.]/g, ""));
+          if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+            setAmountError("Enter a valid amount greater than zero.");
+            toast.error("Enter a valid amount greater than zero.");
+            return;
+          }
+          setAmountError(null);
           onSave({
-            amount: Number(amount.replace(/[^\d.]/g, "")),
+            amount: parsedAmount,
             entry_date: entryDate,
             client_name: clientName || null,
             description: description || null,
@@ -1054,7 +1123,16 @@ function IncomeFormModal({
           });
         }}
       >
-        <Field label="Amount (IDR)" value={amount} onChange={setAmount} />
+        <Field
+          id="income-amount"
+          label="Amount (IDR)"
+          value={amount}
+          onChange={(v) => {
+            setAmount(v);
+            if (amountError) setAmountError(null);
+          }}
+          error={amountError}
+        />
         <Field label="Date" value={entryDate} onChange={setEntryDate} type="date" />
         <Field label="Client" value={clientName} onChange={setClientName} />
         <Field label="Description" value={description} onChange={setDescription} />
@@ -1100,16 +1178,39 @@ function Field({
   value,
   onChange,
   type = "text",
+  error,
+  id,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   type?: string;
+  error?: string | null;
+  id?: string;
 }) {
+  const fieldId = id ?? `field-${label.replace(/\s+/g, "-").toLowerCase()}`;
   return (
     <div>
-      <Label>{label}</Label>
-      <Input type={type} value={value} onChange={(e) => onChange(e.target.value)} />
+      <Label htmlFor={fieldId}>{label}</Label>
+      <Input
+        id={fieldId}
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${fieldId}-error` : undefined}
+        className={
+          error ? "!border-status-editing focus:!border-status-editing" : undefined
+        }
+      />
+      {error ? (
+        <p
+          id={`${fieldId}-error`}
+          className="mt-1 text-[11px] uppercase tracking-label text-status-editing"
+        >
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

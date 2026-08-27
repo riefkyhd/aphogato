@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { InvoiceClient } from "@/app/dashboard/invoices/InvoiceClient";
 import { FEATURES } from "@/lib/features";
+import { FeatureDisabled } from "@/components/FeatureDisabled";
 import { normalizeQuotation } from "@/lib/quotations/db";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -11,6 +12,10 @@ export const metadata = {
 };
 
 export default async function InvoicesPage() {
+  if (!FEATURES.invoices) {
+    return <FeatureDisabled label="Invoices" />;
+  }
+
   const supabase = createServerSupabase();
   const { data } = await supabase
     .from("quotations")
@@ -22,9 +27,9 @@ export default async function InvoicesPage() {
     normalizeQuotation(row as Record<string, unknown>)
   );
 
-  return FEATURES.invoices ? (
+  return (
     <Suspense fallback={null}>
       <InvoiceClient initialSavedQuotations={savedQuotations} />
     </Suspense>
-  ) : null;
+  );
 }

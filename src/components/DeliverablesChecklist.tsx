@@ -5,7 +5,9 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Skeleton } from "@/components/loading/Skeleton";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { useUndoableDelete } from "@/lib/hooks/useUndoableDelete";
 import type { DeliverableItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +24,7 @@ export function DeliverablesChecklist({
   const [loading, setLoading] = useState(true);
   const [newTitle, setNewTitle] = useState("");
   const [adding, setAdding] = useState(false);
+  const undoableDelete = useUndoableDelete();
 
   const queryKey = projectId
     ? `project_id=${projectId}`
@@ -98,18 +101,24 @@ export function DeliverablesChecklist({
     }
   }
 
-  async function removeItem(item: DeliverableItem) {
-    setItems((prev) => prev.filter((row) => row.id !== item.id));
-    try {
-      const res = await fetch(`/api/deliverables/${item.id}`, {
-        method: "DELETE",
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Failed to delete");
-    } catch (err) {
-      void load();
-      toast.error(err instanceof Error ? err.message : "Failed to delete");
-    }
+  function removeItem(item: DeliverableItem) {
+    const previous = items;
+    undoableDelete.trigger({
+      message: `Removed "${item.title}"`,
+      optimisticRemove: () =>
+        setItems((prev) => prev.filter((row) => row.id !== item.id)),
+      restore: () => setItems(previous),
+      commit: async () => {
+        const res = await fetch(`/api/deliverables/${item.id}`, {
+          method: "DELETE",
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error ?? "Failed to delete");
+      },
+      onError: () => {
+        void load();
+      },
+    });
   }
 
   const doneCount = items.filter((i) => i.done).length;
@@ -128,7 +137,11 @@ export function DeliverablesChecklist({
       </div>
 
       {loading ? (
-        <p className="text-[12px] text-text-muted">Loading…</p>
+        <div className="space-y-1.5" aria-busy="true" aria-label="Loading deliverables">
+          <Skeleton className="h-6 w-full" />
+          <Skeleton className="h-6 w-4/5" />
+          <Skeleton className="h-6 w-3/5" />
+        </div>
       ) : items.length === 0 ? (
         <p className="text-[12px] text-text-secondary">
           Track edits, exports, and handoffs for this shoot.
@@ -168,8 +181,8 @@ export function DeliverablesChecklist({
               <Tooltip label="Remove item">
                 <button
                   type="button"
-                  onClick={() => void removeItem(item)}
-                  className="opacity-0 group-hover:opacity-100 focus:opacity-100 p-1 text-text-muted hover:text-status-editing transition-opacity"
+                  onClick={() => removeItem(item)}
+                  className="p-1 text-text-muted hover:text-status-editing transition-colors opacity-60 md:opacity-0 md:group-hover:opacity-100 md:focus:opacity-100 md:focus-within:opacity-100"
                   aria-label="Remove item"
                 >
                   <Trash2 className="h-3.5 w-3.5" aria-hidden />

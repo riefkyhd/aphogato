@@ -1,13 +1,14 @@
 "use client";
 
 import { format, parseISO } from "date-fns";
-import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { ArrowLeft, Pencil, Trash2, UserPlus } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { DashboardMain } from "@/components/layout/DashboardShell";
 import { BackNavLink } from "@/components/BackNavLink";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { FormActions } from "@/components/ui/FormActions";
 import { IconButton } from "@/components/ui/IconButton";
 import { Input } from "@/components/ui/Input";
@@ -17,6 +18,9 @@ import { ClientSocialAccountsEditor } from "@/components/clients/ClientSocialAcc
 import { ClientSocialLinks } from "@/components/clients/ClientSocialLinks";
 import { parseJsonResponse } from "@/lib/clients/parseJsonResponse";
 import { normalizeClientSocialAccounts } from "@/lib/clients/socialAccounts";
+import { useConfirmAction } from "@/lib/hooks/useConfirmAction";
+import { useUndoableDelete } from "@/lib/hooks/useUndoableDelete";
+import { useUnsavedChangesGuard } from "@/lib/hooks/useUnsavedChangesGuard";
 import type { ClientBookEntry } from "@/lib/clients/clientBookStats";
 import type { ClientSocialAccount } from "@/lib/types";
 
@@ -26,6 +30,7 @@ export function ClientsClient({
   initialClients: ClientBookEntry[];
 }) {
   const router = useRouter();
+  const nameInputRef = useRef<HTMLInputElement>(null);
   const [clients, setClients] = useState(initialClients);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -36,19 +41,72 @@ export function ClientsClient({
   );
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<ClientBookEntry | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [pendingReset, setPendingReset] = useState(false);
 
-  const resetForm = () => {
+  const confirmAction = useConfirmAction();
+  const undoableDelete = useUndoableDelete();
+
+  const editingSnapshotRef = useRef<string>("");
+
+  const currentSnapshot = JSON.stringify({
+    name: name.trim(),
+    phone: phone.trim(),
+    email: email.trim(),
+    notes: notes.trim(),
+    socialAccounts,
+  });
+  const dirty = editing
+    ? currentSnapshot !== editingSnapshotRef.current
+    : Boolean(
+        name.trim() ||
+          phone.trim() ||
+          email.trim() ||
+          notes.trim() ||
+          socialAccounts.length
+      );
+
+  useUnsavedChangesGuard(
+    dirty,
+    "You have unsaved client details. Leave this page?"
+  );
+
+  const resetForm = useCallback(() => {
     setName("");
     setPhone("");
     setEmail("");
     setNotes("");
     setSocialAccounts([]);
     setEditing(null);
-  };
+    setNameError(null);
+    editingSnapshotRef.current = "";
+  }, []);
+
+  const requestReset = useCallback(() => {
+    if (!dirty) {
+      resetForm();
+      return;
+    }
+    confirmAction.request({
+      title: "Discard changes?",
+      description:
+        "Any unsaved details in the form will be lost. Continue?",
+      confirmLabel: "Discard",
+      destructive: true,
+      run: () => resetForm(),
+    });
+  }, [dirty, resetForm, confirmAction]);
 
   useEffect(() => {
     setClients(initialClients);
   }, [initialClients]);
+
+  useEffect(() => {
+    if (pendingReset) {
+      resetForm();
+      setPendingReset(false);
+    }
+  }, [pendingReset, resetForm]);
 
   const refreshClients = useCallback(() => {
     router.refresh();
@@ -57,7 +115,12 @@ export function ClientsClient({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmedName = name.trim();
-    if (!trimmedName) return;
+    if (!trimmedName) {
+      setNameError("Enter a client name.");
+      nameInputRef.current?.focus();
+      return;
+    }
+    setNameError(null);
     setSaving(true);
     try {
       const url = editing ? `/api/clients/${editing.id}` : "/api/clients";
@@ -86,30 +149,85 @@ export function ClientsClient({
   }
 
   function startEdit(client: ClientBookEntry) {
+    if (dirty && !editing) {
+      confirmAction.request({
+        title: "Discard new client?",
+        description:
+          "You have unsaved details for a new client. Discard and edit this one?",
+        confirmLabel: "Discard and edit",
+        destructive: true,
+        run: () => applyEdit(client),
+      });
+      return;
+    }
+    applyEdit(client);
+  }
+
+  function applyEdit(client: ClientBookEntry) {
     setEditing(client);
     setName(client.name);
     setPhone(client.phone ?? "");
     setEmail(client.email ?? "");
     setNotes(client.notes ?? "");
-    setSocialAccounts(normalizeClientSocialAccounts(client.social_accounts));
+    setNameError(null);
+    const accounts = normalizeClientSocialAccounts(client.social_accounts);
+    setSocialAccounts(accounts);
+    editingSnapshotRef.current = JSON.stringify({
+      name: client.name,
+      phone: client.phone ?? "",
+      email: client.email ?? "",
+      notes: client.notes ?? "",
+      socialAccounts: accounts,
+    });
   }
 
-  async function removeClient(client: ClientBookEntry) {
-    if (!window.confirm(`Remove ${client.name} from the client book?`)) return;
-    try {
-      const res = await fetch(`/api/clients/${client.id}`, { method: "DELETE" });
-      const json = await parseJsonResponse<{ error?: string }>(res);
-      if (!res.ok) throw new Error(json.error ?? "Failed to delete");
-      toast.success("Client removed");
-      if (editing?.id === client.id) resetForm();
-      refreshClients();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to delete");
-    }
+  function focusNewClient() {
+    resetForm();
+    setTimeout(() => nameInputRef.current?.focus(), 0);
+  }
+
+  function requestDelete(client: ClientBookEntry) {
+    confirmAction.request({
+      title: "Remove client?",
+      description: `${client.name} will be removed from the client book. You'll have 5 seconds to undo.`,
+      confirmLabel: "Remove client",
+      destructive: true,
+      run: () => performUndoableDelete(client),
+    });
+  }
+
+  function performUndoableDelete(client: ClientBookEntry) {
+    const previous = clients;
+    undoableDelete.trigger({
+      message: `Removed ${client.name}`,
+      optimisticRemove: () => {
+        setClients((rows) => rows.filter((row) => row.id !== client.id));
+        if (editing?.id === client.id) setPendingReset(true);
+      },
+      restore: () => setClients(previous),
+      commit: async () => {
+        const res = await fetch(`/api/clients/${client.id}`, {
+          method: "DELETE",
+        });
+        const json = await parseJsonResponse<{ error?: string }>(res);
+        if (!res.ok) throw new Error(json.error ?? "Failed to delete");
+        refreshClients();
+      },
+    });
   }
 
   return (
     <DashboardMain>
+      <ConfirmDialog
+        open={confirmAction.open}
+        title={confirmAction.title}
+        description={confirmAction.description}
+        confirmLabel={confirmAction.confirmLabel}
+        destructive={confirmAction.destructive}
+        confirming={confirmAction.confirming}
+        onClose={confirmAction.close}
+        onConfirm={confirmAction.confirm}
+      />
       <BackNavLink
         href="/dashboard"
         className="inline-flex items-center gap-2 text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors mb-6"
@@ -140,11 +258,30 @@ export function ClientsClient({
             <Label htmlFor="client-name">Name</Label>
             <Input
               id="client-name"
+              ref={nameInputRef}
               required
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (nameError && e.target.value.trim()) setNameError(null);
+              }}
               placeholder="Salma"
+              aria-invalid={nameError ? true : undefined}
+              aria-describedby={nameError ? "client-name-error" : undefined}
+              className={
+                nameError
+                  ? "!border-status-editing focus:!border-status-editing"
+                  : undefined
+              }
             />
+            {nameError ? (
+              <p
+                id="client-name-error"
+                className="mt-1 text-[11px] uppercase tracking-label text-status-editing"
+              >
+                {nameError}
+              </p>
+            ) : null}
           </div>
           <div>
             <Label htmlFor="client-phone">Phone</Label>
@@ -179,11 +316,11 @@ export function ClientsClient({
             onChange={setSocialAccounts}
           />
           <FormActions>
-            {editing && (
-              <Button type="button" variant="secondary" onClick={resetForm}>
+            {editing || dirty ? (
+              <Button type="button" variant="secondary" onClick={requestReset}>
                 Cancel
               </Button>
-            )}
+            ) : null}
             <Button type="submit" loading={saving}>
               {editing ? "Save changes" : "Add client"}
             </Button>
@@ -195,9 +332,24 @@ export function ClientsClient({
             {clients.length} client{clients.length === 1 ? "" : "s"}
           </h2>
           {clients.length === 0 ? (
-            <p className="text-[13px] text-text-secondary">
-              No clients yet. Create a project or add one above.
-            </p>
+            <div className="border border-dashed border-border p-8 text-center">
+              <UserPlus
+                className="h-8 w-8 mx-auto text-text-muted mb-3"
+                aria-hidden
+              />
+              <p className="text-[14px] text-text-primary">No clients yet</p>
+              <p className="mt-2 text-[13px] text-text-secondary leading-relaxed max-w-sm mx-auto">
+                Add your first client to speed up quotes, calendar events, and
+                gallery invites.
+              </p>
+              <Button
+                type="button"
+                className="mt-5"
+                onClick={focusNewClient}
+              >
+                Add first client
+              </Button>
+            </div>
           ) : (
             <ul className="divide-y divide-border border border-border">
               {clients.map((client) => (
@@ -239,7 +391,7 @@ export function ClientsClient({
                     </Tooltip>
                     <Tooltip label="Remove client">
                       <IconButton
-                        onClick={() => void removeClient(client)}
+                        onClick={() => requestDelete(client)}
                         label="Remove client"
                         className="hover:text-status-editing"
                       >

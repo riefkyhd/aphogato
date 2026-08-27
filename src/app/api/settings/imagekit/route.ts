@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/api/requireAuth";
+import { withErrorHandler } from "@/lib/api/logError";
 import {
   getImageKitUrlEndpoint,
   isImageKitConfigured,
@@ -7,7 +8,7 @@ import {
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export const GET = withErrorHandler("settings.imagekit", async () => {
   const auth = await requireAuth();
   if (!auth.ok) return auth.response;
 
@@ -17,4 +18,4 @@ export async function GET() {
     configured,
     urlEndpoint: configured ? getImageKitUrlEndpoint() : null,
   });
-}
+});

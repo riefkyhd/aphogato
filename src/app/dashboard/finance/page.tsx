@@ -1,12 +1,35 @@
 import { Suspense } from "react";
 import { FinanceClient } from "@/app/dashboard/finance/FinanceClient";
 import { FEATURES } from "@/lib/features";
+import { FeatureDisabled } from "@/components/FeatureDisabled";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { unwrapQuery } from "@/lib/api/supabaseQuery";
+import { Skeleton } from "@/components/loading/Skeleton";
 import type { CalendarEvent } from "@/lib/types";
+
+function FinanceChartFallback() {
+  return (
+    <div
+      className="space-y-4"
+      aria-busy="true"
+      aria-label="Loading finance data"
+    >
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-20 w-full" />
+      </div>
+      <Skeleton className="h-56 w-full" />
+    </div>
+  );
+}
 
 export const dynamic = "force-dynamic";
 
 export default async function FinancePage() {
+  if (!FEATURES.finance) {
+    return <FeatureDisabled label="Finance" />;
+  }
   const supabase = createServerSupabase();
   const year = new Date().getFullYear();
 
@@ -37,13 +60,26 @@ export default async function FinancePage() {
     "@/lib/finance/normalize"
   );
 
-  const income = (incomeRes.data ?? []).map((r) => normalizeIncome(r));
-  const expenses = (expenseRes.data ?? []).map((r) => normalizeExpense(r));
-  const events = (eventsRes.data ?? []) as Pick<
-    CalendarEvent,
-    "id" | "title" | "shoot_date" | "client_name" | "project_id"
-  >[];
-  const projects = projectsRes.data ?? [];
+  const incomeRows = unwrapQuery<Array<Parameters<typeof normalizeIncome>[0]>>(
+    "finance.income",
+    incomeRes
+  );
+  const expenseRows = unwrapQuery<Array<Parameters<typeof normalizeExpense>[0]>>(
+    "finance.expenses",
+    expenseRes
+  );
+  const eventRows = unwrapQuery<
+    Pick<CalendarEvent, "id" | "title" | "shoot_date" | "client_name" | "project_id">[]
+  >("finance.events", eventsRes);
+  const projectRows = unwrapQuery<{ id: string; name: string }[]>(
+    "finance.projects",
+    projectsRes
+  );
+
+  const income = incomeRows.map((r) => normalizeIncome(r));
+  const expenses = expenseRows.map((r) => normalizeExpense(r));
+  const events = eventRows;
+  const projects = projectRows;
   const summary = buildFinanceSummary(year, income, expenses);
   const breakdown = buildFinanceBreakdown(
     year,
@@ -53,8 +89,8 @@ export default async function FinancePage() {
     events
   );
 
-  return FEATURES.finance ? (
-    <Suspense fallback={null}>
+  return (
+    <Suspense fallback={<FinanceChartFallback />}>
       <FinanceClient
         initialYear={year}
         initialSummary={{ ...summary, breakdown }}
@@ -64,5 +100,5 @@ export default async function FinancePage() {
         projects={projects}
       />
     </Suspense>
-  ) : null;
+  );
 }

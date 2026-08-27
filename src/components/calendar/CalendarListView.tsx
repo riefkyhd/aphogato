@@ -1,10 +1,12 @@
 "use client";
 
 import { format, isToday, parseISO } from "date-fns";
+import { CalendarPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatEventTimeRange } from "@/lib/calendar/calendarHelpers";
 import { EventStatusDot } from "@/components/calendar/EventStatusDot";
 import { ShootTypeBadge } from "@/components/calendar/ShootTypeBadge";
+import { Button } from "@/components/ui/Button";
 import type { CalendarEvent } from "@/lib/types";
 
 function groupByMonth(events: CalendarEvent[]): Map<string, CalendarEvent[]> {
@@ -31,17 +33,35 @@ function ListColumnHeader() {
 export function CalendarListView({
   events,
   onEventClick,
+  onCreateEvent,
 }: {
   events: CalendarEvent[];
   onEventClick: (event: CalendarEvent) => void;
+  onCreateEvent?: () => void;
 }) {
   const groups = groupByMonth(events);
 
   if (events.length === 0) {
     return (
-      <p className="px-4 py-12 text-[13px] text-text-muted text-center">
-        No events yet. Create one with NEW EVENT.
-      </p>
+      <div className="px-4 py-12 text-center">
+        <CalendarPlus
+          className="h-8 w-8 mx-auto text-text-muted mb-3"
+          aria-hidden
+        />
+        <p className="text-[14px] text-text-primary">No events yet</p>
+        <p className="mt-2 text-[13px] text-text-secondary max-w-sm mx-auto">
+          Add your first shoot so it shows up here and on Home.
+        </p>
+        {onCreateEvent ? (
+          <Button
+            type="button"
+            className="mt-5"
+            onClick={onCreateEvent}
+          >
+            New event
+          </Button>
+        ) : null}
+      </div>
     );
   }
 

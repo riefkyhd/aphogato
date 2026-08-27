@@ -1,5 +1,6 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import { FEATURES } from "@/lib/features";
+import { FeatureDisabled } from "@/components/FeatureDisabled";
 import { normalizeClientSocialAccounts } from "@/lib/clients/socialAccounts";
 import { attachClientBookStats } from "@/lib/clients/clientBookStats";
 import type { Client } from "@/lib/types";
@@ -8,6 +9,10 @@ import { ClientsClient } from "./ClientsClient";
 export const dynamic = "force-dynamic";
 
 export default async function ClientsPage() {
+  if (!FEATURES.clients) {
+    return <FeatureDisabled label="Client book" />;
+  }
+
   const supabase = createServerSupabase();
   const [clientsRes, projectsRes, eventsRes] = await Promise.all([
     supabase.from("clients").select("*").order("name", { ascending: true }),
@@ -29,7 +34,5 @@ export default async function ClientsPage() {
     eventsRes.data ?? []
   );
 
-  return FEATURES.clients ? (
-    <ClientsClient initialClients={clientsWithStats} />
-  ) : null;
+  return <ClientsClient initialClients={clientsWithStats} />;
 }

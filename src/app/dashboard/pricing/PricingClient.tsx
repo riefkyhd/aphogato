@@ -9,15 +9,17 @@ import {
   Pencil,
   Plus,
   Receipt,
+  Tag,
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DashboardMain } from "@/components/layout/DashboardShell";
 import { BackNavLink } from "@/components/BackNavLink";
 import { SalesSectionNav } from "@/components/sales/SalesSectionNav";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { FormActions } from "@/components/ui/FormActions";
 import {
   PageToolbarActions,
@@ -29,6 +31,8 @@ import { Label } from "@/components/ui/Label";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { formatMoney, parseMoneyInput } from "@/lib/finance/formatMoney";
 import { FEATURES } from "@/lib/features";
+import { useConfirmAction } from "@/lib/hooks/useConfirmAction";
+import { useUndoableDelete } from "@/lib/hooks/useUndoableDelete";
 import {
   downloadPriceListCsv,
   exportPriceListPdf,
@@ -50,6 +54,11 @@ export function PricingClient({
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<PriceListItem | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [amountError, setAmountError] = useState<string | null>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const confirmAction = useConfirmAction();
+  const undoableDelete = useUndoableDelete();
 
   const resetForm = () => {
     setName("");
@@ -71,7 +80,23 @@ export function PricingClient({
     e.preventDefault();
     const trimmedName = name.trim();
     const parsedAmount = parseMoneyInput(amount);
-    if (!trimmedName || parsedAmount === null) return;
+    let hasError = false;
+    if (!trimmedName) {
+      setNameError("Enter a service name.");
+      hasError = true;
+    } else {
+      setNameError(null);
+    }
+    if (parsedAmount === null) {
+      setAmountError("Enter a valid price.");
+      hasError = true;
+    } else {
+      setAmountError(null);
+    }
+    if (hasError) {
+      if (!trimmedName) nameInputRef.current?.focus();
+      return;
+    }
     setSaving(true);
     try {
       const url = editing ? `/api/pricing/${editing.id}` : "/api/pricing";
@@ -106,18 +131,34 @@ export function PricingClient({
     setNotes(item.notes ?? "");
   }
 
-  async function removeItem(item: PriceListItem) {
-    if (!window.confirm(`Remove "${item.name}" from the price list?`)) return;
-    try {
-      const res = await fetch(`/api/pricing/${item.id}`, { method: "DELETE" });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Failed to delete");
-      toast.success("Item removed");
-      if (editing?.id === item.id) resetForm();
-      await reload();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to delete");
-    }
+  function requestRemove(item: PriceListItem) {
+    confirmAction.request({
+      title: "Remove price list item?",
+      description: `"${item.name}" will be removed from the price list. You'll have 5 seconds to undo.`,
+      confirmLabel: "Remove item",
+      destructive: true,
+      run: () => performRemove(item),
+    });
+  }
+
+  function performRemove(item: PriceListItem) {
+    const previous = items;
+    undoableDelete.trigger({
+      message: `Removed "${item.name}"`,
+      optimisticRemove: () => {
+        setItems((rows) => rows.filter((row) => row.id !== item.id));
+        if (editing?.id === item.id) resetForm();
+      },
+      restore: () => setItems(previous),
+      commit: async () => {
+        const res = await fetch(`/api/pricing/${item.id}`, {
+          method: "DELETE",
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error ?? "Failed to delete");
+        await reload();
+      },
+    });
   }
 
   async function moveItem(item: PriceListItem, direction: -1 | 1) {
@@ -200,6 +241,16 @@ export function PricingClient({
 
   return (
     <DashboardMain>
+      <ConfirmDialog
+        open={confirmAction.open}
+        title={confirmAction.title}
+        description={confirmAction.description}
+        confirmLabel={confirmAction.confirmLabel}
+        destructive={confirmAction.destructive}
+        confirming={confirmAction.confirming}
+        onClose={confirmAction.close}
+        onConfirm={confirmAction.confirm}
+      />
       <BackNavLink
         href="/dashboard"
         className="inline-flex items-center gap-2 text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors mb-6"
@@ -295,11 +346,30 @@ export function PricingClient({
             <Label htmlFor="price-name">Service</Label>
             <Input
               id="price-name"
+              ref={nameInputRef}
               required
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (nameError && e.target.value.trim()) setNameError(null);
+              }}
               placeholder="Wedding full day"
+              aria-invalid={nameError ? true : undefined}
+              aria-describedby={nameError ? "price-name-error" : undefined}
+              className={
+                nameError
+                  ? "!border-status-editing focus:!border-status-editing"
+                  : undefined
+              }
             />
+            {nameError ? (
+              <p
+                id="price-name-error"
+                className="mt-1 text-[11px] uppercase tracking-label text-status-editing"
+              >
+                {nameError}
+              </p>
+            ) : null}
           </div>
           <div>
             <Label htmlFor="price-amount">Price (IDR)</Label>
@@ -307,10 +377,29 @@ export function PricingClient({
               id="price-amount"
               required
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => {
+                setAmount(e.target.value);
+                if (amountError && parseMoneyInput(e.target.value) !== null)
+                  setAmountError(null);
+              }}
               placeholder="15.000.000"
               inputMode="numeric"
+              aria-invalid={amountError ? true : undefined}
+              aria-describedby={amountError ? "price-amount-error" : undefined}
+              className={
+                amountError
+                  ? "!border-status-editing focus:!border-status-editing"
+                  : undefined
+              }
             />
+            {amountError ? (
+              <p
+                id="price-amount-error"
+                className="mt-1 text-[11px] uppercase tracking-label text-status-editing"
+              >
+                {amountError}
+              </p>
+            ) : null}
           </div>
           <div>
             <Label htmlFor="price-category">Category</Label>
@@ -354,9 +443,26 @@ export function PricingClient({
             {activeCount} active · {items.length} total
           </h2>
           {items.length === 0 ? (
-            <p className="text-[13px] text-text-secondary">
-              No price list items yet. Add your studio rates above.
-            </p>
+            <div className="border border-dashed border-border p-8 text-center">
+              <Tag
+                className="h-8 w-8 mx-auto text-text-muted mb-3"
+                aria-hidden
+              />
+              <p className="text-[14px] text-text-primary">
+                Set your first price
+              </p>
+              <p className="mt-2 text-[13px] text-text-secondary leading-relaxed max-w-sm mx-auto">
+                Add your studio rates so quotations autofill and you can share a
+                price list PDF with clients.
+              </p>
+              <Button
+                type="button"
+                className="mt-5"
+                onClick={() => nameInputRef.current?.focus()}
+              >
+                Add first item
+              </Button>
+            </div>
           ) : (
             <ul className="divide-y divide-border border border-border">
               {items.map((item, idx) => (
@@ -421,7 +527,7 @@ export function PricingClient({
                     </Tooltip>
                     <Tooltip label="Remove item">
                       <IconButton
-                        onClick={() => void removeItem(item)}
+                        onClick={() => requestRemove(item)}
                         label="Remove item"
                         className="hover:text-status-editing"
                       >
