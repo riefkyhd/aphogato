@@ -20,7 +20,7 @@ export type HomeRecentClient = {
   id: string;
   name: string;
   phone?: string | null;
-  updated_at?: string | null;
+  created_at?: string | null;
 };
 
 export type HomeData = {
@@ -108,8 +108,8 @@ export async function loadHomeData(): Promise<HomeData> {
       .limit(5),
     supabase
       .from("clients")
-      .select("id, name, phone, updated_at")
-      .order("updated_at", { ascending: false })
+      .select("id, name, phone, created_at")
+      .order("created_at", { ascending: false })
       .limit(5),
     supabase.from("clients").select("id", { count: "exact", head: true }),
     supabase.from("projects").select("id", { count: "exact", head: true }),

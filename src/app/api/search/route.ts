@@ -37,7 +37,7 @@ export async function GET(request: Request) {
           .from("clients")
           .select("id, name, phone")
           .ilike("name", pattern)
-          .order("updated_at", { ascending: false })
+          .order("created_at", { ascending: false })
           .limit(5),
         supabase
           .from("quotations")

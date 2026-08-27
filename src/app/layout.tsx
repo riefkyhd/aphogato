@@ -15,6 +15,9 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "aphogato",
   },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
   icons: {
     icon: [{ url: "/images/logo/MH_logo.png", type: "image/png" }],
     apple: "/images/logo/MH_logo.png",
