@@ -30,6 +30,7 @@ import { Label } from "@/components/ui/Label";
 import { ModalShell } from "@/components/ui/ModalShell";
 import { ExpenseFormModal } from "@/components/finance/ExpenseFormModal";
 import { ExpenseQuickAdd } from "@/components/finance/ExpenseQuickAdd";
+import { SalesSectionNav } from "@/components/sales/SalesSectionNav";
 import type {
   FinanceEventOption,
   FinanceProjectOption,
@@ -415,6 +416,7 @@ export function FinanceClient({
           isLocked && "blur-md pointer-events-none select-none"
         )}
       >
+      <SalesSectionNav className="mb-6" />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-6">
         <div>
           <h1 className="text-xl sm:text-2xl font-light tracking-[0.05em] uppercase">

@@ -98,6 +98,7 @@ export function NavbarMenu({ shootsToday }: { shootsToday: number }) {
                 return FEATURES.finance ? (
                   <PrivacyFinanceLink
                     key={item.id}
+                    label={item.label}
                     className={cn(linkClass, "flex items-center gap-2")}
                     onActiveTap={() => setOpen(false)}
                   />

@@ -9,10 +9,12 @@ import { financeIsActive } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
 export function PrivacyFinanceLink({
+  label = "Finance & Sales",
   className,
   onClick,
   onActiveTap,
 }: {
+  label?: string;
   className?: string;
   onClick?: () => void;
   onActiveTap?: () => void;
@@ -41,7 +43,7 @@ export function PrivacyFinanceLink({
         if (financeIsActive(pathname)) onActiveTap?.();
       }}
     >
-      Finance
+      {label}
       {settingsLoaded && pinEnabled && isLocked ? (
         <Lock className="h-3 w-3 opacity-70" aria-hidden />
       ) : null}

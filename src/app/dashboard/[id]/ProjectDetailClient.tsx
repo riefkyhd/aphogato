@@ -15,6 +15,7 @@ import { PhotoGallerySection } from "@/components/PhotoGallerySection";
 import { StatusDot, type ProjectStatus } from "@/components/StatusDot";
 import { CancelUploadDialog } from "@/components/CancelUploadDialog";
 import { UploadProgressDock } from "@/components/UploadProgressDock";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { usePhotoDropZone } from "@/hooks/usePhotoDropZone";
 import { useManagePhotoActivation } from "@/hooks/useManagePhotoActivation";
 import { usePhotoManageSelection } from "@/hooks/usePhotoManageSelection";
@@ -47,6 +48,8 @@ import { resolveProjectCoverUrl } from "@/lib/projectCover";
 import type { Photo, PhotoStage, Project } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+type ProjectWorkspaceTab = "photos" | "brief" | "settings";
+
 export function ProjectDetailClient({
   project,
   initialPhotos,
@@ -59,11 +62,11 @@ export function ProjectDetailClient({
   const [projectState, setProjectState] = useState(project);
   const [photos, setPhotos] = useState(initialPhotos);
   const [currentStage, setCurrentStage] = useState<PhotoStage>("proof");
+  const [activeTab, setActiveTab] = useState<ProjectWorkspaceTab>("photos");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteProjectOpen, setDeleteProjectOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deletingProject, setDeletingProject] = useState(false);
-  const [toolsOpen, setToolsOpen] = useState(false);
 
   useEffect(() => {
     setProjectState(project);
@@ -122,36 +125,141 @@ export function ProjectDetailClient({
     [photos]
   );
 
-  const photoIds = useMemo(() => displayedPhotos.map((p) => p.id), [displayedPhotos]);
-  const manage = usePhotoManageSelection(photoIds);
+  const photoIdsForStage = useMemo(
+    () => displayedPhotos.map((p) => p.id),
+    [displayedPhotos]
+  );
+
+  const manage = usePhotoManageSelection(photoIdsForStage);
   const manageActivation = useManagePhotoActivation(manage);
 
-  const handleDropFiles = useCallback(
-    (files: FileList) => {
-      void upload.uploadFiles(files, currentStage);
-    },
-    [upload, currentStage]
+  const clientSelectedIds = useMemo(() => {
+    const s = new Set<string>();
+    for (const p of displayedPhotos) {
+      if (p.is_selected) s.add(p.id);
+    }
+    return s;
+  }, [displayedPhotos]);
+
+  const clientSelectedCount = clientSelectedIds.size;
+  const maxSelection = normalizeMaxPhotoSelection(
+    projectState.max_photo_selection
   );
-
-  const { isDragging, draggedFileCount } = usePhotoDropZone({
-    enabled: true,
-    onDropFiles: handleDropFiles,
-  });
-
-  const clientSelectedCount = useMemo(
-    () => photos.filter((ph) => ph.is_selected).length,
-    [photos]
-  );
-
   const clientOverLimit = isOverSelectionLimit(
     clientSelectedCount,
-    normalizeMaxPhotoSelection(projectState.max_photo_selection)
+    maxSelection
   );
 
-  const imageKitProject = isImageKitProject(projectState);
+  const photosToDelete = useMemo(() => {
+    const set = manage.manageSelected;
+    return displayedPhotos.filter((p) => set.has(p.id));
+  }, [displayedPhotos, manage.manageSelected]);
+
+  const clientPicksInDelete = useMemo(() => {
+    const set = manage.manageSelected;
+    return displayedPhotos.filter((p) => set.has(p.id) && p.is_selected);
+  }, [displayedPhotos, manage.manageSelected]);
+
+  const { isDragging, draggedFileCount } = usePhotoDropZone({
+    enabled: !upload.uploading,
+    onDropFiles: upload.uploadFiles,
+  });
+
+  const confirmDeletePhotos = useCallback(async () => {
+    const ids = photosToDelete.map((p) => p.id);
+    if (ids.length === 0) return;
+
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/projects/${projectState.id}/photos/delete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ photoIds: ids }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        toast.error(data?.error ?? "Failed to delete photos");
+        return;
+      }
+      toast.success(
+        ids.length === 1 ? "Photo deleted" : `${ids.length} photos deleted`
+      );
+      setPhotos((prev) => prev.filter((p) => !manage.manageSelected.has(p.id)));
+      manage.clear();
+      setDeleteDialogOpen(false);
+      refreshProjectPhotos();
+    } catch {
+      toast.error("Failed to delete photos");
+    } finally {
+      setDeleting(false);
+    }
+  }, [
+    photosToDelete,
+    projectState.id,
+    manage,
+    refreshProjectPhotos,
+  ]);
+
+  const confirmDeleteProject = useCallback(async () => {
+    const runDelete = async () => {
+      setDeletingProject(true);
+      try {
+        const res = await fetch(`/api/projects/${projectState.id}`, {
+          method: "DELETE",
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          toast.error(data?.error ?? "Failed to delete project");
+          return;
+        }
+        toast.success("Project deleted");
+        setDeleteProjectOpen(false);
+        router.push("/dashboard");
+        router.refresh();
+      } catch {
+        toast.error("Failed to delete project");
+      } finally {
+        setDeletingProject(false);
+      }
+    };
+
+    if (guardSensitiveAction) {
+      guardSensitiveAction(() => void runDelete());
+    } else {
+      void runDelete();
+    }
+  }, [projectState.id, guardSensitiveAction, router]);
+
+  const setCoverFromSelection = useCallback(async () => {
+    const selectedIds = Array.from(manage.manageSelected);
+    if (selectedIds.length !== 1) {
+      toast.error("Select exactly one photo to set as cover");
+      return;
+    }
+    const photoId = selectedIds[0];
+    try {
+      const res = await fetch(`/api/projects/${projectState.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cover_photo_id: photoId }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        toast.error(json.error ?? "Failed to update cover photo");
+        return;
+      }
+      setProjectState(normalizeProject(json.project as Project));
+      toast.success("Cover photo updated");
+      manage.clear();
+    } catch {
+      toast.error("Failed to update cover photo");
+    }
+  }, [manage, projectState.id]);
+
   const isCloudinaryProject =
     projectState.storage_provider !== "imagekit" &&
     projectState.storage_provider !== "gdrive";
+  const imageKitProject = isImageKitProject(projectState);
 
   const {
     account: cloudinaryAccount,
@@ -160,127 +268,6 @@ export function ProjectDetailClient({
   } = useProjectCloudinaryUsage(
     isCloudinaryProject ? projectState.cloudinary_account : null
   );
-
-  const clientSelectedIds = useMemo(
-    () => new Set(photos.filter((ph) => ph.is_selected).map((ph) => ph.id)),
-    [photos]
-  );
-
-  const photosToDelete = useMemo(
-    () => photos.filter((ph) => manage.manageSelected.has(ph.id)),
-    [photos, manage.manageSelected]
-  );
-
-  const clientPicksInDelete = useMemo(
-    () => photosToDelete.filter((ph) => ph.is_selected),
-    [photosToDelete]
-  );
-
-  async function confirmDeletePhotos() {
-    if (photosToDelete.length === 0) return;
-    setDeleting(true);
-    try {
-      const res = await fetch(`/api/projects/${projectState.id}/photos`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          photoIds: photosToDelete.map((p) => p.id),
-        }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(json.error ?? "Failed to delete photos");
-        return;
-      }
-      if (Array.isArray(json.errors) && json.errors.length > 0) {
-        toast.warning(json.errors.join("; "));
-      }
-      const deleted = json.deleted ?? photosToDelete.length;
-      toast.success(
-        `Deleted ${deleted} photo${deleted === 1 ? "" : "s"}`
-      );
-      if (Array.isArray(json.photos)) {
-        applyServerPhotos(json.photos as Photo[]);
-      }
-      manageActivation.clearAll();
-      setDeleteDialogOpen(false);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to delete");
-    } finally {
-      setDeleting(false);
-    }
-  }
-
-  async function executeDeleteProject() {
-    setDeletingProject(true);
-    try {
-      const res = await fetch(`/api/projects/${projectState.id}`, {
-        method: "DELETE",
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(json.error ?? "Failed to delete project");
-        return;
-      }
-      if (Array.isArray(json.cloudinaryErrors) && json.cloudinaryErrors.length > 0) {
-        toast.warning("Some Cloudinary assets could not be removed");
-      }
-      toast.success("Project deleted");
-      setDeleteProjectOpen(false);
-      router.push("/dashboard");
-      router.refresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to delete");
-    } finally {
-      setDeletingProject(false);
-    }
-  }
-
-  function confirmDeleteProject() {
-    guardSensitiveAction(() => void executeDeleteProject(), {
-      title: "Delete project",
-      description: "Enter your privacy PIN to permanently delete this project.",
-    });
-  }
-
-  async function setCoverFromSelection() {
-    const selectedIds = [...manage.manageSelected];
-    if (selectedIds.length !== 1) {
-      toast.error("Select exactly one photo to set as cover");
-      return;
-    }
-
-    const photoId = selectedIds[0]!;
-    try {
-      const res = await fetch(`/api/projects/${projectState.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cover_photo_id: photoId }),
-      });
-      const json = (await res.json().catch(() => ({}))) as {
-        error?: string;
-        project?: Project;
-      };
-      if (!res.ok) {
-        toast.error(json.error ?? "Failed to set cover photo");
-        return;
-      }
-
-      if (json.project) {
-        setProjectState(normalizeProject(json.project));
-      } else {
-        setProjectState((prev) => ({ ...prev, cover_photo_id: photoId }));
-      }
-
-      manageActivation.clearAll();
-      toast.success(
-        "Cover updated — used on project cards and client link previews"
-      );
-      router.refresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to set cover");
-    }
-  }
 
   const coverImageUrl = useMemo(
     () => resolveProjectCoverUrl(projectState, photos),
@@ -295,6 +282,7 @@ export function ProjectDetailClient({
           fileCount={draggedFileCount}
         />
       )}
+
       {upload.uploading && upload.progress && (
         <UploadProgressDock
           progress={upload.progress}
@@ -332,23 +320,23 @@ export function ProjectDetailClient({
 
       <DashboardMain>
         <BackNavLink
-          href="/dashboard/galleries"
-          className="inline-flex items-center gap-2 text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors mb-6"
+          href="/dashboard"
+          className="inline-flex items-center gap-2 text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors mb-4"
         >
           <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
-          All galleries
+          All projects
         </BackNavLink>
 
-        <header className="mb-8">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
+        <header className="mb-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
             <div className="min-w-0 flex-1">
-              <h1 className="text-2xl sm:text-3xl font-light tracking-[0.05em] uppercase break-words">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-light tracking-[0.05em] uppercase break-words">
                 {projectState.name}
               </h1>
-              <p className="mt-2 text-text-secondary text-[15px]">
+              <p className="mt-1 text-text-secondary text-[14px]">
                 {projectState.client_name ?? "—"}
               </p>
-              <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] uppercase tracking-label text-text-muted">
+              <div className="mt-2.5 flex flex-wrap items-center gap-2.5 text-[11px] uppercase tracking-label text-text-muted">
                 <StatusDot status={projectState.status as ProjectStatus} />
                 <span>
                   {photos.length} photo{photos.length === 1 ? "" : "s"}
@@ -358,7 +346,7 @@ export function ProjectDetailClient({
                   {clientSelectedCount === 1 ? "" : "s"}
                 </span>
                 {projectState.storage_provider === "gdrive" ? (
-                  <span className="text-[11px] text-text-secondary border border-border px-1.5 py-0.5">
+                  <span className="text-[10px] text-text-secondary border border-border px-1.5 py-0.5">
                     Google Drive
                   </span>
                 ) : imageKitProject ? (
@@ -371,21 +359,8 @@ export function ProjectDetailClient({
                   />
                 ) : null}
               </div>
-              {projectState.storage_provider === "gdrive" ? (
-                <p className="mt-1 text-[12px] text-text-muted">
-                  Storage: Google Drive · delivered via Aphogato Media Cache
-                </p>
-              ) : imageKitProject ? (
-                <ProjectImageKitStorageNote photoCount={photos.length} />
-              ) : FEATURES.cloudinarySettings && !FEATURES.photographerFirstUi ? (
-                <ProjectCloudinaryAccountNote
-                  account={cloudinaryAccount}
-                  usage={cloudinaryUsage}
-                  loading={cloudinaryUsageLoading}
-                  photoCount={photos.length}
-                />
-              ) : null}
             </div>
+
             <ProjectActions
               projectId={projectState.id}
               galleryToken={projectState.gallery_token}
@@ -413,172 +388,221 @@ export function ProjectDetailClient({
             />
           </div>
 
-          <div className="mt-6 border border-border bg-bg-secondary">
-            <button
-              type="button"
-              onClick={() => setToolsOpen((o) => !o)}
-              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left sm:px-5"
-              aria-expanded={toolsOpen}
-            >
-              <span className="text-[11px] uppercase tracking-label text-text-secondary">
-                Project setup
-              </span>
-              <span className="text-[11px] text-text-muted">
-                {toolsOpen ? "Hide" : "Show"}
-              </span>
-            </button>
-            <div
-              className={cn(
-                "grid transition-[grid-template-rows] duration-200",
-                toolsOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-              )}
-            >
-              <div className="overflow-hidden">
-                <div className="space-y-[2px] border-t border-border">
-                  <ProjectRename
-                    project={projectState}
-                    onUpdated={(next, options) => {
-                      setProjectState(next);
-                      if (options?.photos) {
-                        setPhotosFromServer(options.photos);
-                      }
-                      if (options?.folderRenamed) {
-                        refreshProjectPhotos();
-                      }
-                    }}
-                  />
-                  <ProjectMaxSelection
-                    project={projectState}
-                    clientSelectedCount={clientSelectedCount}
-                    photoCount={photos.length}
-                    clientOverLimit={clientOverLimit}
-                    onUpdated={setProjectState}
-                  />
-                  {FEATURES.faceSearch ? (
-                    <ProjectFaceSearchSettings
-                      project={projectState}
-                      photoCount={photos.length}
-                      onUpdated={setProjectState}
-                    />
-                  ) : null}
-                  {FEATURES.deliverables ? (
-                    <div className="border-t border-border bg-bg-secondary p-4 sm:p-5">
-                      <DeliverablesChecklist projectId={projectState.id} compact />
-                    </div>
-                  ) : null}
-                  {FEATURES.projectReferences ? (
-                    <div className="border-t border-border bg-bg-secondary p-4 sm:p-5">
-                      <ProjectReferencesSection
-                        projectId={projectState.id}
-                        projectName={projectState.name}
-                        clientName={projectState.client_name}
-                        compact
-                      />
-                    </div>
-                  ) : null}
-                  <ProjectGDriveSettings
-                    project={projectState}
-                    onUpdated={setProjectState}
-                  />
-                </div>
-              </div>
-            </div>
+          <div className="mt-6 border-b border-border pb-4 flex justify-start">
+            <SegmentedControl
+              value={activeTab}
+              aria-label="Project workspaces"
+              options={[
+                { value: "photos", label: `Photos (${photos.length})` },
+                {
+                  value: "brief",
+                  label: "Brief & Moodboard",
+                },
+                { value: "settings", label: "Settings & Setup" },
+              ]}
+              onChange={(val) =>
+                setActiveTab(val as ProjectWorkspaceTab)
+              }
+            />
           </div>
         </header>
 
-        <section aria-label="Photo gallery">
-          {/* Proofs vs Edited Finals Stage Selector */}
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
-            <div className="inline-flex w-full sm:w-auto rounded-sm border border-border bg-bg-secondary p-1">
-              <button
-                type="button"
-                onClick={() => setCurrentStage("proof")}
-                className={cn(
-                  "flex-1 sm:flex-none min-h-[44px] sm:min-h-0 rounded-sm px-3 py-1.5 text-[12px] uppercase tracking-label font-medium transition-colors",
-                  currentStage === "proof"
-                    ? "bg-bg-primary text-text-primary shadow-sm"
-                    : "text-text-secondary hover:text-text-primary"
-                )}
-              >
-                Proofs / Culling ({proofsCount})
-              </button>
-              <button
-                type="button"
-                onClick={() => setCurrentStage("final")}
-                className={cn(
-                  "flex-1 sm:flex-none min-h-[44px] sm:min-h-0 rounded-sm px-3 py-1.5 text-[12px] uppercase tracking-label font-medium transition-colors",
-                  currentStage === "final"
-                    ? "bg-bg-primary text-text-primary shadow-sm"
-                    : "text-text-secondary hover:text-text-primary"
-                )}
-              >
-                Edited Finals ({finalsCount})
-              </button>
+        {activeTab === "photos" && (
+          <section aria-label="Photo gallery">
+            {/* Proofs vs Edited Finals Stage Selector */}
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+              <div className="inline-flex w-full sm:w-auto rounded-sm border border-border bg-bg-secondary p-1">
+                <button
+                  type="button"
+                  onClick={() => setCurrentStage("proof")}
+                  className={cn(
+                    "flex-1 sm:flex-none min-h-[44px] sm:min-h-0 rounded-sm px-3 py-1.5 text-[12px] uppercase tracking-label font-medium transition-colors",
+                    currentStage === "proof"
+                      ? "bg-bg-primary text-text-primary shadow-sm"
+                      : "text-text-secondary hover:text-text-primary"
+                  )}
+                >
+                  Proofs / Culling ({proofsCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentStage("final")}
+                  className={cn(
+                    "flex-1 sm:flex-none min-h-[44px] sm:min-h-0 rounded-sm px-3 py-1.5 text-[12px] uppercase tracking-label font-medium transition-colors",
+                    currentStage === "final"
+                      ? "bg-bg-primary text-text-primary shadow-sm"
+                      : "text-text-secondary hover:text-text-primary"
+                  )}
+                >
+                  Edited Finals ({finalsCount})
+                </button>
+              </div>
+
+              {currentStage === "final" && projectState.gdrive_finals_share_url ? (
+                <a
+                  href={projectState.gdrive_finals_share_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 min-h-[44px] sm:min-h-0 text-[12px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors"
+                >
+                  Open Finals on Google Drive ↗
+                </a>
+              ) : null}
             </div>
 
-            {currentStage === "final" && projectState.gdrive_finals_share_url ? (
-              <a
-                href={projectState.gdrive_finals_share_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 min-h-[44px] sm:min-h-0 text-[12px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors"
-              >
-                Open Finals on Google Drive ↗
-              </a>
-            ) : null}
-          </div>
+            {displayedPhotos.length > 0 && (
+              <p className="mb-4 text-[11px] text-text-muted leading-relaxed max-w-3xl">
+                <span className="md:hidden">
+                  Tap to preview · long-press to select for delete.
+                </span>
+                <span className="hidden md:inline">
+                  Click to select · drag to box-select · Ctrl+click or long-press
+                  for multi-select · select one photo and use Set cover for link
+                  previews · Esc to clear.
+                </span>
+              </p>
+            )}
 
-          {displayedPhotos.length > 0 && (
-            <p className="mb-4 text-[11px] text-text-muted leading-relaxed max-w-3xl">
-              <span className="md:hidden">
-                Tap to preview · long-press to select for delete.
-              </span>
-              <span className="hidden md:inline">
-                Click to select · drag to box-select · Ctrl+click or long-press
-                for multi-select · select one photo and use Set cover for link
-                previews · Esc to clear.
-              </span>
+            <div
+              className="select-none"
+              onSelectCapture={(e) => {
+                if (manage.count > 0) e.preventDefault();
+              }}
+            >
+              {isCloudinaryProject &&
+              !FEATURES.photographerFirstUi &&
+              isCloudinaryAccountDisabled(cloudinaryUsage) ? (
+                <MediaUnavailableBanner message={CLOUDINARY_DISABLED_MESSAGE} />
+              ) : null}
+              <PhotoGallerySection
+                photos={displayedPhotos}
+                mode="dashboard"
+                viewStorageId={`${projectState.gallery_token}-${currentStage}`}
+                selectedIds={clientSelectedIds}
+                manageSelectedIds={manage.manageSelected}
+                onManagePhotoActivate={manageActivation.activate}
+                onManagePhotoMarquee={manage.setMarqueeHits}
+                managePreviewId={manageActivation.previewId}
+                onClearManageSelection={manageActivation.clearAll}
+                onCloseManagePreview={manageActivation.closePreview}
+                onDeletePhotos={() => setDeleteDialogOpen(true)}
+                coverPhotoId={projectState.cover_photo_id}
+                onSetCover={() => void setCoverFromSelection()}
+              />
+            </div>
+
+            <p className="mt-6 text-[12px] text-text-muted leading-relaxed">
+              {displayedPhotos.length === 0
+                ? currentStage === "final"
+                  ? "Drop edited final JPEGs from Lightroom here, or sync from your Google Drive Finals folder."
+                  : "Drag photos anywhere on this page, or use Upload photos. Then share the gallery link with your client."
+                : currentStage === "final"
+                  ? "Edited finals are ready for luxury client delivery and full-res download."
+                  : "Your client selects favorites from the gallery link."}
             </p>
-          )}
+          </section>
+        )}
 
-          <div
-            className="select-none"
-            onSelectCapture={(e) => {
-              if (manage.count > 0) e.preventDefault();
-            }}
-          >
-            {isCloudinaryProject &&
-            !FEATURES.photographerFirstUi &&
-            isCloudinaryAccountDisabled(cloudinaryUsage) ? (
-              <MediaUnavailableBanner message={CLOUDINARY_DISABLED_MESSAGE} />
+        {activeTab === "brief" && (
+          <section aria-label="Brief and moodboard" className="space-y-6">
+            {FEATURES.deliverables ? (
+              <div className="border border-border bg-bg-secondary p-4 sm:p-5">
+                <DeliverablesChecklist projectId={projectState.id} />
+              </div>
             ) : null}
-            <PhotoGallerySection
-              photos={displayedPhotos}
-              mode="dashboard"
-              viewStorageId={`${projectState.gallery_token}-${currentStage}`}
-              selectedIds={clientSelectedIds}
-              manageSelectedIds={manage.manageSelected}
-              onManagePhotoActivate={manageActivation.activate}
-              onManagePhotoMarquee={manage.setMarqueeHits}
-              managePreviewId={manageActivation.previewId}
-              onClearManageSelection={manageActivation.clearAll}
-              onCloseManagePreview={manageActivation.closePreview}
-              onDeletePhotos={() => setDeleteDialogOpen(true)}
-              coverPhotoId={projectState.cover_photo_id}
-              onSetCover={() => void setCoverFromSelection()}
-            />
-          </div>
+            {FEATURES.projectReferences ? (
+              <div className="border border-border bg-bg-secondary p-4 sm:p-5">
+                <ProjectReferencesSection
+                  projectId={projectState.id}
+                  projectName={projectState.name}
+                  clientName={projectState.client_name}
+                />
+              </div>
+            ) : null}
+          </section>
+        )}
 
-          <p className="mt-6 text-[12px] text-text-muted leading-relaxed">
-            {displayedPhotos.length === 0
-              ? currentStage === "final"
-                ? "Drop edited final JPEGs from Lightroom here, or sync from your Google Drive Finals folder."
-                : "Drag photos anywhere on this page, or use Upload photos. Then share the gallery link with your client."
-              : currentStage === "final"
-                ? "Edited finals are ready for luxury client delivery and full-res download."
-                : "Your client selects favorites from the gallery link."}
-          </p>
-        </section>
+        {activeTab === "settings" && (
+          <section aria-label="Project settings" className="space-y-6">
+            <div className="border border-border bg-bg-secondary p-4 sm:p-5 space-y-6">
+              <div>
+                <h3 className="text-[12px] uppercase tracking-label text-text-muted mb-4">
+                  Project Details
+                </h3>
+                <ProjectRename
+                  project={projectState}
+                  onUpdated={(next, options) => {
+                    setProjectState(next);
+                    if (options?.photos) {
+                      setPhotosFromServer(options.photos);
+                    }
+                    if (options?.folderRenamed) {
+                      refreshProjectPhotos();
+                    }
+                  }}
+                />
+              </div>
+
+              <div className="border-t border-border pt-6">
+                <ProjectMaxSelection
+                  project={projectState}
+                  clientSelectedCount={clientSelectedCount}
+                  photoCount={photos.length}
+                  clientOverLimit={clientOverLimit}
+                  onUpdated={setProjectState}
+                />
+              </div>
+
+              {FEATURES.faceSearch ? (
+                <div className="border-t border-border pt-6">
+                  <ProjectFaceSearchSettings
+                    project={projectState}
+                    photoCount={photos.length}
+                    onUpdated={setProjectState}
+                  />
+                </div>
+              ) : null}
+
+              <div className="border-t border-border pt-6">
+                <ProjectGDriveSettings
+                  project={projectState}
+                  onUpdated={setProjectState}
+                />
+              </div>
+
+              {imageKitProject ? (
+                <div className="border-t border-border pt-6">
+                  <ProjectImageKitStorageNote photoCount={photos.length} />
+                </div>
+              ) : FEATURES.cloudinarySettings && !FEATURES.photographerFirstUi ? (
+                <div className="border-t border-border pt-6">
+                  <ProjectCloudinaryAccountNote
+                    account={cloudinaryAccount}
+                    usage={cloudinaryUsage}
+                    loading={cloudinaryUsageLoading}
+                    photoCount={photos.length}
+                  />
+                </div>
+              ) : null}
+
+              <div className="border-t border-border pt-6 flex justify-between items-center">
+                <div>
+                  <h4 className="text-[13px] text-text-primary">Delete Project</h4>
+                  <p className="text-[12px] text-text-muted mt-0.5">
+                    Permanently delete this project, client picks, and associated photos.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDeleteProjectOpen(true)}
+                  className="px-3 py-1.5 text-[11px] uppercase tracking-label text-status-cancelled hover:bg-status-cancelled/10 border border-status-cancelled/30 transition-colors"
+                >
+                  Delete project
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
       </DashboardMain>
     </>
   );

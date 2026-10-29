@@ -2,9 +2,9 @@ import { Suspense } from "react";
 import { ExternalLink } from "lucide-react";
 import { ContentColumn } from "@/components/layout/ContentColumn";
 import { DashboardMain } from "@/components/layout/DashboardShell";
-import { SettingsAccordionSection } from "@/components/settings/SettingsAccordionSection";
 import { FEATURES } from "@/lib/features";
 import { PORTFOLIO_URL } from "@/lib/navConfig";
+import { SettingsTabsClient } from "@/app/dashboard/settings/SettingsTabsClient";
 import { CloudinarySettings } from "@/app/dashboard/settings/CloudinarySettings";
 import { DataExportSettings } from "@/app/dashboard/settings/DataExportSettings";
 import { ImageKitSettings } from "@/app/dashboard/settings/ImageKitSettings";
@@ -26,63 +26,48 @@ export default async function SettingsPage() {
     Promise.resolve(isGoogleOAuthConfigured()),
   ]);
 
-  const storageDefaultOpen = !FEATURES.photographerFirstUi;
+  const connectionsNode = (
+    <div className="space-y-6">
+      {FEATURES.googleCalendarSync ? (
+        <Suspense fallback={null}>
+          <GoogleCalendarSettings
+            isConnected={isConnected}
+            isOAuthConfigured={isOAuthConfigured}
+          />
+        </Suspense>
+      ) : null}
+      {FEATURES.cloudinarySettings ? <CloudinarySettings /> : null}
+      {FEATURES.imagekitStorage ? <ImageKitSettings /> : null}
+    </div>
+  );
+
+  const studioNode = (
+    <div className="space-y-6">
+      {FEATURES.privacyLock ? <PrivacySettings /> : null}
+      <PreferencesSettings />
+      {FEATURES.todayShootsReminder ? <TodayReminderSettings /> : null}
+    </div>
+  );
+
+  const dataNode = (
+    <div className="space-y-6">
+      {FEATURES.domainVerification ? <DomainSecurityInfo /> : null}
+      <DataExportSettings />
+    </div>
+  );
 
   return (
     <DashboardMain>
       <ContentColumn size="lg">
-        <h1 className="text-xl sm:text-2xl font-light tracking-[0.05em] uppercase mb-6 sm:mb-8 text-center sm:text-left">
+        <h1 className="text-xl sm:text-2xl font-light tracking-[0.05em] uppercase mb-4 sm:mb-6 text-center sm:text-left">
           Settings
         </h1>
 
-        <div className="space-y-6">
-          <SettingsAccordionSection
-            title="Workflow"
-            description="Calendar sync, defaults, reminders, and privacy for your daily admin."
-            defaultOpen
-          >
-            {FEATURES.googleCalendarSync ? (
-              <Suspense fallback={null}>
-                <GoogleCalendarSettings
-                  isConnected={isConnected}
-                  isOAuthConfigured={isOAuthConfigured}
-                />
-              </Suspense>
-            ) : null}
-            <PreferencesSettings />
-            {FEATURES.todayShootsReminder ? <TodayReminderSettings /> : null}
-            {FEATURES.privacyLock ? <PrivacySettings /> : null}
-          </SettingsAccordionSection>
-
-          {FEATURES.cloudinarySettings || FEATURES.imagekitStorage ? (
-            <SettingsAccordionSection
-              title="Storage & delivery"
-              description="Cloudinary and ImageKit — for client galleries and photo delivery."
-              defaultOpen={storageDefaultOpen}
-            >
-              {FEATURES.cloudinarySettings ? <CloudinarySettings /> : null}
-              {FEATURES.imagekitStorage ? <ImageKitSettings /> : null}
-            </SettingsAccordionSection>
-          ) : null}
-
-          {FEATURES.domainVerification ? (
-            <SettingsAccordionSection
-              title="Site"
-              description="Domain and security for your public gallery links."
-              defaultOpen={false}
-            >
-              <DomainSecurityInfo />
-            </SettingsAccordionSection>
-          ) : null}
-
-          <SettingsAccordionSection
-            title="Data"
-            description="Back up or export your studio data."
-            defaultOpen={false}
-          >
-            <DataExportSettings />
-          </SettingsAccordionSection>
-        </div>
+        <SettingsTabsClient
+          connectionsNode={connectionsNode}
+          studioNode={studioNode}
+          dataNode={dataNode}
+        />
 
         <footer className="mt-8 sm:mt-10 pt-5 sm:pt-6 border-t border-border">
           <a

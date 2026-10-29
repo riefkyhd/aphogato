@@ -7,19 +7,28 @@ import { cn } from "@/lib/utils";
 
 const TABS = [
   {
-    label: "Quote",
+    label: "Overview & Ledger",
+    href: "/dashboard/finance",
+    enabled: () => FEATURES.finance,
+    exact: true,
+  },
+  {
+    label: "Quotations",
     href: "/dashboard/quotations",
     enabled: () => FEATURES.quotations,
+    exact: false,
   },
   {
-    label: "Invoice",
+    label: "Invoices",
     href: "/dashboard/invoices",
     enabled: () => FEATURES.invoices,
+    exact: false,
   },
   {
-    label: "Price list",
+    label: "Price List",
     href: "/dashboard/pricing",
     enabled: () => FEATURES.pricing,
+    exact: false,
   },
 ] as const;
 
@@ -32,11 +41,12 @@ export function SalesSectionNav({ className }: { className?: string }) {
   return (
     <nav
       className={cn("flex flex-wrap gap-2", className)}
-      aria-label="Quotes section"
+      aria-label="Finance and sales section"
     >
       {visible.map((tab) => {
-        const active =
-          pathname === tab.href || pathname.startsWith(`${tab.href}/`);
+        const active = tab.exact
+          ? pathname === tab.href
+          : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
         return (
           <Link
             key={tab.href}

@@ -28,7 +28,7 @@ export function Navbar({
               {navItems.map((item) => {
                 if (item.id === "finance") {
                   return FEATURES.finance ? (
-                    <PrivacyFinanceLink key={item.id} />
+                    <PrivacyFinanceLink key={item.id} label={item.label} />
                   ) : null;
                 }
 
@@ -48,7 +48,7 @@ export function Navbar({
                     }
                     aria-label={
                       showBell
-                        ? `Calendar, ${shootsToday} shoot${shootsToday === 1 ? "" : "s"} today`
+                        ? `${item.label}, ${shootsToday} shoot${shootsToday === 1 ? "" : "s"} today`
                         : item.label
                     }
                   >
