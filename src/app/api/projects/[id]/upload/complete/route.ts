@@ -20,7 +20,9 @@ import {
 import { insertPhotoFaces } from "@/lib/faces/insertPhotoFaces";
 import { parsePhotoFacesInput } from "@/lib/faces/validation";
 import { completeImageKitPhotoUpload } from "@/lib/imagekit/completeUpload";
+import { getDriveFileMeta } from "@/lib/gdrive/client";
 import { getProjectStorageProvider } from "@/lib/storage/provider";
+import type { PhotoStage } from "@/lib/types";
 
 export const runtime = "nodejs";
 
@@ -29,6 +31,7 @@ type CompleteBody = {
   fileId?: string;
   secureUrl?: string;
   originalFilename?: string;
+  stage?: PhotoStage;
   width?: number;
   height?: number;
   bytes?: number;
@@ -51,8 +54,10 @@ export async function POST(
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
+  const stage: PhotoStage = body.stage === "final" ? "final" : "proof";
   const publicId = body.publicId?.trim() ?? "";
   const secureUrl = body.secureUrl?.trim() ?? "";
+  const fileId = body.fileId?.trim() ?? "";
 
   const { data: project, error: projectError } = await supabase
     .from("projects")
@@ -70,6 +75,69 @@ export async function POST(
   if (!facesParsed.ok) {
     return NextResponse.json({ error: facesParsed.error }, { status: 400 });
   }
+
+  const provider = getProjectStorageProvider(project);
+
+  // Handle Google Drive completion
+  if (provider === "gdrive") {
+    if (!fileId) {
+      return NextResponse.json({ error: "fileId is required" }, { status: 400 });
+    }
+
+    const filename = body.originalFilename?.trim() || "photo.jpg";
+    let shotAt: string | null = null;
+
+    try {
+      const meta = await getDriveFileMeta(fileId);
+      if (meta?.imageMediaMetadata?.time) {
+        const rawTime = meta.imageMediaMetadata.time;
+        const normalizedIso = rawTime.replace(
+          /^(\d{4}):(\d{2}):(\d{2})/,
+          "$1-$2-$3"
+        );
+        const parsed = new Date(normalizedIso);
+        if (!isNaN(parsed.getTime())) {
+          shotAt = parsed.toISOString();
+        }
+      }
+    } catch {
+      // Non-fatal if metadata fetch fails
+    }
+
+    const { data: row, error: insertError } = await supabase
+      .from("photos")
+      .insert({
+        project_id: project.id,
+        filename,
+        cloudinary_url: `gdrive://${fileId}`,
+        gdrive_file_id: fileId,
+        stage,
+        is_selected: false,
+        perceptual_hash: null,
+        shot_at: shotAt,
+      })
+      .select("*")
+      .single();
+
+    if (insertError || !row) {
+      return NextResponse.json(
+        { error: insertError?.message ?? "DB insert failed" },
+        { status: 500 }
+      );
+    }
+
+    if (project.face_search_enabled && facesParsed.faces.length > 0) {
+      await insertPhotoFaces(supabase, project.id, row.id, facesParsed.faces);
+    }
+
+    const photos = await fetchAllProjectPhotos(supabase, project.id);
+    return NextResponse.json({
+      uploaded: 1,
+      errors: [] as string[],
+      photos,
+    });
+  }
+
   if (facesParsed.faces.length > 0 && !project.face_search_enabled) {
     return NextResponse.json(
       { error: "Face search is not enabled for this project" },
@@ -77,7 +145,7 @@ export async function POST(
     );
   }
 
-  if (getProjectStorageProvider(project) === "imagekit") {
+  if (provider === "imagekit") {
     const result = await completeImageKitPhotoUpload(
       supabase,
       project,
@@ -162,6 +230,7 @@ export async function POST(
     .select("filename")
     .eq("project_id", project.id)
     .eq("filename", filename)
+    .eq("stage", stage)
     .maybeSingle();
 
   if (lateDuplicate) {
@@ -184,6 +253,7 @@ export async function POST(
       project_id: project.id,
       filename,
       cloudinary_url: secureUrl,
+      stage,
       is_selected: false,
       perceptual_hash: perceptualHash,
       shot_at: shotAt,

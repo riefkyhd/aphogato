@@ -23,6 +23,9 @@ export async function PATCH(
     max_photo_selection?: unknown;
     face_search_enabled?: unknown;
     cover_photo_id?: unknown;
+    gdrive_folder_id?: unknown;
+    gdrive_finals_folder_id?: unknown;
+    gdrive_finals_share_url?: unknown;
   };
   try {
     body = await request.json();
@@ -34,12 +37,23 @@ export async function PATCH(
   const hasMaxSelection = body.max_photo_selection !== undefined;
   const hasFaceSearchEnabled = body.face_search_enabled !== undefined;
   const hasCoverPhotoId = body.cover_photo_id !== undefined;
+  const hasGDriveFolderId = body.gdrive_folder_id !== undefined;
+  const hasGDriveFinalsFolderId = body.gdrive_finals_folder_id !== undefined;
+  const hasGDriveFinalsShareUrl = body.gdrive_finals_share_url !== undefined;
 
-  if (!hasName && !hasMaxSelection && !hasFaceSearchEnabled && !hasCoverPhotoId) {
+  if (
+    !hasName &&
+    !hasMaxSelection &&
+    !hasFaceSearchEnabled &&
+    !hasCoverPhotoId &&
+    !hasGDriveFolderId &&
+    !hasGDriveFinalsFolderId &&
+    !hasGDriveFinalsShareUrl
+  ) {
     return NextResponse.json(
       {
         error:
-          "name, max_photo_selection, face_search_enabled, or cover_photo_id is required",
+          "No valid fields to update",
       },
       { status: 400 }
     );
@@ -123,6 +137,27 @@ export async function PATCH(
     }
   }
 
+  if (hasGDriveFolderId) {
+    updatePayload.gdrive_folder_id =
+      typeof body.gdrive_folder_id === "string"
+        ? body.gdrive_folder_id.trim() || null
+        : null;
+  }
+
+  if (hasGDriveFinalsFolderId) {
+    updatePayload.gdrive_finals_folder_id =
+      typeof body.gdrive_finals_folder_id === "string"
+        ? body.gdrive_finals_folder_id.trim() || null
+        : null;
+  }
+
+  if (hasGDriveFinalsShareUrl) {
+    updatePayload.gdrive_finals_share_url =
+      typeof body.gdrive_finals_share_url === "string"
+        ? body.gdrive_finals_share_url.trim() || null
+        : null;
+  }
+
   if (Object.keys(updatePayload).length === 0) {
     return NextResponse.json({ error: "No valid fields to update" }, {
       status: 400,
@@ -164,10 +199,15 @@ export async function DELETE(
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
-  let photos: { id: string; cloudinary_url: string; imagekit_file_id: string | null }[];
+  let photos: {
+    id: string;
+    cloudinary_url: string;
+    imagekit_file_id: string | null;
+    gdrive_file_id?: string | null;
+  }[];
   try {
     photos = await fetchAllProjectPhotoRows(supabase, params.id, {
-      columns: "id, cloudinary_url, imagekit_file_id",
+      columns: "id, cloudinary_url, imagekit_file_id, gdrive_file_id",
     });
   } catch (err) {
     return NextResponse.json(

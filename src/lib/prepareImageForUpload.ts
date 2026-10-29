@@ -147,7 +147,8 @@ async function compressImageFile(
  */
 export async function prepareImageForUpload(
   file: File,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  options?: { bypassCompression?: boolean }
 ): Promise<File> {
   throwIfAborted(signal);
 
@@ -158,7 +159,7 @@ export async function prepareImageForUpload(
 
   const normalized = withMimeType(file, mimeType);
 
-  if (normalized.size <= CLOUDINARY_MAX_UPLOAD_BYTES) {
+  if (options?.bypassCompression || normalized.size <= CLOUDINARY_MAX_UPLOAD_BYTES) {
     return normalized;
   }
 

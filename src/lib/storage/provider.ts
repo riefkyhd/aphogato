@@ -1,11 +1,13 @@
 import type { Project } from "@/lib/types";
 
-export type StorageProvider = "cloudinary" | "imagekit";
+export type StorageProvider = "cloudinary" | "imagekit" | "gdrive";
 
 export function normalizeStorageProvider(
   value: string | null | undefined
 ): StorageProvider {
-  return value === "imagekit" ? "imagekit" : "cloudinary";
+  if (value === "imagekit") return "imagekit";
+  if (value === "gdrive") return "gdrive";
+  return "cloudinary";
 }
 
 export function getProjectStorageProvider(
@@ -18,4 +20,10 @@ export function isImageKitProject(
   project: Pick<Project, "storage_provider">
 ): boolean {
   return getProjectStorageProvider(project) === "imagekit";
+}
+
+export function isGDriveProject(
+  project: Pick<Project, "storage_provider">
+): boolean {
+  return getProjectStorageProvider(project) === "gdrive";
 }

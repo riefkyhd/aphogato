@@ -45,7 +45,7 @@ import {
 } from "@/components/layout/DashboardShell";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
-import type { Photo, Project } from "@/lib/types";
+import type { Photo, PhotoStage, Project } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const FacePickModal = FEATURES.faceSearch
@@ -157,6 +157,13 @@ export function GallerySelector({
 }) {
   const storageKey = gallerySelectionStorageKey(token);
 
+  const hasFinals = useMemo(
+    () => initialPhotos.some((p) => p.stage === "final"),
+    [initialPhotos]
+  );
+  const [activeStage, setActiveStage] = useState<PhotoStage>(
+    hasFinals ? "final" : "proof"
+  );
   const [project, setProject] = useState(initialProject);
   const [photos, setPhotos] = useState(initialPhotos);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -325,16 +332,30 @@ export function GallerySelector({
     faceSearch.enabled &&
     faceSearch.status === "ready";
 
+  const finalsCount = useMemo(
+    () => photos.filter((p) => p.stage === "final").length,
+    [photos]
+  );
+  const proofsCount = useMemo(
+    () => photos.filter((p) => (p.stage ?? "proof") === "proof").length,
+    [photos]
+  );
+  const isSelectionLocked = project.status !== "pending";
+
+  const stagePhotos = useMemo(() => {
+    return photos.filter((p) => (p.stage ?? "proof") === activeStage);
+  }, [photos, activeStage]);
+
   const scopedPhotos = useMemo(() => {
-    let rows = photos;
+    let rows = stagePhotos;
     if (faceFilterIds) {
       rows = rows.filter((photo) => faceFilterIds.has(photo.id));
     }
-    if (galleryScope === "selected") {
+    if (activeStage === "proof" && galleryScope === "selected") {
       rows = rows.filter((photo) => selected.has(photo.id));
     }
     return rows;
-  }, [photos, galleryScope, selected, faceFilterIds]);
+  }, [stagePhotos, activeStage, galleryScope, selected, faceFilterIds]);
 
   useEffect(() => {
     if (galleryScope === "selected" && selectedCount === 0) {
@@ -343,6 +364,7 @@ export function GallerySelector({
   }, [galleryScope, selectedCount]);
 
   function toggle(id: string) {
+    if (isSelectionLocked || activeStage === "final") return;
     if (!photos.some((p) => p.id === id)) return;
     setSelected((prev) => {
       const next = new Set(prev);
@@ -516,7 +538,62 @@ export function GallerySelector({
               </h1>
               {refreshButton}
             </div>
-            {project.client_name ? (
+            {finalsCount > 0 ? (
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                <div className="inline-flex rounded-sm border border-border bg-bg-secondary p-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveStage("final");
+                      setGalleryScope("all");
+                    }}
+                    className={cn(
+                      "rounded-sm px-3 py-1.5 text-[12px] uppercase tracking-label font-medium transition-colors",
+                      activeStage === "final"
+                        ? "bg-bg-primary text-text-primary shadow-sm"
+                        : "text-text-secondary hover:text-text-primary"
+                    )}
+                  >
+                    Edited Finals ({finalsCount})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveStage("proof")}
+                    className={cn(
+                      "rounded-sm px-3 py-1.5 text-[12px] uppercase tracking-label font-medium transition-colors",
+                      activeStage === "proof"
+                        ? "bg-bg-primary text-text-primary shadow-sm"
+                        : "text-text-secondary hover:text-text-primary"
+                    )}
+                  >
+                    Proofs &amp; Picks ({proofsCount})
+                  </button>
+                </div>
+
+                {project.gdrive_finals_share_url ? (
+                  <a
+                    href={project.gdrive_finals_share_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-bg-secondary px-3 py-1.5 text-[12px] uppercase tracking-label text-text-primary hover:bg-bg-elevated transition-colors"
+                  >
+                    Download All on Google Drive ↗
+                  </a>
+                ) : null}
+              </div>
+            ) : null}
+
+            {activeStage === "final" ? (
+              <p className="text-text-secondary text-[14px] sm:text-[15px] leading-relaxed">
+                Here are your final retouched photos. Tap the download icon on any photo to save full resolution.
+              </p>
+            ) : isSelectionLocked ? (
+              <div className="rounded-sm border border-border bg-bg-secondary/60 px-4 py-3">
+                <p className="text-[13px] text-text-primary leading-relaxed">
+                  ✓ Selection confirmed by client ({selectedCount} photo{selectedCount === 1 ? "" : "s"}). Displaying your confirmed picks in read-only mode.
+                </p>
+              </div>
+            ) : project.client_name ? (
               <p className="text-text-secondary text-[14px] sm:text-[15px] leading-relaxed">
                 Hi {project.client_name}, select up to {maxSelection} photo
                 {maxSelection === 1 ? "" : "s"} you&rsquo;d like edited.
@@ -662,7 +739,7 @@ export function GallerySelector({
       />
       ) : null}
 
-      {FEATURES.clientPhotoSelection ? (
+      {FEATURES.clientPhotoSelection && !isSelectionLocked && activeStage === "proof" ? (
       <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-bg-secondary/95 backdrop-blur-md">
         <div
           className={cn(

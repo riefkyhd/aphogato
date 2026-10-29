@@ -1,4 +1,5 @@
 export type ProjectStatus = "pending" | "selected" | "editing" | "delivered";
+export type PhotoStage = "proof" | "final";
 
 export interface Project {
   id: string;
@@ -7,6 +8,9 @@ export interface Project {
   cloudinary_folder: string;
   cloudinary_account: string;
   storage_provider: string;
+  gdrive_folder_id?: string | null;
+  gdrive_finals_folder_id?: string | null;
+  gdrive_finals_share_url?: string | null;
   gallery_token: string;
   created_at: string;
   status: ProjectStatus;
@@ -21,6 +25,8 @@ export interface Photo {
   filename: string;
   cloudinary_url: string;
   imagekit_file_id?: string | null;
+  gdrive_file_id?: string | null;
+  stage?: PhotoStage;
   is_selected: boolean;
   created_at: string;
   shot_at?: string | null;

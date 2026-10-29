@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, X } from "lucide-react";
+import { Download, Loader2, X } from "lucide-react";
 import { IconButton } from "@/components/ui/IconButton";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { previewLargeUrl } from "@/lib/mediaUrls";
+import { isGDriveUrl } from "@/lib/gdriveUrls";
 import type { Photo } from "@/lib/types";
 
 export function ManagePhotoLightbox({
@@ -33,6 +34,10 @@ export function ManagePhotoLightbox({
 
   if (!photo) return null;
 
+  const downloadTarget = isGDriveUrl(photo.cloudinary_url)
+    ? `/api/media/${encodeURIComponent(photo.id)}?download=1`
+    : null;
+
   return (
     <div
       className="fixed inset-0 z-[60] flex flex-col bg-bg-primary/95 backdrop-blur-sm lg:hidden"
@@ -44,11 +49,23 @@ export function ManagePhotoLightbox({
         <p className="min-w-0 truncate text-[13px] text-text-primary">
           {photo.filename}
         </p>
-        <Tooltip label="Close preview">
-          <IconButton onClick={onClose} label="Close preview">
-            <X className="h-5 w-5" aria-hidden />
-          </IconButton>
-        </Tooltip>
+        <div className="flex items-center gap-1">
+          {downloadTarget ? (
+            <a
+              href={downloadTarget}
+              download={photo.filename}
+              className="flex h-10 w-10 items-center justify-center rounded-sm text-text-secondary hover:text-text-primary"
+              aria-label={`Download ${photo.filename}`}
+            >
+              <Download className="h-4 w-4" aria-hidden />
+            </a>
+          ) : null}
+          <Tooltip label="Close preview">
+            <IconButton onClick={onClose} label="Close preview">
+              <X className="h-5 w-5" aria-hidden />
+            </IconButton>
+          </Tooltip>
+        </div>
       </div>
       <div className="relative flex flex-1 items-center justify-center p-4 min-h-0">
         {loading && !failed && (

@@ -245,7 +245,10 @@ export function getGoogleAuthUrl(state: string, redirectUri: string): string {
     client_id: clientId,
     redirect_uri: redirectUri,
     response_type: "code",
-    scope: "https://www.googleapis.com/auth/calendar.events",
+    scope: [
+      "https://www.googleapis.com/auth/calendar.events",
+      "https://www.googleapis.com/auth/drive",
+    ].join(" "),
     access_type: "offline",
     prompt: "consent",
     state,

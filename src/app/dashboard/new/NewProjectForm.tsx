@@ -30,6 +30,7 @@ export function NewProjectForm() {
   const [cloudinaryAccount, setCloudinaryAccount] = useState("");
   const [storageProvider, setStorageProvider] =
     useState<StorageProvider>("cloudinary");
+  const [gdriveFolderId, setGDriveFolderId] = useState("");
   const [faceSearchEnabled, setFaceSearchEnabled] = useState(false);
   const [phase, setPhase] = useState<CreatePhase>("idle");
 
@@ -59,6 +60,7 @@ export function NewProjectForm() {
           max_photo_selection: Number(maxSelection),
           cloudinary_account: cloudinaryAccount || undefined,
           storage_provider: storageProvider,
+          gdrive_folder_id: gdriveFolderId || undefined,
           face_search_enabled: FEATURES.faceSearch && faceSearchEnabled,
         }),
       });
@@ -102,6 +104,8 @@ export function NewProjectForm() {
       <NewProjectStorageField
         value={storageProvider}
         onChange={setStorageProvider}
+        gdriveFolderId={gdriveFolderId}
+        onGDriveFolderChange={setGDriveFolderId}
       />
       {storageProvider === "cloudinary" ? (
         <NewProjectCloudinaryField

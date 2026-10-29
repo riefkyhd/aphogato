@@ -23,6 +23,7 @@ export async function POST(request: Request) {
     max_photo_selection?: unknown;
     cloudinary_account?: string;
     storage_provider?: string;
+    gdrive_folder_id?: string;
     face_search_enabled?: unknown;
   };
   try {
@@ -72,7 +73,7 @@ export async function POST(request: Request) {
 
   let cloudinary_account: string;
   try {
-    if (storage_provider === "imagekit") {
+    if (storage_provider === "imagekit" || storage_provider === "gdrive") {
       cloudinary_account = "default";
     } else {
       const requested = body.cloudinary_account?.trim();
@@ -112,6 +113,7 @@ export async function POST(request: Request) {
       cloudinary_folder,
       cloudinary_account,
       storage_provider,
+      gdrive_folder_id: body.gdrive_folder_id?.trim() || null,
       gallery_token,
       status: "pending",
       max_photo_selection: maxParsed.value,

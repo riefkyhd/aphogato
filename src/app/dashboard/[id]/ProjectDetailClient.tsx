@@ -37,13 +37,14 @@ import { isImageKitProject } from "@/lib/storage/provider";
 import { ProjectMaxSelection } from "./ProjectMaxSelection";
 import { ProjectFaceSearchSettings } from "./ProjectFaceSearchSettings";
 import { ProjectRename } from "./ProjectRename";
+import { ProjectGDriveSettings } from "./ProjectGDriveSettings";
 import { normalizeProject } from "@/lib/normalizeProject";
 import {
   isOverSelectionLimit,
   normalizeMaxPhotoSelection,
 } from "@/lib/photoSelectionLimit";
 import { resolveProjectCoverUrl } from "@/lib/projectCover";
-import type { Photo, Project } from "@/lib/types";
+import type { Photo, PhotoStage, Project } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export function ProjectDetailClient({
@@ -57,6 +58,7 @@ export function ProjectDetailClient({
   const { guardSensitiveAction } = usePrivacyLockContext();
   const [projectState, setProjectState] = useState(project);
   const [photos, setPhotos] = useState(initialPhotos);
+  const [currentStage, setCurrentStage] = useState<PhotoStage>("proof");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteProjectOpen, setDeleteProjectOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -100,18 +102,35 @@ export function ProjectDetailClient({
     setPhotosFromServer,
     refreshProjectPhotos,
     faceSearchActive,
-    projectState.storage_provider === "imagekit" ? "imagekit" : "cloudinary"
+    projectState.storage_provider === "imagekit"
+      ? "imagekit"
+      : projectState.storage_provider === "gdrive"
+        ? "gdrive"
+        : "cloudinary"
   );
 
-  const photoIds = useMemo(() => photos.map((p) => p.id), [photos]);
+  const displayedPhotos = useMemo(() => {
+    return photos.filter((p) => (p.stage ?? "proof") === currentStage);
+  }, [photos, currentStage]);
+
+  const proofsCount = useMemo(
+    () => photos.filter((p) => (p.stage ?? "proof") === "proof").length,
+    [photos]
+  );
+  const finalsCount = useMemo(
+    () => photos.filter((p) => p.stage === "final").length,
+    [photos]
+  );
+
+  const photoIds = useMemo(() => displayedPhotos.map((p) => p.id), [displayedPhotos]);
   const manage = usePhotoManageSelection(photoIds);
   const manageActivation = useManagePhotoActivation(manage);
 
   const handleDropFiles = useCallback(
     (files: FileList) => {
-      void upload.uploadFiles(files);
+      void upload.uploadFiles(files, currentStage);
     },
-    [upload]
+    [upload, currentStage]
   );
 
   const { isDragging, draggedFileCount } = usePhotoDropZone({
@@ -364,7 +383,14 @@ export function ProjectDetailClient({
               cloudinaryAccount={cloudinaryAccount}
               cloudinaryUsage={cloudinaryUsage}
               cloudinaryUsageLoading={cloudinaryUsageLoading}
-              storageProvider={projectState.storage_provider === "imagekit" ? "imagekit" : "cloudinary"}
+              storageProvider={
+                projectState.storage_provider === "imagekit"
+                  ? "imagekit"
+                  : projectState.storage_provider === "gdrive"
+                    ? "gdrive"
+                    : "cloudinary"
+              }
+              currentStage={currentStage}
               onPhotosSynced={applyServerPhotos}
               onDeleteProject={() => setDeleteProjectOpen(true)}
               onStatusChange={(status) =>
@@ -439,6 +465,10 @@ export function ProjectDetailClient({
                       />
                     </div>
                   ) : null}
+                  <ProjectGDriveSettings
+                    project={projectState}
+                    onUpdated={setProjectState}
+                  />
                 </div>
               </div>
             </div>
@@ -446,7 +476,48 @@ export function ProjectDetailClient({
         </header>
 
         <section aria-label="Photo gallery">
-          {photos.length > 0 && (
+          {/* Proofs vs Edited Finals Stage Selector */}
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+            <div className="inline-flex rounded-sm border border-border bg-bg-secondary p-1">
+              <button
+                type="button"
+                onClick={() => setCurrentStage("proof")}
+                className={cn(
+                  "rounded-sm px-3 py-1.5 text-[12px] uppercase tracking-label font-medium transition-colors",
+                  currentStage === "proof"
+                    ? "bg-bg-primary text-text-primary shadow-sm"
+                    : "text-text-secondary hover:text-text-primary"
+                )}
+              >
+                Proofs / Culling ({proofsCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrentStage("final")}
+                className={cn(
+                  "rounded-sm px-3 py-1.5 text-[12px] uppercase tracking-label font-medium transition-colors",
+                  currentStage === "final"
+                    ? "bg-bg-primary text-text-primary shadow-sm"
+                    : "text-text-secondary hover:text-text-primary"
+                )}
+              >
+                Edited Finals ({finalsCount})
+              </button>
+            </div>
+
+            {currentStage === "final" && projectState.gdrive_finals_share_url ? (
+              <a
+                href={projectState.gdrive_finals_share_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-[12px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors"
+              >
+                Open Finals on Google Drive ↗
+              </a>
+            ) : null}
+          </div>
+
+          {displayedPhotos.length > 0 && (
             <p className="mb-4 text-[11px] text-text-muted leading-relaxed max-w-3xl">
               <span className="md:hidden">
                 Tap to preview · long-press to select for delete.
@@ -471,9 +542,9 @@ export function ProjectDetailClient({
               <MediaUnavailableBanner message={CLOUDINARY_DISABLED_MESSAGE} />
             ) : null}
             <PhotoGallerySection
-              photos={photos}
+              photos={displayedPhotos}
               mode="dashboard"
-              viewStorageId={projectState.gallery_token}
+              viewStorageId={`${projectState.gallery_token}-${currentStage}`}
               selectedIds={clientSelectedIds}
               manageSelectedIds={manage.manageSelected}
               onManagePhotoActivate={manageActivation.activate}
@@ -488,9 +559,13 @@ export function ProjectDetailClient({
           </div>
 
           <p className="mt-6 text-[12px] text-text-muted leading-relaxed">
-            {photos.length === 0
-              ? "Drag photos anywhere on this page, or use Upload photos. Then share the gallery link with your client."
-              : "Your client selects favorites from the gallery link."}
+            {displayedPhotos.length === 0
+              ? currentStage === "final"
+                ? "Drop edited final JPEGs from Lightroom here, or sync from your Google Drive Finals folder."
+                : "Drag photos anywhere on this page, or use Upload photos. Then share the gallery link with your client."
+              : currentStage === "final"
+                ? "Edited finals are ready for luxury client delivery and full-res download."
+                : "Your client selects favorites from the gallery link."}
           </p>
         </section>
       </DashboardMain>

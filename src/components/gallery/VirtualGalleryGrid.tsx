@@ -31,10 +31,12 @@ export function VirtualGalleryGrid({
         const selected = selectedIds.has(ph.id);
         return (
           <GalleryPhotoCell
+            photoId={ph.id}
             cloudinaryUrl={ph.cloudinary_url}
             filename={ph.filename}
             selected={selected}
             selectDisabled={selectionLimitReached && !selected}
+            isFinal={ph.stage === "final"}
             onToggle={() => onTogglePhoto(index)}
           />
         );

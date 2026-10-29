@@ -110,6 +110,7 @@ export function ProjectActions({
   cloudinaryUsage,
   cloudinaryUsageLoading,
   storageProvider = "cloudinary",
+  currentStage = "proof",
   onPhotosSynced,
   onDeleteProject,
   onStatusChange,
@@ -125,6 +126,7 @@ export function ProjectActions({
   cloudinaryUsage: CloudinaryAccountUsagePublic | null;
   cloudinaryUsageLoading: boolean;
   storageProvider?: StorageProvider;
+  currentStage?: "proof" | "final";
   onPhotosSynced: (photos: Photo[]) => void;
   onDeleteProject: () => void;
   onStatusChange: (status: ProjectStatus) => void;
@@ -133,7 +135,7 @@ export function ProjectActions({
   upload: ProjectPhotoUpload;
 }) {
   const selectedFilenames = photos
-    .filter((ph) => ph.is_selected)
+    .filter((ph) => ph.is_selected && (ph.stage ?? "proof") === "proof")
     .map((ph) => ph.filename);
   const router = useRouter();
   const [statusBusy, setStatusBusy] = useState(false);
@@ -208,6 +210,8 @@ export function ProjectActions({
     try {
       const res = await fetch(`/api/projects/${projectId}/sync`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stage: currentStage ?? "proof" }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {

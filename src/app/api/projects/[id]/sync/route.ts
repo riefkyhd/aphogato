@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/api/requireAuth";
 import { listFolder, publicIdFromUrl } from "@/lib/cloudinary";
 import { getProjectCloudinaryAccountId } from "@/lib/cloudinary/accounts";
 import { syncImageKitProject } from "@/lib/imagekit/syncProject";
+import { syncGDriveProject } from "@/lib/gdrive/syncProject";
 import { getProjectStorageProvider } from "@/lib/storage/provider";
 import {
   backfillMissingHashes,
@@ -14,22 +15,30 @@ import { backfillDerivedFilenames } from "@/lib/images/backfillFilenames";
 import { backfillMissingShotAt } from "@/lib/images/backfillShotAt";
 import { extractShotAt } from "@/lib/images/extractShotAt";
 import { fetchAllProjectPhotoRows, fetchAllProjectPhotos } from "@/lib/photos/fetchProjectPhotos";
-import type { Photo } from "@/lib/types";
+import type { Photo, PhotoStage } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
   const auth = await requireAuth();
   if (!auth.ok) return auth.response;
   const { supabase } = auth;
 
+  let body: { stage?: PhotoStage } = {};
+  try {
+    body = (await request.json().catch(() => ({}))) as { stage?: PhotoStage };
+  } catch {
+    // optional body
+  }
+  const stage: PhotoStage = body.stage === "final" ? "final" : "proof";
+
   const { data: project, error: projectError } = await supabase
     .from("projects")
-    .select("id, cloudinary_folder, cloudinary_account, storage_provider")
+    .select("id, cloudinary_folder, cloudinary_account, storage_provider, gdrive_folder_id, gdrive_finals_folder_id")
     .eq("id", params.id)
     .single();
 
@@ -37,7 +46,14 @@ export async function POST(
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
-  if (getProjectStorageProvider(project) === "imagekit") {
+  const provider = getProjectStorageProvider(project);
+
+  if (provider === "gdrive") {
+    const result = await syncGDriveProject(supabase, project, { stage });
+    return NextResponse.json(result.body, { status: result.status });
+  }
+
+  if (provider === "imagekit") {
     const result = await syncImageKitProject(supabase, project);
     return NextResponse.json(result.body, { status: result.status });
   }

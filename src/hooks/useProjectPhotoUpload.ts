@@ -5,11 +5,12 @@ import { toast } from "sonner";
 import type { UploadProgressState } from "@/components/PhotoUploadProgress";
 import { filterImageUploadFiles } from "@/lib/imageUploadFiles";
 import { uploadProjectPhotos } from "@/lib/uploadProjectPhotos";
-import type { Photo } from "@/lib/types";
+import type { Photo, PhotoStage } from "@/lib/types";
 import type { StorageProvider } from "@/lib/storage/provider";
 
 type UploadJob = {
   files: File[];
+  stage?: PhotoStage;
   controller: AbortController;
 };
 
@@ -67,7 +68,11 @@ export function useProjectPhotoUpload(
           (photos) => onPhotosUpdated(photos),
           job.controller.signal,
           setUploadedCount,
-          { faceSearchEnabled: faceSearchEnabledRef.current, storageProvider: storageProviderRef.current }
+          {
+            faceSearchEnabled: faceSearchEnabledRef.current,
+            storageProvider: storageProviderRef.current,
+            stage: job.stage,
+          }
         );
 
         if (cancelled) {
@@ -109,7 +114,7 @@ export function useProjectPhotoUpload(
   }, [projectId, onPhotosUpdated, onBatchComplete]);
 
   const uploadFiles = useCallback(
-    (fileList: FileList | File[] | null) => {
+    (fileList: FileList | File[] | null, stage: PhotoStage = "proof") => {
       const files = filterImageUploadFiles(fileList);
       if (files.length === 0) {
         toast.error("No supported image files to upload");
@@ -119,6 +124,7 @@ export function useProjectPhotoUpload(
       const wasActive = workerActiveRef.current || queueRef.current.length > 0;
       queueRef.current.push({
         files,
+        stage,
         controller: new AbortController(),
       });
 

@@ -1,7 +1,8 @@
 import { uploadProjectPhotoViaCloudinary } from "@/lib/directCloudinaryClientUpload";
 import { uploadProjectPhotoViaImageKit } from "@/lib/directImageKitClientUpload";
+import { uploadProjectPhotoViaGDrive } from "@/lib/directGDriveClientUpload";
 import type { StorageProvider } from "@/lib/storage/provider";
-import type { Photo } from "@/lib/types";
+import type { Photo, PhotoStage } from "@/lib/types";
 
 export type UploadBatchResult = {
   uploaded: number;
@@ -22,6 +23,7 @@ export type UploadProgressCallback = (progress: {
 export type UploadProjectPhotoOptions = {
   faceSearchEnabled?: boolean;
   storageProvider?: StorageProvider;
+  stage?: PhotoStage;
 };
 
 export type UploadPhotosUpdatedCallback = (photos: Photo[]) => void;
@@ -37,8 +39,13 @@ export function uploadProjectPhoto(
     onIndexingFaces?: () => void;
     faceSearchEnabled?: boolean;
     storageProvider?: StorageProvider;
+    stage?: PhotoStage;
   }
 ): Promise<{ ok: boolean; result: UploadBatchResult; cancelled?: boolean }> {
+  if (options?.storageProvider === "gdrive") {
+    return uploadProjectPhotoViaGDrive(projectId, file, onProgress, signal, options);
+  }
+
   const upload =
     options?.storageProvider === "imagekit"
       ? uploadProjectPhotoViaImageKit
@@ -111,6 +118,7 @@ export async function uploadProjectPhotos(
           });
         },
         storageProvider: options?.storageProvider,
+        stage: options?.stage,
       }
     );
 
