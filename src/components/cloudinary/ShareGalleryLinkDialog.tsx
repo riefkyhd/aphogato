@@ -122,8 +122,10 @@ export function ShareGalleryLinkDialog({
   );
 
   const isImageKit = storageProvider === "imagekit";
+  const isGDrive = storageProvider === "gdrive";
   const showUsageWarning =
     !isImageKit &&
+    !isGDrive &&
     !isCloudinaryAccountDisabled(usage) &&
     (usage?.level === "warning" || usage?.level === "critical");
 
@@ -149,18 +151,24 @@ export function ShareGalleryLinkDialog({
         {photoCount.toLocaleString()} photo{photoCount === 1 ? "" : "s"} will
         be delivered from{" "}
         <span className="text-text-primary">
-          {isImageKit
-            ? "ImageKit"
-            : (account?.label ?? "this project's Cloudinary account")}
+          {isGDrive
+            ? "Google Drive"
+            : isImageKit
+              ? "ImageKit"
+              : (account?.label ?? "this project's Cloudinary account")}
         </span>
-        {!isImageKit && account ? (
+        {!isImageKit && !isGDrive && account ? (
           <>
             {" "}
             (<code className="text-[12px]">{account.cloudName}</code>)
           </>
         ) : null}
         . When your client opens the link, browsing uses{" "}
-        {isImageKit ? "bandwidth on your ImageKit account" : "bandwidth and transforms on that account"}.
+        {isGDrive
+          ? "your Edge CDN cache and Google Drive storage"
+          : isImageKit
+            ? "bandwidth on your ImageKit account"
+            : "bandwidth and transforms on that account"}.
       </p>
 
       {faceSearchLoading ? (
@@ -176,9 +184,9 @@ export function ShareGalleryLinkDialog({
         })()
       ) : null}
 
-      {!isImageKit && loading ? (
+      {!isImageKit && !isGDrive && loading ? (
         <p className="mt-4 text-[13px] text-text-muted">Loading usage…</p>
-      ) : !isImageKit && (usage?.error || isCloudinaryAccountDisabled(usage)) ? (
+      ) : !isImageKit && !isGDrive && (usage?.error || isCloudinaryAccountDisabled(usage)) ? (
         <div
           className={cn(
             "mt-4 border px-4 py-3 text-[13px] leading-relaxed",
@@ -191,14 +199,18 @@ export function ShareGalleryLinkDialog({
               : "Cloudinary unavailable"}
           </p>
           <p className="mt-1.5 text-[12px] text-text-secondary">
-            {usage?.error ?? CLOUDINARY_DISABLED_MESSAGE}
+            {typeof usage?.error === "string"
+              ? usage.error
+              : typeof usage?.error === "object" && usage?.error !== null
+                ? JSON.stringify(usage.error)
+                : CLOUDINARY_DISABLED_MESSAGE}
           </p>
           <p className="mt-2 text-[12px] text-text-secondary">
             Client galleries will show broken photos until this account is
             re-enabled in Cloudinary.
           </p>
         </div>
-      ) : !isImageKit && usage && metricParts.length > 0 ? (
+      ) : !isImageKit && !isGDrive && usage && metricParts.length > 0 ? (
         <div
           className={cn(
             "mt-4 border px-4 py-3 text-[13px] leading-relaxed",
