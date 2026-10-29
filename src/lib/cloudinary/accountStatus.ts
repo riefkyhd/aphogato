@@ -26,12 +26,38 @@ export const MEDIA_UNAVAILABLE_BANNER_ADMIN =
 export const MEDIA_UNAVAILABLE_BANNER_GALLERY =
   "Photos aren’t available right now — the storage account for this gallery is disabled or inactive. Please check back later, or contact the photographer.";
 
+export function extractErrorMessage(err: unknown): string {
+  if (!err) return "";
+  if (err instanceof Error) return err.message;
+  if (typeof err === "string") return err;
+  if (typeof err === "object") {
+    const obj = err as Record<string, unknown>;
+    if (typeof obj.message === "string") return obj.message;
+    if (typeof obj.error === "string") return obj.error;
+    if (
+      typeof obj.error === "object" &&
+      obj.error !== null &&
+      typeof (obj.error as Record<string, unknown>).message === "string"
+    ) {
+      return (obj.error as Record<string, unknown>).message as string;
+    }
+    try {
+      const serialized = JSON.stringify(err);
+      if (serialized && serialized !== "{}") return serialized;
+    } catch {
+      // ignore serialization error
+    }
+  }
+  const str = String(err);
+  return str === "[object Object]" ? "" : str;
+}
+
 export function classifyCloudinaryAccountError(err: unknown): {
   health: Exclude<CloudinaryAccountHealth, "active">;
   headline: string;
   message: string;
 } {
-  const raw = err instanceof Error ? err.message : String(err ?? "");
+  const raw = extractErrorMessage(err);
   const lower = raw.toLowerCase();
 
   const disabled =

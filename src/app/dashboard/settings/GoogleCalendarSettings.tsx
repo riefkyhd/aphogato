@@ -21,7 +21,7 @@ export function GoogleCalendarSettings({
   const finishOAuthFlow = useCallback(
     (message: { type: "success" } | { type: "error"; text: string }) => {
       if (message.type === "success") {
-        toast.success("Google Calendar connected");
+        toast.success("Google account connected");
       } else {
         toast.error(message.text);
       }
@@ -66,13 +66,16 @@ export function GoogleCalendarSettings({
   return (
     <section className="border border-border bg-bg-secondary p-6">
       <h2 className="text-[11px] uppercase tracking-label text-text-muted mb-4">
-        Google Calendar
+        Google Account (Calendar &amp; Drive)
       </h2>
       {isConnected ? (
         <div className="space-y-4">
           <p className="text-[11px] uppercase tracking-label text-status-delivered flex items-center gap-2">
             <span className="inline-block h-[6px] w-[6px] rounded-full bg-status-delivered" />
             Connected
+          </p>
+          <p className="text-[12px] text-text-muted leading-relaxed">
+            Calendar shoot sync and Google Drive storage sync are authorized.
           </p>
           <Button
             type="button"
@@ -85,9 +88,8 @@ export function GoogleCalendarSettings({
         </div>
       ) : (
         <div className="space-y-4">
-          <p className="text-[13px] text-text-secondary">
-            Connect your Google account to sync shoot events to your primary
-            calendar.
+          <p className="text-[13px] text-text-secondary leading-relaxed">
+            Connect your Google account to sync shoot dates to Calendar and sync photo proofs/finals with Google Drive.
           </p>
           {!isOAuthConfigured ? (
             <p className="text-[13px] text-status-cancelled">
@@ -104,7 +106,7 @@ export function GoogleCalendarSettings({
             fullWidth
             className="sm:w-auto"
           >
-            Connect Google Calendar
+            Connect Google Account
           </ConnectGoogleCalendarButton>
         </div>
       )}
@@ -119,7 +121,7 @@ export function GoogleCalendarSettings({
         toast.error(json.error ?? "Failed to disconnect");
         return;
       }
-      toast.success("Google Calendar disconnected");
+      toast.success("Google account disconnected");
       router.refresh();
     } catch (err) {
       toast.error(

@@ -199,7 +199,9 @@ export function ShareGalleryLinkDialog({
               : "Cloudinary unavailable"}
           </p>
           <p className="mt-1.5 text-[12px] text-text-secondary">
-            {typeof usage?.error === "string"
+            {typeof usage?.error === "string" &&
+            usage.error.trim().length > 0 &&
+            usage.error !== "[object Object]"
               ? usage.error
               : typeof usage?.error === "object" && usage?.error !== null
                 ? JSON.stringify(usage.error)

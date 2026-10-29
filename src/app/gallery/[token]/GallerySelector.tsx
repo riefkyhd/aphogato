@@ -539,8 +539,8 @@ export function GallerySelector({
               {refreshButton}
             </div>
             {finalsCount > 0 ? (
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                <div className="inline-flex rounded-sm border border-border bg-bg-secondary p-1">
+              <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-3 pt-2">
+                <div className="flex w-full sm:w-auto rounded-sm border border-border bg-bg-secondary p-1">
                   <button
                     type="button"
                     onClick={() => {
@@ -548,7 +548,7 @@ export function GallerySelector({
                       setGalleryScope("all");
                     }}
                     className={cn(
-                      "rounded-sm px-3 py-1.5 text-[12px] uppercase tracking-label font-medium transition-colors",
+                      "flex-1 sm:flex-none inline-flex items-center justify-center min-h-[44px] sm:min-h-9 rounded-sm px-3 py-1.5 text-[12px] uppercase tracking-label font-medium transition-colors",
                       activeStage === "final"
                         ? "bg-bg-primary text-text-primary shadow-sm"
                         : "text-text-secondary hover:text-text-primary"
@@ -560,7 +560,7 @@ export function GallerySelector({
                     type="button"
                     onClick={() => setActiveStage("proof")}
                     className={cn(
-                      "rounded-sm px-3 py-1.5 text-[12px] uppercase tracking-label font-medium transition-colors",
+                      "flex-1 sm:flex-none inline-flex items-center justify-center min-h-[44px] sm:min-h-9 rounded-sm px-3 py-1.5 text-[12px] uppercase tracking-label font-medium transition-colors",
                       activeStage === "proof"
                         ? "bg-bg-primary text-text-primary shadow-sm"
                         : "text-text-secondary hover:text-text-primary"
@@ -575,7 +575,7 @@ export function GallerySelector({
                     href={project.gdrive_finals_share_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-bg-secondary px-3 py-1.5 text-[12px] uppercase tracking-label text-text-primary hover:bg-bg-elevated transition-colors"
+                    className="inline-flex items-center justify-center min-h-[44px] sm:min-h-9 rounded-sm border border-border bg-bg-secondary px-3 py-1.5 text-[12px] uppercase tracking-label text-text-primary hover:bg-bg-elevated transition-colors"
                   >
                     Download All on Google Drive ↗
                   </a>
@@ -590,7 +590,7 @@ export function GallerySelector({
             ) : isSelectionLocked ? (
               <div className="rounded-sm border border-border bg-bg-secondary/60 px-4 py-3">
                 <p className="text-[13px] text-text-primary leading-relaxed">
-                  ✓ Selection confirmed by client ({selectedCount} photo{selectedCount === 1 ? "" : "s"}). Displaying your confirmed picks in read-only mode.
+                  Selection confirmed by client ({selectedCount} photo{selectedCount === 1 ? "" : "s"}). Displaying your confirmed picks in read-only mode.
                 </p>
               </div>
             ) : project.client_name ? (
@@ -766,7 +766,7 @@ export function GallerySelector({
             <Button
               type="button"
               size="sm"
-              className="w-full sm:w-auto min-w-0"
+              className="w-full sm:w-auto min-w-0 !min-h-[44px] sm:!min-h-9"
               loading={submitting}
               onClick={submitSelection}
               disabled={

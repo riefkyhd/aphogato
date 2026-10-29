@@ -149,13 +149,16 @@ export function ProjectDetailClient({
   );
 
   const imageKitProject = isImageKitProject(projectState);
+  const isCloudinaryProject =
+    projectState.storage_provider !== "imagekit" &&
+    projectState.storage_provider !== "gdrive";
 
   const {
     account: cloudinaryAccount,
     usage: cloudinaryUsage,
     loading: cloudinaryUsageLoading,
   } = useProjectCloudinaryUsage(
-    imageKitProject ? null : projectState.cloudinary_account
+    isCloudinaryProject ? projectState.cloudinary_account : null
   );
 
   const clientSelectedIds = useMemo(
@@ -354,7 +357,11 @@ export function ProjectDetailClient({
                   {clientSelectedCount} client pick
                   {clientSelectedCount === 1 ? "" : "s"}
                 </span>
-                {imageKitProject ? (
+                {projectState.storage_provider === "gdrive" ? (
+                  <span className="text-[11px] text-text-secondary border border-border px-1.5 py-0.5">
+                    Google Drive
+                  </span>
+                ) : imageKitProject ? (
                   <ProjectImageKitBadge />
                 ) : FEATURES.cloudinarySettings && !FEATURES.photographerFirstUi ? (
                   <ProjectCloudinaryUsageBadge
@@ -364,7 +371,11 @@ export function ProjectDetailClient({
                   />
                 ) : null}
               </div>
-              {imageKitProject ? (
+              {projectState.storage_provider === "gdrive" ? (
+                <p className="mt-1 text-[12px] text-text-muted">
+                  Storage: Google Drive · delivered via Aphogato Media Cache
+                </p>
+              ) : imageKitProject ? (
                 <ProjectImageKitStorageNote photoCount={photos.length} />
               ) : FEATURES.cloudinarySettings && !FEATURES.photographerFirstUi ? (
                 <ProjectCloudinaryAccountNote
@@ -478,12 +489,12 @@ export function ProjectDetailClient({
         <section aria-label="Photo gallery">
           {/* Proofs vs Edited Finals Stage Selector */}
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
-            <div className="inline-flex rounded-sm border border-border bg-bg-secondary p-1">
+            <div className="inline-flex w-full sm:w-auto rounded-sm border border-border bg-bg-secondary p-1">
               <button
                 type="button"
                 onClick={() => setCurrentStage("proof")}
                 className={cn(
-                  "rounded-sm px-3 py-1.5 text-[12px] uppercase tracking-label font-medium transition-colors",
+                  "flex-1 sm:flex-none min-h-[44px] sm:min-h-0 rounded-sm px-3 py-1.5 text-[12px] uppercase tracking-label font-medium transition-colors",
                   currentStage === "proof"
                     ? "bg-bg-primary text-text-primary shadow-sm"
                     : "text-text-secondary hover:text-text-primary"
@@ -495,7 +506,7 @@ export function ProjectDetailClient({
                 type="button"
                 onClick={() => setCurrentStage("final")}
                 className={cn(
-                  "rounded-sm px-3 py-1.5 text-[12px] uppercase tracking-label font-medium transition-colors",
+                  "flex-1 sm:flex-none min-h-[44px] sm:min-h-0 rounded-sm px-3 py-1.5 text-[12px] uppercase tracking-label font-medium transition-colors",
                   currentStage === "final"
                     ? "bg-bg-primary text-text-primary shadow-sm"
                     : "text-text-secondary hover:text-text-primary"
@@ -510,7 +521,7 @@ export function ProjectDetailClient({
                 href={projectState.gdrive_finals_share_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-[12px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors"
+                className="inline-flex items-center gap-1.5 min-h-[44px] sm:min-h-0 text-[12px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors"
               >
                 Open Finals on Google Drive ↗
               </a>
@@ -536,7 +547,7 @@ export function ProjectDetailClient({
               if (manage.count > 0) e.preventDefault();
             }}
           >
-            {!imageKitProject &&
+            {isCloudinaryProject &&
             !FEATURES.photographerFirstUi &&
             isCloudinaryAccountDisabled(cloudinaryUsage) ? (
               <MediaUnavailableBanner message={CLOUDINARY_DISABLED_MESSAGE} />
