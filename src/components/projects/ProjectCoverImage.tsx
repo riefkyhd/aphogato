@@ -1,28 +1,26 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 import { useReportMediaLoadFailure } from "@/components/media/MediaLoadStatus";
-import { cloudinaryLoader } from "@/lib/cloudinaryLoader";
 import { MEDIA_UNAVAILABLE_COVER_LABEL } from "@/lib/cloudinary/accountStatus";
+import { listThumbUrl, masonryImageUrl } from "@/lib/mediaUrls";
 import { cn } from "@/lib/utils";
 
 type ProjectCoverImageProps = {
   src: string;
   alt?: string;
-  sizes: string;
+  sizes?: string;
   className?: string;
   /** Compact thumb (pipeline board) vs full card cover. */
   variant?: "card" | "thumb";
 };
 
 /**
- * Project cover with load-error handling — avoids native broken-image icons.
+ * Project cover with multi-provider URL resolution and load-error handling.
  */
 export function ProjectCoverImage({
   src,
   alt = "",
-  sizes,
   className,
   variant = "card",
 }: ProjectCoverImageProps) {
@@ -51,15 +49,20 @@ export function ProjectCoverImage({
     );
   }
 
+  const resolvedUrl =
+    variant === "thumb"
+      ? listThumbUrl(src)
+      : masonryImageUrl(src, 800, 75);
+
   return (
-    <Image
-      loader={cloudinaryLoader}
-      src={src}
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={resolvedUrl}
       alt={alt}
-      fill
-      sizes={sizes}
+      loading="lazy"
+      decoding="async"
       draggable={false}
-      className={cn("object-cover", className)}
+      className={cn("absolute inset-0 h-full w-full object-cover", className)}
       onError={() => {
         setFailed(true);
         reportFailure?.();
