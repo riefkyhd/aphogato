@@ -333,6 +333,21 @@ export function InvoiceClient({
           </QuotationPageFrame>
         </div>
       </div>
+      {selectedQuotation ? (
+        <div className="lg:hidden sticky bottom-0 -mx-4 sm:-mx-6 mt-8 border-t border-border bg-bg-primary/95 backdrop-blur px-4 sm:px-6 py-3 flex gap-2 z-30 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+          <Button
+            type="button"
+            size="sm"
+            className="flex-1 !min-h-[44px]"
+            loading={exporting}
+            onClick={() => void handleExportPdf()}
+            aria-label="Export invoice PDF"
+          >
+            <FileDown className="h-3.5 w-3.5 mr-1.5" aria-hidden />
+            PDF
+          </Button>
+        </div>
+      ) : null}
     </DashboardMain>
   );
 }

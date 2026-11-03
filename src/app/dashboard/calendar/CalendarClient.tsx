@@ -533,7 +533,7 @@ export function CalendarClient({
             <button
               type="button"
               onClick={() => setCurrentMonth((m) => subMonths(m, 1))}
-              className="p-2 text-text-muted hover:text-text-primary"
+              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center text-text-muted hover:text-text-primary transition-colors"
               aria-label="Previous month"
             >
               <ChevronLeft className="h-5 w-5" />
@@ -546,7 +546,7 @@ export function CalendarClient({
             <button
               type="button"
               onClick={() => setCurrentMonth((m) => addMonths(m, 1))}
-              className="p-2 text-text-muted hover:text-text-primary"
+              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center text-text-muted hover:text-text-primary transition-colors"
               aria-label="Next month"
             >
               <ChevronRight className="h-5 w-5" />

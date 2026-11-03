@@ -1027,14 +1027,14 @@ function EntryListBody({
             <div className="flex gap-2 mt-1 justify-end">
               <button
                 type="button"
-                className="text-[10px] uppercase tracking-label text-text-muted hover:text-text-primary"
+                className="text-[10px] uppercase tracking-label text-text-muted hover:text-text-primary px-2 py-1 min-h-[36px] inline-flex items-center transition-colors"
                 onClick={e.onEdit}
               >
                 Edit
               </button>
               <button
                 type="button"
-                className="text-[10px] uppercase tracking-label text-status-editing hover:opacity-80"
+                className="text-[10px] uppercase tracking-label text-status-editing hover:opacity-80 px-2 py-1 min-h-[36px] inline-flex items-center transition-opacity"
                 onClick={e.onDelete}
               >
                 Delete

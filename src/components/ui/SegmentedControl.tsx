@@ -62,7 +62,7 @@ export function SegmentedControl<T extends string>({
       role="radiogroup"
       aria-label={ariaLabel}
       className={cn(
-        "inline-flex rounded-sm border border-border overflow-hidden",
+        "inline-flex max-w-full overflow-x-auto rounded-sm border border-border",
         className
       )}
     >

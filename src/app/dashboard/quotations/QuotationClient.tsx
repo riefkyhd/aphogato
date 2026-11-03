@@ -929,7 +929,7 @@ export function QuotationClient({
             type="button"
             variant="secondary"
             size="sm"
-            className="flex-1"
+            className="flex-1 !min-h-[44px]"
             loading={exporting}
             onClick={() => void handleExportPdf()}
             aria-label="Export PDF"
@@ -940,7 +940,7 @@ export function QuotationClient({
           <Button
             type="button"
             size="sm"
-            className="flex-1"
+            className="flex-1 !min-h-[44px]"
             loading={saving}
             disabled={!canSave}
             onClick={() => void handleSave()}

@@ -392,9 +392,9 @@ export function ProjectActions({
 
       {/* Mobile / tablet */}
       <div className="lg:hidden rounded-sm border border-border bg-bg-secondary/30 p-3 space-y-2">
-        <PhotoUploadButton upload={upload} size="sm" className="w-full" />
+        <PhotoUploadButton upload={upload} size="sm" className="w-full !min-h-[44px]" />
         <div className="grid grid-cols-2 gap-2">
-          <Button size="sm" variant="secondary" onClick={() => setShareDialogOpen(true)}>
+          <Button size="sm" variant="secondary" onClick={() => setShareDialogOpen(true)} className="!min-h-[44px]">
             Copy link
           </Button>
           {nextStatus ? (
@@ -403,6 +403,7 @@ export function ProjectActions({
               onClick={advanceStatus}
               loading={statusBusy}
               disabled={statusBusy}
+              className="!min-h-[44px]"
             >
               {statusBusy ? "Updating…" : STATUS_LABEL[status]}
             </Button>
@@ -412,6 +413,7 @@ export function ProjectActions({
               variant="secondary"
               onClick={() => setMoreOpen((o) => !o)}
               aria-expanded={moreOpen}
+              className="!min-h-[44px]"
             >
               {moreOpen ? "Less" : "More"}
             </Button>
@@ -425,7 +427,7 @@ export function ProjectActions({
                 size="sm"
                 variant="secondary"
                 onClick={() => setMoreOpen((o) => !o)}
-                className="w-full"
+                className="w-full !min-h-[44px]"
                 aria-expanded={moreOpen}
               >
                 {moreOpen ? "Hide gallery tools" : "Gallery tools"}
