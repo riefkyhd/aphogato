@@ -47,6 +47,16 @@ export async function PATCH(request: Request) {
     );
   }
 
+  if (project.status === "editing" || project.status === "delivered") {
+    return NextResponse.json(
+      {
+        error: "Selection is locked because editing has already begun.",
+        code: "SELECTION_LOCKED",
+      },
+      { status: 403 }
+    );
+  }
+
   const uniqueSelectedIds = [...new Set(selectedIds)];
   const maxSelection = normalizeMaxPhotoSelection(project.max_photo_selection);
 

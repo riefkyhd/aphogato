@@ -340,7 +340,10 @@ export function GallerySelector({
     () => photos.filter((p) => (p.stage ?? "proof") === "proof").length,
     [photos]
   );
-  const isSelectionLocked = project.status !== "pending";
+  const isSelectionLocked =
+    project.status === "editing" || project.status === "delivered";
+  const isUpdateFlow =
+    project.status !== "pending" || previouslyConfirmed;
 
   const stagePhotos = useMemo(() => {
     return photos.filter((p) => (p.stage ?? "proof") === activeStage);
@@ -439,6 +442,13 @@ export function GallerySelector({
           setError(GALLERY_MESSAGES.galleryNotFound);
           return;
         }
+        if (res.status === 403) {
+          await refreshGallery();
+          setError(
+            json.error ?? "Selection is locked because editing has already begun."
+          );
+          return;
+        }
         if (
           res.status === 400 &&
           json.code === GALLERY_ERROR_CODES.SELECTION_LIMIT
@@ -490,8 +500,6 @@ export function GallerySelector({
   }
 
   const total = photos.length;
-  const isUpdateFlow =
-    project.status !== "pending" || previouslyConfirmed;
 
   const topNotice = saveNotice ?? syncNotice;
 
@@ -590,7 +598,13 @@ export function GallerySelector({
             ) : isSelectionLocked ? (
               <div className="rounded-sm border border-border bg-bg-secondary/60 px-4 py-3">
                 <p className="text-[13px] text-text-primary leading-relaxed">
-                  Selection confirmed by client ({selectedCount} photo{selectedCount === 1 ? "" : "s"}). Displaying your confirmed picks in read-only mode.
+                  Selection confirmed ({selectedCount} photo{selectedCount === 1 ? "" : "s"}). Editing is in progress — picks are locked.
+                </p>
+              </div>
+            ) : isUpdateFlow && selectedCount > 0 ? (
+              <div className="rounded-sm border border-border bg-bg-secondary/60 px-4 py-3">
+                <p className="text-[13px] text-text-primary leading-relaxed">
+                  Picks saved ({selectedCount} photo{selectedCount === 1 ? "" : "s"}). You can adjust your selection below and tap Update selection before editing starts.
                 </p>
               </div>
             ) : project.client_name ? (
