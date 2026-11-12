@@ -4,6 +4,7 @@ import {
   Calendar,
   FileText,
   Images,
+  Receipt,
   Search,
   User,
   Wallet,
@@ -72,6 +73,14 @@ function buildQuickActions(): QuickAction[] {
       icon: User,
       enabled: FEATURES.clients,
       run: (r) => r.push("/dashboard/clients"),
+    },
+    {
+      id: "jump-invoices",
+      label: "Invoices & Billing",
+      hint: "Sales",
+      icon: Receipt,
+      enabled: FEATURES.invoices,
+      run: (r) => r.push("/dashboard/invoices"),
     },
   ];
 }

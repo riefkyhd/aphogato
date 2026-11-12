@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { format, parseISO } from "date-fns";
-import { Archive, GitBranchPlus, Receipt, Trash2 } from "lucide-react";
+import { Archive, ArrowUpRight, GitBranchPlus, Receipt, Rocket, Trash2 } from "lucide-react";
 import { IconButton } from "@/components/ui/IconButton";
 import { Tooltip } from "@/components/ui/Tooltip";
 import type { SavedQuotation } from "@/lib/quotations/db";
@@ -23,6 +24,7 @@ export function QuotationArchive({
   onLoad,
   onRevision,
   onFinalInvoice,
+  onLaunchProject,
   onRequestDelete,
   deletingId,
 }: {
@@ -31,6 +33,7 @@ export function QuotationArchive({
   onLoad: (item: SavedQuotation) => void;
   onRevision: (item: SavedQuotation) => void;
   onFinalInvoice: (item: SavedQuotation) => void;
+  onLaunchProject: (item: SavedQuotation) => void;
   onRequestDelete: (item: SavedQuotation) => void;
   deletingId: string | null;
 }) {
@@ -81,6 +84,27 @@ export function QuotationArchive({
               </p>
             </button>
             <div className="flex items-center shrink-0 pr-1 py-1">
+              {item.project_id ? (
+                <Tooltip label="Open Workspace">
+                  <Link
+                    href={`/dashboard/${item.project_id}`}
+                    className="p-2 text-text-muted hover:text-text-primary transition-colors flex items-center justify-center min-h-[40px] min-w-[40px]"
+                    aria-label={`Open workspace for ${item.quote_number}`}
+                  >
+                    <ArrowUpRight className="h-4 w-4 text-status-delivered" aria-hidden />
+                  </Link>
+                </Tooltip>
+              ) : (
+                <Tooltip label="Launch project">
+                  <IconButton
+                    onClick={() => onLaunchProject(item)}
+                    label={`Accept and launch project for ${item.quote_number}`}
+                    className="hover:text-status-delivered"
+                  >
+                    <Rocket className="h-4 w-4" aria-hidden />
+                  </IconButton>
+                </Tooltip>
+              )}
               <Tooltip label="Final invoice">
                 <IconButton
                   onClick={() => onFinalInvoice(item)}

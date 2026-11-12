@@ -1,8 +1,8 @@
 "use client";
 
-import { ArrowLeft, FileDown, Plus, Receipt, RotateCcw, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, FileDown, Plus, Receipt, Rocket, RotateCcw, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { FEATURES } from "@/lib/features";
 import { DashboardMain } from "@/components/layout/DashboardShell";
@@ -11,6 +11,7 @@ import { ClientNameInput } from "@/components/clients/ClientNameInput";
 import { buildCalendarPrefillUrl } from "@/lib/quotations/calendarPrefill";
 import { QuotationArchive } from "@/components/quotations/QuotationArchive";
 import { QuotationConfirmDialog } from "@/components/quotations/QuotationConfirmDialog";
+import { LaunchProjectDialog } from "@/components/quotations/LaunchProjectDialog";
 import { QuotationPageFrame } from "@/components/quotations/QuotationPageFrame";
 import { QuotationPreview } from "@/components/quotations/QuotationPreview";
 import { BackNavLink } from "@/components/BackNavLink";
@@ -90,12 +91,18 @@ export function QuotationClient({
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SavedQuotation | null>(null);
+  const [launchTarget, setLaunchTarget] = useState<SavedQuotation | null>(null);
   const [discardAction, setDiscardAction] = useState<
     | { type: "new" }
     | { type: "load"; item: SavedQuotation }
     | { type: "revision"; item: SavedQuotation }
     | null
   >(null);
+
+  const activeSavedQuote = useMemo(
+    () => (savedId ? savedQuotations.find((q) => q.id === savedId) ?? null : null),
+    [savedId, savedQuotations]
+  );
 
   const needsDiscardConfirm = useCallback(
     () => savedId !== null || hasDraftContent(draft),
@@ -468,6 +475,32 @@ export function QuotationClient({
             </p>
           </div>
           <PageToolbarActions>
+            {activeSavedQuote ? (
+              activeSavedQuote.project_id ? (
+                <Tooltip label="Open linked project workspace">
+                  <Link
+                    href={`/dashboard/${activeSavedQuote.project_id}`}
+                    className={`btn-primary !text-[11px] !min-h-9 !px-3 !py-2 inline-flex items-center justify-center gap-1.5 ${toolbarButtonClass}`}
+                  >
+                    <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+                    Workspace
+                  </Link>
+                </Tooltip>
+              ) : (
+                <Tooltip label="Accept deal and launch project workspace">
+                  <Button
+                    type="button"
+                    size="sm"
+                    className={toolbarButtonClass}
+                    onClick={() => setLaunchTarget(activeSavedQuote)}
+                    aria-label="Launch project"
+                  >
+                    <Rocket className="h-3.5 w-3.5 mr-1.5" aria-hidden />
+                    Launch
+                  </Button>
+                </Tooltip>
+              )
+            ) : null}
             {FEATURES.invoices ? (
               <Tooltip label="Final payment invoice">
                 <Link
@@ -553,6 +586,7 @@ export function QuotationClient({
                   `/dashboard/invoices?from=${encodeURIComponent(item.id)}`
                 );
               }}
+              onLaunchProject={(item) => setLaunchTarget(item)}
               onRequestDelete={setDeleteTarget}
               deletingId={deletingId}
             />
@@ -923,8 +957,30 @@ export function QuotationClient({
           </QuotationPageFrame>
         </div>
       </div>
-      {canSave || exporting ? (
+      {canSave || exporting || activeSavedQuote ? (
         <div className="lg:hidden sticky bottom-0 -mx-4 sm:-mx-6 mt-8 border-t border-border bg-bg-primary/95 backdrop-blur px-4 sm:px-6 py-3 flex gap-2 z-30 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+          {activeSavedQuote ? (
+            activeSavedQuote.project_id ? (
+              <Link
+                href={`/dashboard/${activeSavedQuote.project_id}`}
+                className="btn-primary !text-[12px] flex-1 !min-h-[44px] inline-flex items-center justify-center gap-1.5 font-medium"
+              >
+                <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+                Workspace →
+              </Link>
+            ) : (
+              <Button
+                type="button"
+                size="sm"
+                className="flex-1 !min-h-[44px]"
+                onClick={() => setLaunchTarget(activeSavedQuote)}
+                aria-label="Launch project"
+              >
+                <Rocket className="h-3.5 w-3.5 mr-1.5" aria-hidden />
+                Launch
+              </Button>
+            )
+          ) : null}
           <Button
             type="button"
             variant="secondary"
@@ -937,20 +993,27 @@ export function QuotationClient({
             <FileDown className="h-3.5 w-3.5 mr-1.5" aria-hidden />
             PDF
           </Button>
-          <Button
-            type="button"
-            size="sm"
-            className="flex-1 !min-h-[44px]"
-            loading={saving}
-            disabled={!canSave}
-            onClick={() => void handleSave()}
-            aria-label="Save quotation"
-          >
-            <Save className="h-3.5 w-3.5 mr-1.5" aria-hidden />
-            Save
-          </Button>
+          {canSave ? (
+            <Button
+              type="button"
+              size="sm"
+              className="flex-1 !min-h-[44px]"
+              loading={saving}
+              disabled={!canSave}
+              onClick={() => void handleSave()}
+              aria-label="Save quotation"
+            >
+              <Save className="h-3.5 w-3.5 mr-1.5" aria-hidden />
+              Save
+            </Button>
+          ) : null}
         </div>
       ) : null}
+      <LaunchProjectDialog
+        open={Boolean(launchTarget)}
+        quote={launchTarget}
+        onClose={() => setLaunchTarget(null)}
+      />
     </DashboardMain>
   );
 }

@@ -395,7 +395,7 @@ export function EventDetailPanel({
                       href={`/dashboard/${event.project_id}`}
                       className="inline-block mt-2 text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary"
                     >
-                      View gallery →
+                      Open shoot workspace →
                     </Link>
                   </div>
                 )}

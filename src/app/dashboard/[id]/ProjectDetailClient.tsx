@@ -23,11 +23,12 @@ import { useProjectPhotoUpload } from "@/hooks/useProjectPhotoUpload";
 import { useSyncServerPhotos } from "@/hooks/useSyncServerPhotos";
 import { ProjectActions } from "./ProjectActions";
 import { DeliverablesChecklist } from "@/components/DeliverablesChecklist";
-import { ProjectReferencesSection } from "@/components/ProjectReferencesSection";
+import { ProjectDealSection } from "@/components/projects/ProjectDealSection";
+import { ProjectScheduleSection } from "@/components/projects/ProjectScheduleSection";
+import { ProjectCostsSummary } from "@/components/projects/ProjectCostsSummary";
+import { ProjectSettingsAccordion } from "@/components/projects/ProjectSettingsAccordion";
 import { ProjectCloudinaryUsageBadge } from "@/components/cloudinary/ProjectCloudinaryUsageBadge";
-import { ProjectCloudinaryAccountNote } from "@/components/cloudinary/ProjectCloudinaryAccountNote";
 import { ProjectImageKitBadge } from "@/components/imagekit/ProjectImageKitBadge";
-import { ProjectImageKitStorageNote } from "@/components/imagekit/ProjectImageKitStorageNote";
 import { MediaUnavailableBanner } from "@/components/media/MediaUnavailable";
 import {
   CLOUDINARY_DISABLED_MESSAGE,
@@ -35,27 +36,32 @@ import {
 } from "@/lib/cloudinary/accountStatus";
 import { useProjectCloudinaryUsage } from "@/hooks/useProjectCloudinaryUsage";
 import { isImageKitProject } from "@/lib/storage/provider";
-import { ProjectMaxSelection } from "./ProjectMaxSelection";
-import { ProjectFaceSearchSettings } from "./ProjectFaceSearchSettings";
-import { ProjectRename } from "./ProjectRename";
-import { ProjectGDriveSettings } from "./ProjectGDriveSettings";
 import { normalizeProject } from "@/lib/normalizeProject";
 import {
   isOverSelectionLimit,
   normalizeMaxPhotoSelection,
 } from "@/lib/photoSelectionLimit";
 import { resolveProjectCoverUrl } from "@/lib/projectCover";
-import type { Photo, PhotoStage, Project } from "@/lib/types";
+import type { CalendarEvent, ExpenseEntry, IncomeEntry, Photo, PhotoStage, Project } from "@/lib/types";
+import type { SavedQuotation } from "@/lib/quotations/db";
 import { cn } from "@/lib/utils";
 
-type ProjectWorkspaceTab = "photos" | "brief" | "settings";
+type ProjectWorkspaceTab = "photos" | "budget" | "schedule" | "deal";
 
 export function ProjectDetailClient({
   project,
   initialPhotos,
+  initialEvent = null,
+  initialQuotation = null,
+  initialIncome = null,
+  initialExpenses = [],
 }: {
   project: Project;
   initialPhotos: Photo[];
+  initialEvent?: CalendarEvent | null;
+  initialQuotation?: SavedQuotation | null;
+  initialIncome?: IncomeEntry | null;
+  initialExpenses?: ExpenseEntry[];
 }) {
   const router = useRouter();
   const { guardSensitiveAction } = usePrivacyLockContext();
@@ -394,11 +400,9 @@ export function ProjectDetailClient({
               aria-label="Project workspaces"
               options={[
                 { value: "photos", label: `Photos (${photos.length})` },
-                {
-                  value: "brief",
-                  label: "Brief & Moodboard",
-                },
-                { value: "settings", label: "Settings & Setup" },
+                { value: "budget", label: "Budget & Costs" },
+                { value: "schedule", label: "Schedule & Brief" },
+                { value: "deal", label: "Deal & Docs" },
               ]}
               onChange={(val) =>
                 setActiveTab(val as ProjectWorkspaceTab)
@@ -408,7 +412,13 @@ export function ProjectDetailClient({
         </header>
 
         {activeTab === "photos" && (
-          <section aria-label="Photo gallery">
+          <section aria-label="Photo gallery" className="space-y-6">
+            {FEATURES.deliverables ? (
+              <div className="border border-border bg-bg-secondary p-4 sm:p-5">
+                <DeliverablesChecklist projectId={projectState.id} compact />
+              </div>
+            ) : null}
+
             {/* Proofs vs Edited Finals Stage Selector */}
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
               <div className="inline-flex w-full sm:w-auto rounded-sm border border-border bg-bg-secondary p-1">
@@ -503,106 +513,55 @@ export function ProjectDetailClient({
           </section>
         )}
 
-        {activeTab === "brief" && (
-          <section aria-label="Brief and moodboard" className="space-y-6">
-            {FEATURES.deliverables ? (
-              <div className="border border-border bg-bg-secondary p-4 sm:p-5">
-                <DeliverablesChecklist projectId={projectState.id} />
-              </div>
-            ) : null}
-            {FEATURES.projectReferences ? (
-              <div className="border border-border bg-bg-secondary p-4 sm:p-5">
-                <ProjectReferencesSection
-                  projectId={projectState.id}
-                  projectName={projectState.name}
-                  clientName={projectState.client_name}
-                />
-              </div>
-            ) : null}
+        {activeTab === "budget" && (
+          <section aria-label="Shoot budget and costs">
+            <ProjectCostsSummary
+              project={projectState}
+              event={initialEvent}
+              quotation={initialQuotation}
+              initialExpenses={initialExpenses}
+              onExpensesChanged={refreshProjectPhotos}
+            />
           </section>
         )}
 
-        {activeTab === "settings" && (
-          <section aria-label="Project settings" className="space-y-6">
-            <div className="border border-border bg-bg-secondary p-4 sm:p-5 space-y-6">
-              <div>
-                <h3 className="text-[12px] uppercase tracking-label text-text-muted mb-4">
-                  Project Details
-                </h3>
-                <ProjectRename
-                  project={projectState}
-                  onUpdated={(next, options) => {
-                    setProjectState(next);
-                    if (options?.photos) {
-                      setPhotosFromServer(options.photos);
-                    }
-                    if (options?.folderRenamed) {
-                      refreshProjectPhotos();
-                    }
-                  }}
-                />
-              </div>
-
-              <div className="border-t border-border pt-6">
-                <ProjectMaxSelection
-                  project={projectState}
-                  clientSelectedCount={clientSelectedCount}
-                  photoCount={photos.length}
-                  clientOverLimit={clientOverLimit}
-                  onUpdated={setProjectState}
-                />
-              </div>
-
-              {FEATURES.faceSearch ? (
-                <div className="border-t border-border pt-6">
-                  <ProjectFaceSearchSettings
-                    project={projectState}
-                    photoCount={photos.length}
-                    onUpdated={setProjectState}
-                  />
-                </div>
-              ) : null}
-
-              <div className="border-t border-border pt-6">
-                <ProjectGDriveSettings
-                  project={projectState}
-                  onUpdated={setProjectState}
-                />
-              </div>
-
-              {imageKitProject ? (
-                <div className="border-t border-border pt-6">
-                  <ProjectImageKitStorageNote photoCount={photos.length} />
-                </div>
-              ) : FEATURES.cloudinarySettings && !FEATURES.photographerFirstUi ? (
-                <div className="border-t border-border pt-6">
-                  <ProjectCloudinaryAccountNote
-                    account={cloudinaryAccount}
-                    usage={cloudinaryUsage}
-                    loading={cloudinaryUsageLoading}
-                    photoCount={photos.length}
-                  />
-                </div>
-              ) : null}
-
-              <div className="border-t border-border pt-6 flex justify-between items-center">
-                <div>
-                  <h4 className="text-[13px] text-text-primary">Delete Project</h4>
-                  <p className="text-[12px] text-text-muted mt-0.5">
-                    Permanently delete this project, client picks, and associated photos.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setDeleteProjectOpen(true)}
-                  className="px-3 py-1.5 text-[11px] uppercase tracking-label text-status-cancelled hover:bg-status-cancelled/10 border border-status-cancelled/30 transition-colors"
-                >
-                  Delete project
-                </button>
-              </div>
-            </div>
+        {activeTab === "schedule" && (
+          <section aria-label="Schedule and moodboard">
+            <ProjectScheduleSection
+              project={projectState}
+              event={initialEvent}
+            />
           </section>
         )}
+
+        {activeTab === "deal" && (
+          <section aria-label="Deal and client documents">
+            <ProjectDealSection
+              project={projectState}
+              event={initialEvent}
+              quotation={initialQuotation}
+              income={initialIncome}
+              onIncomeUpdated={refreshProjectPhotos}
+            />
+          </section>
+        )}
+
+        <div className="mt-12 pt-8 border-t border-border">
+          <ProjectSettingsAccordion
+            project={projectState}
+            photos={photos}
+            clientSelectedCount={clientSelectedCount}
+            clientOverLimit={clientOverLimit}
+            cloudinaryAccount={cloudinaryAccount}
+            cloudinaryUsage={cloudinaryUsage}
+            cloudinaryUsageLoading={cloudinaryUsageLoading}
+            imageKitProject={imageKitProject}
+            onProjectUpdated={setProjectState}
+            onPhotosUpdated={setPhotosFromServer}
+            onFolderRenamed={refreshProjectPhotos}
+            onRequestDelete={() => setDeleteProjectOpen(true)}
+          />
+        </div>
       </DashboardMain>
     </>
   );

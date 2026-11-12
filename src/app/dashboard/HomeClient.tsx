@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { format } from "date-fns";
 import {
   Calendar,
   CheckCircle2,
@@ -19,6 +22,7 @@ import type { HomeData } from "@/lib/home/loadHomeData";
 import { DashboardMain } from "@/components/layout/DashboardShell";
 import { StatusDot } from "@/components/StatusDot";
 import { usePrivacyLockContext } from "@/components/privacy/PrivacyLockProvider";
+import { ExpenseQuickAdd } from "@/components/finance/ExpenseQuickAdd";
 import type { ProjectStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -95,6 +99,8 @@ function OnboardingItem({
 }
 
 export function HomeClient({ data }: { data: HomeData }) {
+  const router = useRouter();
+  const [quickSaving, setQuickSaving] = useState(false);
   const { pinEnabled, isLocked, settingsLoaded } = usePrivacyLockContext();
   const financeMasked = settingsLoaded && pinEnabled && isLocked;
 
@@ -230,11 +236,21 @@ export function HomeClient({ data }: { data: HomeData }) {
                       </p>
                     ) : null}
                   </div>
-                  {time ? (
-                    <span className="shrink-0 text-[11px] uppercase tracking-label text-text-muted tabular-nums">
-                      {time}
-                    </span>
-                  ) : null}
+                  <div className="flex items-center gap-3 shrink-0">
+                    {time ? (
+                      <span className="text-[11px] uppercase tracking-label text-text-muted tabular-nums">
+                        {time}
+                      </span>
+                    ) : null}
+                    {event.project_id ? (
+                      <Link
+                        href={`/dashboard/${event.project_id}`}
+                        className="text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors"
+                      >
+                        Workspace →
+                      </Link>
+                    ) : null}
+                  </div>
                 </li>
               );
             })}
@@ -277,6 +293,42 @@ export function HomeClient({ data }: { data: HomeData }) {
           ) : null}
         </div>
       </section>
+
+      {FEATURES.finance ? (
+        <section className="mb-6 sm:mb-8 border border-border bg-bg-secondary p-4 sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 mb-2">
+            <div className="flex items-center gap-2">
+              <Wallet className="h-4 w-4 text-text-muted" aria-hidden />
+              <h2 className="text-[11px] uppercase tracking-label text-text-muted">
+                Quick Log Expense
+              </h2>
+            </div>
+            <Link
+              href="/dashboard/finance"
+              className="text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors"
+            >
+              All Finance →
+            </Link>
+          </div>
+          <p className="text-[12px] text-text-secondary mb-3 leading-relaxed">
+            {data.todayEvents.length > 0
+              ? `Log shoot expenses for today (${data.todayEvents[0].title}) with 1-tap category chips.`
+              : "Log daily expenses (coffee, transport, gear) with 1-tap category chips."}
+          </p>
+          <div className="border border-border/70 bg-bg-primary/40 p-3">
+            <ExpenseQuickAdd
+              entryDate={format(new Date(), "yyyy-MM-dd")}
+              eventId={data.todayEvents[0]?.id ?? ""}
+              projectId={data.todayEvents[0]?.project_id ?? ""}
+              saving={quickSaving}
+              onSavingChange={setQuickSaving}
+              onSaved={() => {
+                router.refresh();
+              }}
+            />
+          </div>
+        </section>
+      ) : null}
 
       {FEATURES.finance ? (
         <section className="mb-6 sm:mb-8 border border-border bg-bg-secondary p-4 sm:p-5">

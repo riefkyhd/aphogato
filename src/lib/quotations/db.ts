@@ -28,6 +28,8 @@ export type SavedQuotation = {
   subtotal: number;
   parent_id: string | null;
   revision: number;
+  project_id: string | null;
+  status: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -104,6 +106,8 @@ export function normalizeQuotation(row: Record<string, unknown>): SavedQuotation
     subtotal: Number(row.subtotal),
     parent_id: row.parent_id ? String(row.parent_id) : null,
     revision: Number(row.revision ?? 0),
+    project_id: row.project_id ? String(row.project_id) : null,
+    status: row.status ? String(row.status) : "draft",
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
   };
