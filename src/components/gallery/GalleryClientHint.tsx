@@ -49,7 +49,7 @@ export function GalleryClientHint({
       </p>
       <button
         type="button"
-        className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center text-text-muted hover:text-text-primary transition-colors sm:right-3 sm:top-3"
+        className="absolute right-1 top-1 flex h-10 w-10 sm:h-8 sm:w-8 sm:right-3 sm:top-3 items-center justify-center text-text-muted hover:text-text-primary transition-colors"
         aria-label="Dismiss tips"
         onClick={dismiss}
       >

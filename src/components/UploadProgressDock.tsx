@@ -35,8 +35,8 @@ export function UploadProgressDock({
         className={cn(
           "fixed z-[101] border border-border bg-bg-elevated shadow-2xl transition-all duration-200",
           expanded
-            ? "bottom-6 right-6 left-6 sm:left-auto sm:w-[min(440px,calc(100vw-3rem))] rounded-lg px-5 py-5"
-            : "bottom-6 right-6 w-[min(380px,calc(100vw-2rem))] rounded-lg px-5 py-4"
+            ? "bottom-6 right-6 left-6 sm:left-auto sm:w-[min(440px,calc(100vw-3rem))] rounded-sm px-5 py-5"
+            : "bottom-6 right-6 w-[min(380px,calc(100vw-2rem))] rounded-sm px-5 py-4"
         )}
         role="status"
         aria-live="polite"

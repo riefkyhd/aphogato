@@ -177,7 +177,7 @@ export function GalleryPhotoZoomLightbox({
             type="button"
             onClick={onClose}
             aria-label="Close preview (Esc)"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm text-text-secondary hover:bg-white/10 hover:text-text-primary transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-primary"
+            className="flex h-10 w-10 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-sm text-text-secondary hover:bg-white/10 hover:text-text-primary transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-primary"
           >
             <X className="h-5 w-5" aria-hidden />
           </button>
@@ -262,7 +262,7 @@ export function GalleryPhotoZoomLightbox({
               aria-label={isSelected ? `Deselect ${photo.filename}` : `Select ${photo.filename}`}
               aria-pressed={isSelected}
               className={cn(
-                "flex h-8 items-center gap-1.5 rounded-sm px-3 text-[12px] font-medium tracking-wide transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white",
+                "flex min-h-[38px] sm:min-h-8 items-center gap-1.5 rounded-sm px-3.5 sm:px-3 text-[12px] font-medium tracking-wide transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white",
                 isSelected
                   ? "bg-white text-black shadow-md hover:bg-neutral-200"
                   : "border border-border/70 bg-bg-elevated/80 text-text-primary hover:bg-white/10",
@@ -345,7 +345,7 @@ export function GalleryPhotoZoomLightbox({
               handlePrev();
             }}
             aria-label="Previous photo (Left arrow)"
-            className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white/80 hover:bg-black/90 hover:text-white transition-all shadow-lg backdrop-blur-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white"
+            className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex h-10 w-10 items-center justify-center rounded-sm bg-black/60 text-white/80 hover:bg-black/90 hover:text-white transition-all shadow-lg backdrop-blur-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white"
           >
             <ChevronLeft className="h-6 w-6" aria-hidden />
           </button>
@@ -359,7 +359,7 @@ export function GalleryPhotoZoomLightbox({
               handleNext();
             }}
             aria-label="Next photo (Right arrow)"
-            className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white/80 hover:bg-black/90 hover:text-white transition-all shadow-lg backdrop-blur-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white"
+            className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex h-10 w-10 items-center justify-center rounded-sm bg-black/60 text-white/80 hover:bg-black/90 hover:text-white transition-all shadow-lg backdrop-blur-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white"
           >
             <ChevronRight className="h-6 w-6" aria-hidden />
           </button>
@@ -368,17 +368,17 @@ export function GalleryPhotoZoomLightbox({
 
       {/* Mobile Bottom Bar for Zoom & Navigation Info */}
       <footer className="relative z-20 flex sm:hidden shrink-0 items-center justify-between border-t border-border/40 bg-black/70 px-4 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={zoomOut}
             disabled={zoom <= 1.0}
             aria-label="Zoom out"
-            className="flex h-8 w-8 items-center justify-center rounded-sm bg-bg-elevated/70 text-text-primary disabled:opacity-40"
+            className="flex h-10 w-10 items-center justify-center rounded-sm bg-bg-elevated/70 text-text-primary disabled:opacity-40 transition-colors"
           >
             <ZoomOut className="h-4 w-4" aria-hidden />
           </button>
-          <span className="min-w-[44px] text-center font-mono text-[11px] text-text-secondary">
+          <span className="min-w-[48px] text-center font-mono text-[11px] text-text-secondary">
             {zoomPercent}%
           </span>
           <button
@@ -386,7 +386,7 @@ export function GalleryPhotoZoomLightbox({
             onClick={zoomIn}
             disabled={zoom >= 4.0}
             aria-label="Zoom in"
-            className="flex h-8 w-8 items-center justify-center rounded-sm bg-bg-elevated/70 text-text-primary disabled:opacity-40"
+            className="flex h-10 w-10 items-center justify-center rounded-sm bg-bg-elevated/70 text-text-primary disabled:opacity-40 transition-colors"
           >
             <ZoomIn className="h-4 w-4" aria-hidden />
           </button>
@@ -394,10 +394,10 @@ export function GalleryPhotoZoomLightbox({
             type="button"
             onClick={resetZoom}
             aria-label="Reset zoom"
-            className="ml-1 flex h-8 w-8 items-center justify-center rounded-sm bg-bg-elevated/70 text-text-primary"
+            className="ml-1 flex h-10 w-10 items-center justify-center rounded-sm bg-bg-elevated/70 text-text-primary transition-colors"
             title="Reset"
           >
-            <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+            <RotateCcw className="h-4 w-4" aria-hidden />
           </button>
         </div>
 

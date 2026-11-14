@@ -82,10 +82,10 @@ export function SegmentedControl<T extends string>({
             onClick={() => onChange(opt.value)}
             onKeyDown={(e) => handleKey(index, e)}
             className={cn(
-              "transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-text-primary",
+              "transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-text-primary flex items-center justify-center",
               size === "compact"
-                ? "px-2.5 py-1 text-[10px] uppercase tracking-label"
-                : "px-3 py-2 text-[11px] uppercase tracking-label",
+                ? "px-2.5 py-1 text-[10px] uppercase tracking-label min-h-8 sm:min-h-0"
+                : "px-3 py-2 text-[11px] uppercase tracking-label min-h-[38px] sm:min-h-0",
               active
                 ? "bg-bg-elevated text-text-primary"
                 : "bg-bg-secondary text-text-muted hover:text-text-secondary",

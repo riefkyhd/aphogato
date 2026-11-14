@@ -91,10 +91,10 @@ export function GalleryPhotoCell({
             if (!selectDisabled) onToggle();
           }}
           className={cn(
-            "absolute top-2 right-2 z-20 flex h-7 w-7 items-center justify-center rounded-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+            "absolute top-0 right-0 z-20 flex h-11 w-11 sm:h-9 sm:w-9 sm:top-2 sm:right-2 items-center justify-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
             selected
               ? "opacity-100"
-              : "opacity-80 sm:opacity-0 sm:group-hover:opacity-100 bg-black/50 text-white hover:bg-black/75",
+              : "opacity-80 sm:opacity-0 sm:group-hover:opacity-100 text-white",
             selectDisabled && "cursor-not-allowed opacity-30"
           )}
         >
@@ -110,7 +110,7 @@ export function GalleryPhotoCell({
               </svg>
             </div>
           ) : (
-            <div className="h-5 w-5 border border-white/80 bg-black/30 backdrop-blur-sm" />
+            <div className="h-5 w-5 border border-white/80 bg-black/40 backdrop-blur-sm" />
           )}
         </button>
 
@@ -123,9 +123,11 @@ export function GalleryPhotoCell({
               onOpenZoom();
             }}
             aria-label={`Zoom photo ${filename}`}
-            className="absolute bottom-2 left-2 z-20 flex h-8 w-8 items-center justify-center rounded-sm bg-black/60 text-white/90 shadow-sm backdrop-blur-md opacity-90 transition-opacity hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white"
+            className="absolute bottom-0 left-0 z-20 flex h-11 w-11 sm:h-8 sm:w-8 sm:bottom-2 sm:left-2 items-center justify-center text-white/90 transition-opacity hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white"
           >
-            <ZoomIn className="h-4 w-4" aria-hidden />
+            <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-sm bg-black/60 shadow-sm backdrop-blur-md">
+              <ZoomIn className="h-4 w-4" aria-hidden />
+            </div>
           </button>
         ) : null}
 
@@ -136,9 +138,11 @@ export function GalleryPhotoCell({
             download={filename}
             onClick={(e) => e.stopPropagation()}
             aria-label={`Download full resolution ${filename}`}
-            className="absolute bottom-2 right-2 z-20 flex h-8 w-8 items-center justify-center rounded-sm bg-bg-secondary/90 text-text-primary shadow-sm backdrop-blur-md opacity-90 transition-opacity hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-primary"
+            className="absolute bottom-0 right-0 z-20 flex h-11 w-11 sm:h-8 sm:w-8 sm:bottom-2 sm:right-2 items-center justify-center text-text-primary transition-opacity hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-primary"
           >
-            <Download className="h-4 w-4" aria-hidden />
+            <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-sm bg-bg-secondary/90 shadow-sm backdrop-blur-md">
+              <Download className="h-4 w-4" aria-hidden />
+            </div>
           </a>
         ) : null}
       </div>

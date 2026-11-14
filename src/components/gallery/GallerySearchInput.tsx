@@ -76,9 +76,9 @@ export function GallerySearchInput({
             inputRef.current?.focus();
           }}
           aria-label="Clear search"
-          className="absolute right-2 flex h-6 w-6 items-center justify-center rounded-sm text-text-muted hover:text-text-primary transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-primary"
+          className="absolute right-1 flex h-8 w-8 items-center justify-center rounded-sm text-text-muted hover:text-text-primary transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-primary"
         >
-          <X className="h-3.5 w-3.5" aria-hidden />
+          <X className="h-4 w-4" aria-hidden />
         </button>
       ) : null}
     </div>

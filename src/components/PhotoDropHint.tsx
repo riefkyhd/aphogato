@@ -29,7 +29,7 @@ export function PhotoDropHint({
 
       <div
         className={cn(
-          "photo-drop-panel relative w-full max-w-lg rounded-lg border-2 border-dashed",
+          "photo-drop-panel relative w-full max-w-lg rounded-sm border-2 border-dashed",
           "border-text-primary/70 bg-bg-elevated/95 shadow-[0_24px_80px_rgba(0,0,0,0.55)]",
           "px-8 py-10 md:px-12 md:py-14 text-center"
         )}
