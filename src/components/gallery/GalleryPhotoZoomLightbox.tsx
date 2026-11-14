@@ -196,7 +196,7 @@ export function GalleryPhotoZoomLightbox({
           <button
             type="button"
             onClick={zoomOut}
-            disabled={zoom <= 0.5}
+            disabled={zoom <= 1.0}
             aria-label="Zoom out (-)"
             className="flex h-7 w-7 items-center justify-center rounded-sm text-text-secondary hover:text-text-primary disabled:opacity-40 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-primary"
           >
@@ -372,7 +372,7 @@ export function GalleryPhotoZoomLightbox({
           <button
             type="button"
             onClick={zoomOut}
-            disabled={zoom <= 0.5}
+            disabled={zoom <= 1.0}
             aria-label="Zoom out"
             className="flex h-8 w-8 items-center justify-center rounded-sm bg-bg-elevated/70 text-text-primary disabled:opacity-40"
           >

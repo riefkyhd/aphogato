@@ -9,15 +9,15 @@ import {
 
 describe("useImageZoomPan constants & clamping", () => {
   it("exports expected standard zoom parameters", () => {
-    expect(MIN_ZOOM).toBe(0.5);
+    expect(MIN_ZOOM).toBe(1.0);
     expect(MAX_ZOOM).toBe(4.0);
     expect(ZOOM_STEP).toBe(0.5);
     expect(QUICK_ZOOM_SCALE).toBe(2.0);
   });
 
   it("clamps zoom within default min and max boundaries", () => {
-    expect(clampZoom(0.2)).toBe(0.5);
-    expect(clampZoom(0.5)).toBe(0.5);
+    expect(clampZoom(0.2)).toBe(1.0);
+    expect(clampZoom(0.5)).toBe(1.0);
     expect(clampZoom(1.0)).toBe(1.0);
     expect(clampZoom(2.5)).toBe(2.5);
     expect(clampZoom(4.0)).toBe(4.0);

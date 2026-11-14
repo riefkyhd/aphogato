@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 
-export const MIN_ZOOM = 0.5;
+export const MIN_ZOOM = 1.0;
 export const MAX_ZOOM = 4.0;
 export const ZOOM_STEP = 0.5;
 export const QUICK_ZOOM_SCALE = 2.0;

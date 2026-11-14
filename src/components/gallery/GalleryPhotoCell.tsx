@@ -2,7 +2,6 @@
 
 import { Download, ZoomIn } from "lucide-react";
 import { MasonryPhoto } from "@/components/MasonryPhoto";
-import { SelectionOverlay } from "@/components/SelectionOverlay";
 import { useColumnCount } from "@/hooks/useColumnCount";
 import { isGDriveUrl } from "@/lib/gdriveUrls";
 import { cn } from "@/lib/utils";
@@ -66,8 +65,20 @@ export function GalleryPhotoCell({
           className="pointer-events-none select-none transition duration-200 group-hover:brightness-105"
         />
 
-        {/* Selected Overlay Border */}
-        {selected ? <SelectionOverlay /> : null}
+        {/* Selected White Border */}
+        {selected ? (
+          <div
+            className="absolute inset-0 border-2 border-white pointer-events-none z-10"
+            aria-hidden
+          />
+        ) : null}
+
+        {/* Filename badge on hover / focus */}
+        <div className="absolute top-2 left-2 z-20 pointer-events-none max-w-[calc(100%-3.5rem)] rounded-sm bg-black/75 px-2 py-1 backdrop-blur-md opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
+          <p className="truncate font-mono text-[11px] tracking-tight text-white/95 leading-tight">
+            {filename}
+          </p>
+        </div>
 
         {/* Dedicated Select Button in Top-Right Corner */}
         <button
@@ -80,7 +91,7 @@ export function GalleryPhotoCell({
             if (!selectDisabled) onToggle();
           }}
           className={cn(
-            "absolute top-2 right-2 z-20 flex h-9 w-9 items-center justify-center rounded-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+            "absolute top-2 right-2 z-20 flex h-7 w-7 items-center justify-center rounded-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
             selected
               ? "opacity-100"
               : "opacity-80 sm:opacity-0 sm:group-hover:opacity-100 bg-black/50 text-white hover:bg-black/75",
@@ -99,7 +110,7 @@ export function GalleryPhotoCell({
               </svg>
             </div>
           ) : (
-            <div className="h-5 w-5 rounded-none border border-white/80 bg-black/30 backdrop-blur-sm" />
+            <div className="h-5 w-5 border border-white/80 bg-black/30 backdrop-blur-sm" />
           )}
         </button>
 
