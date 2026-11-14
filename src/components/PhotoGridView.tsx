@@ -21,6 +21,7 @@ export function PhotoGridView({
   facePickMode = false,
   onFacePickPhoto,
   coverPhotoId,
+  onOpenZoom,
 }: {
   photos: Photo[];
   mode: "gallery" | "dashboard";
@@ -34,6 +35,7 @@ export function PhotoGridView({
   facePickMode?: boolean;
   onFacePickPhoto?: (photo: Photo) => void;
   coverPhotoId?: string | null;
+  onOpenZoom?: (photoId: string) => void;
 }) {
   const manageMode =
     mode === "dashboard" &&
@@ -50,6 +52,7 @@ export function PhotoGridView({
         photos={photos}
         selectedIds={selectedIds}
         selectionLimitReached={selectionLimitReached}
+        onOpenZoom={onOpenZoom}
         onTogglePhoto={(index) => {
           const photo = photos[index];
           if (!photo) return;

@@ -35,6 +35,9 @@ import {
   GalleryScopeFilter,
   type GalleryScope,
 } from "@/components/gallery/GalleryScopeFilter";
+import { GallerySearchInput } from "@/components/gallery/GallerySearchInput";
+import { GalleryPhotoZoomLightbox } from "@/components/gallery/GalleryPhotoZoomLightbox";
+import { filterPhotosByFilename } from "@/lib/gallery/photoSearch";
 import { FEATURES } from "@/lib/features";
 import type { FaceSearchStatus } from "@/lib/faces/types";
 import { GalleryPhotosLoading } from "@/components/GalleryPhotosLoading";
@@ -174,6 +177,8 @@ export function GallerySelector({
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
   const [galleryScope, setGalleryScope] = useState<GalleryScope>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [zoomPhotoId, setZoomPhotoId] = useState<string | null>(null);
   const [faceSearch, setFaceSearch] = useState(initialFaceSearch);
   const [facePickMode, setFacePickMode] = useState(false);
   const [facePickPhoto, setFacePickPhoto] = useState<Photo | null>(null);
@@ -357,8 +362,11 @@ export function GallerySelector({
     if (activeStage === "proof" && galleryScope === "selected") {
       rows = rows.filter((photo) => selected.has(photo.id));
     }
+    if (searchQuery.trim()) {
+      rows = filterPhotosByFilename(rows, searchQuery);
+    }
     return rows;
-  }, [stagePhotos, activeStage, galleryScope, selected, faceFilterIds]);
+  }, [stagePhotos, activeStage, galleryScope, selected, faceFilterIds, searchQuery]);
 
   useEffect(() => {
     if (galleryScope === "selected" && selectedCount === 0) {
@@ -661,16 +669,22 @@ export function GallerySelector({
                 </div>
               ) : null}
               <div className="mb-3 flex flex-col gap-3 sm:mb-4 sm:flex-row sm:items-center sm:justify-between">
-                {FEATURES.clientPhotoSelection ? (
-                  <GalleryScopeFilter
-                    value={galleryScope}
-                    selectedCount={selectedCount}
+                <div className="flex flex-1 flex-col gap-2.5 sm:flex-row sm:items-center">
+                  {FEATURES.clientPhotoSelection ? (
+                    <GalleryScopeFilter
+                      value={galleryScope}
+                      selectedCount={selectedCount}
+                      disabled={!ready}
+                      onChange={setGalleryScope}
+                    />
+                  ) : null}
+                  <GallerySearchInput
+                    value={searchQuery}
+                    onChange={setSearchQuery}
                     disabled={!ready}
-                    onChange={setGalleryScope}
+                    className="w-full sm:w-60"
                   />
-                ) : (
-                  <div />
-                )}
+                </div>
                 {FEATURES.faceSearch ? (
                 <FaceFindControls
                   active={faceSearchReady}
@@ -709,6 +723,22 @@ export function GallerySelector({
                   No photos match this face. Try another photo or clear the
                   filter.
                 </p>
+              ) : searchQuery.trim() && scopedPhotos.length === 0 ? (
+                <div className="rounded-sm border border-border bg-bg-secondary p-8 text-center sm:p-12">
+                  <p className="text-[14px] text-text-primary">
+                    No photos match &ldquo;{searchQuery.trim()}&rdquo;
+                  </p>
+                  <p className="mt-1 text-[12px] text-text-muted">
+                    Check the filename spelling or search for another number.
+                  </p>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setSearchQuery("")}
+                    className="mt-4"
+                  >
+                    Clear search
+                  </Button>
+                </div>
               ) : (
                 <PhotoGallerySection
                   photos={scopedPhotos}
@@ -716,6 +746,7 @@ export function GallerySelector({
                   viewStorageId={token}
                   selectedIds={selected}
                   onToggleSelect={toggle}
+                  onOpenZoom={(id) => setZoomPhotoId(id)}
                   selectionLimitReached={selectionLimitReached}
                   facePickMode={FEATURES.faceSearch && facePickMode}
                   onFacePickPhoto={
@@ -729,6 +760,20 @@ export function GallerySelector({
           )}
         </section>
       </DashboardShell>
+
+      {zoomPhotoId ? (
+        <GalleryPhotoZoomLightbox
+          photos={scopedPhotos}
+          activePhotoId={zoomPhotoId}
+          selectedIds={selected}
+          onToggleSelect={toggle}
+          selectionLimitReached={selectionLimitReached}
+          maxSelection={maxSelection}
+          onClose={() => setZoomPhotoId(null)}
+          isSelectionLocked={isSelectionLocked}
+          activeStage={activeStage}
+        />
+      ) : null}
 
       {FEATURES.faceSearch && FacePickModal ? (
       <FacePickModal

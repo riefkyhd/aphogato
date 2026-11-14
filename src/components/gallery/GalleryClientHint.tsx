@@ -45,7 +45,7 @@ export function GalleryClientHint({
       role="note"
     >
       <p className="text-[13px] leading-relaxed text-text-secondary">
-        Tap a photo to select the shots you want edited. Tap again to deselect.
+        Tap a photo to open and zoom like Google Drive, or tap the checkmark to select directly.
       </p>
       <button
         type="button"

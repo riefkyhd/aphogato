@@ -10,11 +10,13 @@ export function VirtualGalleryGrid({
   selectedIds,
   selectionLimitReached = false,
   onTogglePhoto,
+  onOpenZoom,
 }: {
   photos: Photo[];
   selectedIds: Set<string>;
   selectionLimitReached?: boolean;
   onTogglePhoto: (index: number) => void;
+  onOpenZoom?: (photoId: string) => void;
 }) {
   const photoIndexById = useMemo(() => {
     const map = new Map<string, number>();
@@ -38,6 +40,7 @@ export function VirtualGalleryGrid({
             selectDisabled={selectionLimitReached && !selected}
             isFinal={ph.stage === "final"}
             onToggle={() => onTogglePhoto(index)}
+            onOpenZoom={onOpenZoom ? () => onOpenZoom(ph.id) : undefined}
           />
         );
       }}

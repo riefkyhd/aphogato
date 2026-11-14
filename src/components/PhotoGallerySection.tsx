@@ -58,6 +58,7 @@ export function PhotoGallerySection({
   ready = true,
   facePickMode = false,
   onFacePickPhoto,
+  onOpenZoom,
 }: {
   photos: Photo[];
   mode: "gallery" | "dashboard";
@@ -77,6 +78,7 @@ export function PhotoGallerySection({
   ready?: boolean;
   facePickMode?: boolean;
   onFacePickPhoto?: (photo: Photo) => void;
+  onOpenZoom?: (photoId: string) => void;
 }) {
   const touchLike = useTouchLike();
   const prefsCtx = useOptionalUserPreferencesContext();
@@ -251,6 +253,7 @@ export function PhotoGallerySection({
         coverPhotoId={coverPhotoId}
         facePickMode={facePickMode}
         onFacePickPhoto={onFacePickPhoto}
+        onOpenZoom={onOpenZoom}
         showListDivider={showListDivider}
         selectedCount={selectedCount}
         photoCount={photos.length}
@@ -293,6 +296,7 @@ function PhotoGallerySectionBody({
   coverPhotoId,
   facePickMode,
   onFacePickPhoto,
+  onOpenZoom,
   showListDivider,
   selectedCount,
   photoCount,
@@ -330,6 +334,7 @@ function PhotoGallerySectionBody({
   coverPhotoId?: string | null;
   facePickMode: boolean;
   onFacePickPhoto?: (photo: Photo) => void;
+  onOpenZoom?: (photoId: string) => void;
   showListDivider: boolean;
   selectedCount: number;
   photoCount: number;
@@ -433,6 +438,7 @@ function PhotoGallerySectionBody({
             coverPhotoId={coverPhotoId}
             facePickMode={facePickMode}
             onFacePickPhoto={onFacePickPhoto}
+            onOpenZoom={onOpenZoom}
           />
         </div>
         {!isGallery ? (
