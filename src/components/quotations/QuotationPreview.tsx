@@ -6,10 +6,8 @@ import {
 } from "@/lib/quotations/calculations";
 import type { QuotationDraft } from "@/lib/quotations/types";
 import { formatMoney } from "@/lib/finance/formatMoney";
-import {
-  INTERNATIONAL_PAYMENT_METHODS,
-  QUOTATION_BANK_ACCOUNTS,
-} from "@/lib/quotations/payment";
+import { QUOTATION_BANK_ACCOUNTS } from "@/lib/quotations/payment";
+import { PayPalIcon, WiseIcon } from "@/components/icons/PaymentIcons";
 
 function formatTermsParagraph(text: string): string {
   return text.replace(/\s*\n+\s*/g, " ").trim();
@@ -279,14 +277,20 @@ export const QuotationPreview = forwardRef<
                 <div className="pt-2 border-t border-neutral-100 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5 text-[11px] text-neutral-600">
                     <span className="text-neutral-500">Also accepts:</span>
-                    {INTERNATIONAL_PAYMENT_METHODS.map((method) => (
-                      <span
-                        key={method}
-                        className="inline-flex items-center px-1.5 py-0.5 border border-neutral-200 bg-white text-[10px] font-medium text-neutral-800 rounded-none shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
-                      >
-                        {method}
-                      </span>
-                    ))}
+                    <span
+                      className="inline-flex items-center gap-1.5 px-2 py-0.5 border border-neutral-200 bg-white text-[10px] font-medium text-neutral-800 rounded-none shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                      title="Wise"
+                    >
+                      <WiseIcon className="h-3 w-3 text-neutral-800 shrink-0" />
+                      <span>Wise</span>
+                    </span>
+                    <span
+                      className="inline-flex items-center gap-1.5 px-2 py-0.5 border border-neutral-200 bg-white text-[10px] font-medium text-neutral-800 rounded-none shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                      title="PayPal"
+                    >
+                      <PayPalIcon className="h-3 w-3 text-neutral-800 shrink-0" />
+                      <span>PayPal</span>
+                    </span>
                   </div>
                   <span className="text-[10px] text-neutral-400">
                     International transfers available upon request
