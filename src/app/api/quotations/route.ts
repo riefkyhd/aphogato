@@ -63,11 +63,35 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("quotations")
     .insert(payload)
     .select("*")
     .single();
+
+  // Graceful fallback if database migration 0029 has not yet been applied
+  if (
+    error &&
+    (error.message?.includes("currency") ||
+      error.message?.includes("schema cache") ||
+      error.code === "PGRST204" ||
+      error.code === "42703")
+  ) {
+    const legacyPayload = { ...payload };
+    delete (legacyPayload as Record<string, unknown>).currency;
+    delete (legacyPayload as Record<string, unknown>).exchange_rate_to_idr;
+    delete (legacyPayload as Record<string, unknown>).exchange_rate_date;
+    delete (legacyPayload as Record<string, unknown>).total_idr;
+
+    const retry = await supabase
+      .from("quotations")
+      .insert(legacyPayload)
+      .select("*")
+      .single();
+
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) {
     const message =

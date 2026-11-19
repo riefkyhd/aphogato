@@ -6,7 +6,10 @@ import {
   quotationFinalBalance,
   quotationSubtotal,
 } from "@/lib/quotations/calculations";
-import { QUOTATION_BANK_ACCOUNT } from "@/lib/quotations/payment";
+import {
+  INTERNATIONAL_PAYMENT_METHODS,
+  QUOTATION_BANK_ACCOUNTS,
+} from "@/lib/quotations/payment";
 
 function formatTermsParagraph(text: string): string {
   return text.replace(/\s*\n+\s*/g, " ").trim();
@@ -268,21 +271,48 @@ export const InvoicePreview = forwardRef<HTMLElement, { draft: InvoiceDraft }>(
                     </div>
                   </div>
                 </section>
-                <section className="quotation-payment border-t border-neutral-100 pt-4">
-                  <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-2 m-0">
-                    Payment
-                  </p>
-                  <p className="text-[12px] text-neutral-500 mb-3 leading-relaxed m-0">
-                    Transfer the balance due to the account below.
-                  </p>
-                  <div className="space-y-1">
-                    <p className="text-[13px] text-neutral-700 m-0">
-                      {QUOTATION_BANK_ACCOUNT.bank} ·{" "}
-                      {QUOTATION_BANK_ACCOUNT.name}
+                <section className="quotation-payment border-t border-neutral-100 pt-4 space-y-3">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-1 m-0">
+                      Payment
                     </p>
-                    <p className="text-[15px] tabular-nums tracking-[0.02em] text-neutral-900 m-0">
-                      {QUOTATION_BANK_ACCOUNT.number}
+                    <p className="text-[12px] text-neutral-500 leading-relaxed m-0">
+                      Transfer the balance due to one of the bank accounts below:
                     </p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {QUOTATION_BANK_ACCOUNTS.map((acc) => (
+                      <div
+                        key={acc.bank}
+                        className="border border-neutral-200/90 p-2.5 bg-neutral-50/60"
+                      >
+                        <p className="text-[11px] font-medium text-neutral-900 m-0">
+                          {acc.bank} ·{" "}
+                          <span className="font-normal text-neutral-600">
+                            {acc.name}
+                          </span>
+                        </p>
+                        <p className="text-[14px] font-mono tabular-nums tracking-[0.03em] text-neutral-900 mt-1 m-0">
+                          {acc.number}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="pt-2 border-t border-neutral-100 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 text-[11px] text-neutral-600">
+                      <span className="text-neutral-500">Also accepts:</span>
+                      {INTERNATIONAL_PAYMENT_METHODS.map((method) => (
+                        <span
+                          key={method}
+                          className="inline-flex items-center px-1.5 py-0.5 border border-neutral-200 bg-white text-[10px] font-medium text-neutral-800 rounded-none shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                        >
+                          {method}
+                        </span>
+                      ))}
+                    </div>
+                    <span className="text-[10px] text-neutral-400">
+                      International transfers available upon request
+                    </span>
                   </div>
                 </section>
               </div>
