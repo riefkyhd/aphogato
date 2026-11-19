@@ -6,6 +6,9 @@ export function normalizeIncome(row: {
   entry_date: string;
   amount: string | number;
   currency: string;
+  exchange_rate_to_idr?: string | number | null;
+  exchange_rate_date?: string | null;
+  original_amount?: string | number | null;
   client_name: string | null;
   description: string | null;
   notes: string | null;
@@ -14,6 +17,11 @@ export function normalizeIncome(row: {
   return {
     ...row,
     amount: Number(row.amount),
+    exchange_rate_to_idr:
+      row.exchange_rate_to_idr != null ? Number(row.exchange_rate_to_idr) : 1,
+    exchange_rate_date: row.exchange_rate_date ?? null,
+    original_amount:
+      row.original_amount != null ? Number(row.original_amount) : null,
   };
 }
 

@@ -20,6 +20,10 @@ export type LaunchProjectPayloads = {
   };
   income: {
     amount: number;
+    currency: string;
+    exchange_rate_to_idr: number;
+    exchange_rate_date: string;
+    original_amount: number | null;
     entry_date: string;
     client_name: string | null;
     description: string;
@@ -66,8 +70,13 @@ export function prepareLaunchPayloads(
   const fallbackMax = options?.defaultMaxPhotoSelection ?? 50;
   const maxSelection = extractMaxPhotoSelection(deliverableTitles, fallbackMax);
 
+  const currency = quote.currency || "IDR";
+  const rate = quote.exchange_rate_to_idr || 1;
+  const isForeign = currency !== "IDR";
+
   const dpAmount = quotationDownPayment(quote.line_items);
-  const incomeAmount = dpAmount > 0 ? dpAmount : Math.round(quote.subtotal * 0.5);
+  const dpForeign = dpAmount > 0 ? dpAmount : Math.round(quote.subtotal * 0.5);
+  const incomeAmountIdr = isForeign ? Math.round(dpForeign * rate) : dpForeign;
 
   return {
     project: {
@@ -86,7 +95,11 @@ export function prepareLaunchPayloads(
       notes: quote.notes?.trim() ? `Quote ${quote.quote_number}: ${quote.notes.trim()}` : `Quote ${quote.quote_number}`,
     },
     income: {
-      amount: incomeAmount,
+      amount: incomeAmountIdr,
+      currency,
+      exchange_rate_to_idr: rate,
+      exchange_rate_date: quote.exchange_rate_date || fallbackDate,
+      original_amount: isForeign ? dpForeign : null,
       entry_date: fallbackDate,
       client_name: rawClient,
       description: `DP ${quote.quote_number} (${title})`,

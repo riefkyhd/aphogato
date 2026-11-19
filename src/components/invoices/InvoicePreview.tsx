@@ -38,6 +38,13 @@ export const InvoicePreview = forwardRef<HTMLElement, { draft: InvoiceDraft }>(
     );
     const total = quotationSubtotal(draft.lineItems);
     const balanceDue = quotationFinalBalance(draft.lineItems, draft.depositPaid);
+    const currency = draft.currency || "IDR";
+    const isForeign = currency !== "IDR";
+    const exchangeRate = draft.exchangeRateToIdr || 1;
+    const totalIdr = isForeign ? Math.round(total * exchangeRate) : total;
+    const balanceDueIdr = isForeign
+      ? Math.round(balanceDue * exchangeRate)
+      : balanceDue;
     const hasEventDetails =
       draft.projectTitle.trim() ||
       draft.eventDate.trim() ||
@@ -208,10 +215,10 @@ export const InvoicePreview = forwardRef<HTMLElement, { draft: InvoiceDraft }>(
                           {item.qty}
                         </td>
                         <td className="py-3 text-right tabular-nums text-neutral-600">
-                          {formatMoney(item.unitPrice)}
+                          {formatMoney(item.unitPrice, currency)}
                         </td>
                         <td className="py-3 text-right tabular-nums text-neutral-900">
-                          {formatMoney(item.qty * item.unitPrice)}
+                          {formatMoney(item.qty * item.unitPrice, currency)}
                         </td>
                       </tr>
                     ))}
@@ -227,15 +234,20 @@ export const InvoicePreview = forwardRef<HTMLElement, { draft: InvoiceDraft }>(
                         Total contract value
                       </p>
                       <p className="text-[15px] tabular-nums text-neutral-900 m-0">
-                        {formatMoney(total)}
+                        {formatMoney(total, currency)}
                       </p>
+                      {isForeign ? (
+                        <p className="text-[11px] text-neutral-500 mt-0.5 tabular-nums m-0">
+                          ≈ {formatMoney(totalIdr, "IDR")}
+                        </p>
+                      ) : null}
                     </div>
                     <div className="border-t border-neutral-100 pt-3">
                       <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-1 m-0">
                         Deposit paid
                       </p>
                       <p className="text-[15px] tabular-nums text-neutral-900 m-0">
-                        {formatMoney(draft.depositPaid)}
+                        {formatMoney(draft.depositPaid, currency)}
                       </p>
                       <p className="text-[12px] text-neutral-500 mt-1.5 leading-relaxed m-0">
                         Received per quotation. Non-refundable.
@@ -246,8 +258,13 @@ export const InvoicePreview = forwardRef<HTMLElement, { draft: InvoiceDraft }>(
                         Balance due
                       </p>
                       <p className="text-lg font-light tracking-[0.04em] tabular-nums text-neutral-900 m-0">
-                        {formatMoney(balanceDue)}
+                        {formatMoney(balanceDue, currency)}
                       </p>
+                      {isForeign ? (
+                        <p className="text-[11px] text-neutral-500 mt-0.5 tabular-nums m-0">
+                          ≈ {formatMoney(balanceDueIdr, "IDR")}
+                        </p>
+                      ) : null}
                     </div>
                   </div>
                 </section>

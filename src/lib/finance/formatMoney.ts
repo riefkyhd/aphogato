@@ -1,22 +1,11 @@
 import { DEFAULT_CURRENCY } from "@/lib/finance/constants";
+import { formatCurrency } from "@/lib/currency/currencies";
 
 export function formatMoney(
   amount: number,
   currency: string = DEFAULT_CURRENCY
 ): string {
-  const code = currency || DEFAULT_CURRENCY;
-  if (code === "IDR") {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      maximumFractionDigits: 0,
-    }).format(amount);
-  }
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: code,
-    maximumFractionDigits: 2,
-  }).format(amount);
+  return formatCurrency(amount, currency || DEFAULT_CURRENCY);
 }
 
 /** Parse user input like "1.500.000" or "1500000" to number. */

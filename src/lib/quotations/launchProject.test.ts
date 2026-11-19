@@ -7,6 +7,10 @@ const mockQuote: SavedQuotation = {
   quote_number: "MH-202611-0001",
   quote_date: "2026-11-12",
   valid_until: "2026-11-26",
+  currency: "IDR",
+  exchange_rate_to_idr: 1,
+  exchange_rate_date: "2026-11-12T10:00:00Z",
+  total_idr: 15000000,
   client_name: "Derio & Salma",
   client_phone: "08123456789",
   client_social: "@deriosalma",
@@ -87,5 +91,30 @@ describe("prepareLaunchPayloads", () => {
     expect(payload.event.shoot_date).toBe("2026-11-12");
     expect(payload.income.amount).toBe(1000000);
     expect(payload.deliverables).toEqual(["Studio Portrait Session"]);
+  });
+
+  it("converts foreign currency DP to IDR for income.amount while preserving original currency", () => {
+    const foreignQuote: SavedQuotation = {
+      ...mockQuote,
+      currency: "SGD",
+      exchange_rate_to_idr: 14000,
+      exchange_rate_date: "2026-11-19T00:00:00Z",
+      total_idr: 28000000,
+      subtotal: 2000,
+      line_items: [
+        {
+          id: "item-sgd",
+          description: "Singapore Pre-wedding",
+          qty: 1,
+          unitPrice: 2000,
+        },
+      ],
+    };
+
+    const payload = prepareLaunchPayloads(foreignQuote);
+    expect(payload.income.currency).toBe("SGD");
+    expect(payload.income.exchange_rate_to_idr).toBe(14000);
+    expect(payload.income.original_amount).toBe(1000); // 50% of 2000 SGD
+    expect(payload.income.amount).toBe(14000000); // 1000 SGD * 14000 = 14,000,000 IDR
   });
 });

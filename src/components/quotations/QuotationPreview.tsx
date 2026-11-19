@@ -38,6 +38,13 @@ export const QuotationPreview = forwardRef<
   const deliverables = draft.deliverables.filter((d) => d.description.trim());
   const total = quotationSubtotal(draft.lineItems);
   const downPayment = quotationDownPayment(draft.lineItems);
+  const currency = draft.currency || "IDR";
+  const isForeign = currency !== "IDR";
+  const exchangeRate = draft.exchangeRateToIdr || 1;
+  const totalIdr = isForeign ? Math.round(total * exchangeRate) : total;
+  const downPaymentIdr = isForeign
+    ? Math.round(downPayment * exchangeRate)
+    : downPayment;
   const hasEventDetails =
     draft.projectTitle.trim() ||
     draft.eventDate.trim() ||
@@ -194,10 +201,10 @@ export const QuotationPreview = forwardRef<
                       {item.qty}
                     </td>
                     <td className="py-3 text-right tabular-nums text-neutral-600">
-                      {formatMoney(item.unitPrice)}
+                      {formatMoney(item.unitPrice, currency)}
                     </td>
                     <td className="py-3 text-right tabular-nums text-neutral-900">
-                      {formatMoney(item.qty * item.unitPrice)}
+                      {formatMoney(item.qty * item.unitPrice, currency)}
                     </td>
                   </tr>
                 ))}
@@ -213,16 +220,26 @@ export const QuotationPreview = forwardRef<
                       Total
                     </p>
                     <p className="text-lg font-light tracking-[0.04em] tabular-nums text-neutral-900 m-0">
-                      {formatMoney(total)}
+                      {formatMoney(total, currency)}
                     </p>
+                    {isForeign ? (
+                      <p className="text-[11px] text-neutral-500 mt-0.5 tabular-nums m-0">
+                        ≈ {formatMoney(totalIdr, "IDR")}
+                      </p>
+                    ) : null}
                   </div>
                   <div className="border-t border-neutral-100 pt-3">
                     <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-1 m-0">
                       Down payment (50%)
                     </p>
                     <p className="text-[15px] tabular-nums text-neutral-900 m-0">
-                      {formatMoney(downPayment)}
+                      {formatMoney(downPayment, currency)}
                     </p>
+                    {isForeign ? (
+                      <p className="text-[11px] text-neutral-500 mt-0.5 tabular-nums m-0">
+                        ≈ {formatMoney(downPaymentIdr, "IDR")}
+                      </p>
+                    ) : null}
                     <p className="text-[12px] text-neutral-500 mt-1.5 leading-relaxed m-0">
                       Non-refundable. Required to secure the booking date.
                     </p>

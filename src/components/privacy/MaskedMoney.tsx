@@ -7,10 +7,12 @@ const MASK = "••••••";
 
 export function MaskedMoney({
   amount,
+  currency,
   visible,
   className,
 }: {
   amount: number;
+  currency?: string;
   visible: boolean;
   className?: string;
 }) {
@@ -19,7 +21,7 @@ export function MaskedMoney({
       className={cn("tabular-nums", !visible && "select-none", className)}
       aria-hidden={!visible}
     >
-      {visible ? formatMoney(amount) : MASK}
+      {visible ? formatMoney(amount, currency) : MASK}
     </span>
   );
 }

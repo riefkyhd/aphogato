@@ -7,6 +7,10 @@ export type InvoiceDraft = {
   invoiceNumber: string;
   invoiceDate: string;
   dueDate: string;
+  currency?: string;
+  exchangeRateToIdr?: number;
+  exchangeRateDate?: string | null;
+  totalIdr?: number | null;
   quoteNumber: string;
   quotationId: string | null;
   clientName: string;

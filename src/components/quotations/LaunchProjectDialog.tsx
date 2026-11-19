@@ -42,8 +42,15 @@ export function LaunchProjectDialog({
     quote.project_title?.trim() ||
     (quote.client_name?.trim() ? `${quote.client_name} Shoot` : "Untitled Shoot");
 
+  const currency = quote.currency || "IDR";
+  const isForeign = currency !== "IDR";
+  const exchangeRate = quote.exchange_rate_to_idr || 1;
   const dpAmount = quotationDownPayment(quote.line_items);
   const expectedDp = dpAmount > 0 ? dpAmount : Math.round(quote.subtotal * 0.5);
+  const expectedDpIdr = isForeign ? Math.round(expectedDp * exchangeRate) : expectedDp;
+  const totalIdr = isForeign
+    ? quote.total_idr ?? Math.round(quote.subtotal * exchangeRate)
+    : quote.subtotal;
 
   const deliverablesCount =
     quote.deliverables.length > 0
@@ -147,9 +154,15 @@ export function LaunchProjectDialog({
                 Expected Down Payment (Income)
               </p>
               <p className="text-[14px] text-status-delivered font-medium tabular-nums">
-                {formatMoney(expectedDp)}
+                {formatMoney(expectedDp, currency)}
+                {isForeign ? (
+                  <span className="text-[12px] text-text-secondary ml-1.5 font-normal">
+                    (≈ {formatMoney(expectedDpIdr, "IDR")})
+                  </span>
+                ) : null}
                 <span className="text-[11px] text-text-muted ml-2 font-normal">
-                  (Total {formatMoney(quote.subtotal)})
+                  (Total {formatMoney(quote.subtotal, currency)}
+                  {isForeign ? ` ≈ ${formatMoney(totalIdr, "IDR")}` : ""})
                 </span>
               </p>
             </div>

@@ -14,6 +14,9 @@ export type QuotationDraft = {
   quoteNumber: string;
   quoteDate: string;
   validUntil: string;
+  currency?: string;
+  exchangeRateToIdr?: number;
+  exchangeRateDate?: string | null;
   clientName: string;
   clientPhone: string;
   clientSocial: string;

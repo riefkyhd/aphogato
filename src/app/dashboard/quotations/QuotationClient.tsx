@@ -3,6 +3,7 @@
 import { ArrowLeft, ArrowUpRight, FileDown, Plus, Receipt, Rocket, RotateCcw, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { FEATURES } from "@/lib/features";
 import { DashboardMain } from "@/components/layout/DashboardShell";
@@ -25,7 +26,9 @@ import {
   toolbarButtonClass,
 } from "@/components/ui/PageToolbarActions";
 import { Tooltip } from "@/components/ui/Tooltip";
-import { parseMoneyInput } from "@/lib/finance/formatMoney";
+import { formatMoney, parseMoneyInput } from "@/lib/finance/formatMoney";
+import { SUPPORTED_CURRENCIES } from "@/lib/currency/currencies";
+import { quotationGrandTotal } from "@/lib/quotations/calculations";
 import {
   createBlankQuotation,
   createEmptyDeliverable,
@@ -172,6 +175,65 @@ export function QuotationClient({
       setDraft((prev) => ({ ...prev, ...patch }));
     },
     []
+  );
+
+  const [isFetchingRate, setIsFetchingRate] = useState(false);
+  const [isCustomRate, setIsCustomRate] = useState(false);
+
+  const fetchLiveRate = useCallback(
+    async (currencyCode: string) => {
+      if (currencyCode === "IDR") {
+        updateDraft({
+          currency: "IDR",
+          exchangeRateToIdr: 1,
+          exchangeRateDate: new Date().toISOString(),
+        });
+        return;
+      }
+      setIsFetchingRate(true);
+      try {
+        const res = await fetch(`/api/currency/rates?from=${currencyCode}`);
+        if (!res.ok) throw new Error("Failed to fetch exchange rate");
+        const data = await res.json();
+        updateDraft({
+          currency: currencyCode,
+          exchangeRateToIdr: data.rateToIdr,
+          exchangeRateDate: data.fetchedAt,
+        });
+        toast.success(
+          `Exchange rate updated: 1 ${currencyCode} = ${formatMoney(
+            data.rateToIdr,
+            "IDR"
+          )}`
+        );
+      } catch {
+        toast.error("Failed to fetch live exchange rate");
+      } finally {
+        setIsFetchingRate(false);
+      }
+    },
+    [updateDraft]
+  );
+
+  const handleCurrencyChange = useCallback(
+    (newCurrency: string) => {
+      if (newCurrency === "IDR") {
+        updateDraft({
+          currency: "IDR",
+          exchangeRateToIdr: 1,
+          exchangeRateDate: null,
+        });
+        setIsCustomRate(false);
+      } else {
+        fetchLiveRate(newCurrency);
+      }
+    },
+    [fetchLiveRate, updateDraft]
+  );
+
+  const quotationTotal = useMemo(
+    () => quotationGrandTotal(draft.lineItems),
+    [draft.lineItems]
   );
 
   const updateLineItem = useCallback(
@@ -616,6 +678,21 @@ export function QuotationClient({
                 )}
               </div>
               <div>
+                <Label htmlFor="currency">Currency</Label>
+                <select
+                  id="currency"
+                  value={draft.currency || "IDR"}
+                  onChange={(e) => handleCurrencyChange(e.target.value)}
+                  className="w-full h-9 mt-1 px-3 py-1.5 text-[13px] bg-bg-surface border border-border text-text-primary rounded-none focus:outline-none focus:border-border-hover min-h-[44px] sm:min-h-[36px]"
+                >
+                  {SUPPORTED_CURRENCIES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.code} ({c.symbol}) · {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
                 <Label htmlFor="quote-date">Date</Label>
                 <Input
                   id="quote-date"
@@ -633,6 +710,65 @@ export function QuotationClient({
                   onChange={(e) => updateDraft({ validUntil: e.target.value })}
                 />
               </div>
+
+              {draft.currency && draft.currency !== "IDR" ? (
+                <div className="col-span-1 sm:col-span-2 border border-border bg-bg-surface p-3.5 space-y-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[12px] font-medium text-text-primary">
+                        1 {draft.currency} ≈ {formatMoney(draft.exchangeRateToIdr || 1, "IDR")}
+                      </span>
+                      {draft.exchangeRateDate ? (
+                        <span className="text-[10px] text-text-muted">
+                          ({format(parseISO(draft.exchangeRateDate), "d MMM yyyy")})
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => fetchLiveRate(draft.currency || "SGD")}
+                        disabled={isFetchingRate}
+                        className="text-[11px] text-text-secondary hover:text-text-primary inline-flex items-center gap-1 py-1 px-2 border border-border bg-bg-secondary transition-colors"
+                      >
+                        <RotateCcw className={`h-3 w-3 ${isFetchingRate ? "animate-spin" : ""}`} />
+                        {isFetchingRate ? "Updating..." : "Refresh live rate"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsCustomRate((prev) => !prev)}
+                        className="text-[11px] text-text-muted hover:text-text-primary underline transition-colors"
+                      >
+                        {isCustomRate ? "Hide custom rate" : "Edit rate"}
+                      </button>
+                    </div>
+                  </div>
+                  {isCustomRate ? (
+                    <div className="pt-2 border-t border-border flex items-center gap-3">
+                      <Label htmlFor="custom-exchange-rate" className="text-[11px] shrink-0">
+                        Custom rate to IDR:
+                      </Label>
+                      <Input
+                        id="custom-exchange-rate"
+                        type="number"
+                        step="any"
+                        value={draft.exchangeRateToIdr || ""}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          updateDraft({
+                            exchangeRateToIdr: Number.isFinite(val) && val > 0 ? val : 0,
+                          });
+                        }}
+                        className="max-w-[160px] h-8 text-[12px]"
+                        placeholder="e.g. 14150"
+                      />
+                    </div>
+                  ) : null}
+                  <p className="text-[11px] text-text-muted tabular-nums">
+                    Est. studio accounting equivalent: ≈ {formatMoney(Math.round(quotationTotal * (draft.exchangeRateToIdr || 1)), "IDR")}
+                  </p>
+                </div>
+              ) : null}
             </div>
           </section>
 
@@ -896,7 +1032,9 @@ export function QuotationClient({
                       />
                     </div>
                     <div>
-                      <Label htmlFor={`rate-${item.id}`}>Rate (IDR)</Label>
+                      <Label htmlFor={`rate-${item.id}`}>
+                        Rate ({draft.currency || "IDR"})
+                      </Label>
                       <Input
                         id={`rate-${item.id}`}
                         value={
@@ -908,7 +1046,7 @@ export function QuotationClient({
                             unitPrice: parsed ?? 0,
                           });
                         }}
-                        placeholder="15000000"
+                        placeholder={draft.currency === "IDR" || !draft.currency ? "15000000" : "1500"}
                       />
                     </div>
                   </div>

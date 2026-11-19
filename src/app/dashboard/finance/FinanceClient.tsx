@@ -650,6 +650,10 @@ export function FinanceClient({
               id: row.id,
               date: row.entry_date,
               amount: row.amount,
+              currency: row.currency,
+              originalAmount: row.original_amount,
+              exchangeRate: row.exchange_rate_to_idr,
+              rateDate: row.exchange_rate_date,
               primary: row.client_name ?? row.description ?? "Client payment",
               secondary: row.event_id
                 ? eventById.get(row.event_id)?.title ?? "Calendar event"
@@ -969,6 +973,10 @@ function EntryList({
     id: string;
     date: string;
     amount: number;
+    currency?: string;
+    originalAmount?: number | null;
+    exchangeRate?: number | null;
+    rateDate?: string | null;
     primary: string;
     secondary: string | null;
     onEdit: () => void;
@@ -996,6 +1004,10 @@ function EntryListBody({
     id: string;
     date: string;
     amount: number;
+    currency?: string;
+    originalAmount?: number | null;
+    exchangeRate?: number | null;
+    rateDate?: string | null;
     primary: string;
     secondary: string | null;
     onEdit: () => void;
@@ -1024,6 +1036,14 @@ function EntryListBody({
             <p className="text-[13px] text-text-primary">
               <MaskedMoney amount={e.amount} visible={showAmounts} />
             </p>
+            {e.currency && e.currency !== "IDR" && e.originalAmount ? (
+              <p className="text-[10px] text-text-muted mt-0.5">
+                {formatMoney(e.originalAmount, e.currency)}
+                {e.exchangeRate
+                  ? ` @ Rp ${Math.round(e.exchangeRate).toLocaleString("id-ID")}`
+                  : ""}
+              </p>
+            ) : null}
             <div className="flex gap-2 mt-1 justify-end">
               <button
                 type="button"

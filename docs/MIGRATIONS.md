@@ -40,6 +40,9 @@ filename-sort order. To keep ordering unambiguous:
 | 0024 | `0024_project_cover_photo.sql` | Project cover photo |
 | 0025 | `0025_imagekit_storage.sql` | ImageKit storage |
 | 0026 | `0026_photo_perceptual_hash.sql` | Perceptual hash for dedupe (was `0017_*` — renamed to unblock ordering) |
+| 0027 | `0027_gdrive_and_finals_delivery.sql` | Google Drive storage & finals delivery linkage |
+| 0028 | `0028_quotation_project_pipeline.sql` | Quotation-to-project pipeline linkage & deal status |
+| 0029 | `0029_multi_currency_support.sql` | Multi-currency support for quotations, invoices, income snapshots, and rate cache |
 
 ## Note on the `0026_photo_perceptual_hash.sql` rename
 

@@ -18,6 +18,7 @@ import {
   toolbarButtonClass,
 } from "@/components/ui/PageToolbarActions";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { format, parseISO } from "date-fns";
 import { formatMoney, parseMoneyInput } from "@/lib/finance/formatMoney";
 import { createBlankInvoice } from "@/lib/invoices/defaults";
 import { exportInvoicePdf } from "@/lib/invoices/exportInvoicePdf";
@@ -202,7 +203,7 @@ export function InvoiceClient({
                         {formatListLabel(item)}
                       </p>
                       <p className="text-[11px] text-text-muted mt-1">
-                        {formatMoney(item.subtotal)}
+                        {formatMoney(item.subtotal, item.currency)}
                       </p>
                     </button>
                   </li>
@@ -250,6 +251,43 @@ export function InvoiceClient({
                       }
                     />
                   </div>
+
+                  {draft.currency && draft.currency !== "IDR" ? (
+                    <div className="sm:col-span-2 border border-border bg-bg-surface p-3 space-y-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="text-[12px] text-text-primary">
+                          <span>Currency: <strong>{draft.currency}</strong></span>
+                          <span className="mx-2 text-text-muted">·</span>
+                          <span>1 {draft.currency} ≈ {formatMoney(draft.exchangeRateToIdr || 1, "IDR")}</span>
+                          {draft.exchangeRateDate ? (
+                            <span className="text-[10px] text-text-muted ml-1.5">
+                              ({format(parseISO(draft.exchangeRateDate), "d MMM yyyy")})
+                            </span>
+                          ) : null}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              const res = await fetch(`/api/currency/rates?from=${draft.currency}`);
+                              if (!res.ok) throw new Error();
+                              const data = await res.json();
+                              updateDraft({
+                                exchangeRateToIdr: data.rateToIdr,
+                                exchangeRateDate: data.fetchedAt,
+                              });
+                              toast.success("Updated to today's live rate");
+                            } catch {
+                              toast.error("Failed to fetch live rate");
+                            }
+                          }}
+                          className="text-[11px] text-text-secondary hover:text-text-primary border border-border bg-bg-secondary px-2 py-1 transition-colors min-h-[36px] flex items-center"
+                        >
+                          Update to today&apos;s live rate
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               </section>
 
@@ -259,7 +297,9 @@ export function InvoiceClient({
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="deposit-paid">Deposit paid</Label>
+                    <Label htmlFor="deposit-paid">
+                      Deposit paid ({draft.currency || "IDR"})
+                    </Label>
                     <Input
                       id="deposit-paid"
                       inputMode="numeric"
@@ -280,10 +320,10 @@ export function InvoiceClient({
                   <div>
                     <Label>Balance due</Label>
                     <p className="text-[15px] text-text-primary tabular-nums py-2">
-                      {formatMoney(balanceDue)}
+                      {formatMoney(balanceDue, draft.currency)}
                     </p>
                     <p className="text-[11px] text-text-muted">
-                      Total {formatMoney(total)}
+                      Total {formatMoney(total, draft.currency)}
                     </p>
                   </div>
                 </div>

@@ -161,18 +161,26 @@ export async function POST(
   // 6. Log Down Payment in Income Entries
   const shouldLogDp = body.log_dp !== false;
   let incomeId: string | null = null;
-  const incomeAmount = typeof body.dp_amount === "number" && body.dp_amount >= 0
-    ? body.dp_amount
-    : payloads.income.amount;
+  const isCustomDp = typeof body.dp_amount === "number" && body.dp_amount >= 0;
+  const isForeign = payloads.income.currency !== "IDR";
+  const dpForeign: number = isCustomDp
+    ? (body.dp_amount as number)
+    : (payloads.income.original_amount ?? payloads.income.amount);
+  const dpIdr: number = isForeign
+    ? Math.round(dpForeign * payloads.income.exchange_rate_to_idr)
+    : dpForeign;
 
-  if (shouldLogDp && eventId && incomeAmount > 0) {
+  if (shouldLogDp && eventId && dpIdr > 0) {
     const { data: inc } = await supabase
       .from("income_entries")
       .insert({
         event_id: eventId,
         entry_date: payloads.income.entry_date,
-        amount: incomeAmount,
-        currency: "IDR",
+        amount: dpIdr,
+        currency: payloads.income.currency,
+        exchange_rate_to_idr: payloads.income.exchange_rate_to_idr,
+        exchange_rate_date: payloads.income.exchange_rate_date,
+        original_amount: isForeign ? dpForeign : null,
         client_name: payloads.income.client_name,
         description: payloads.income.description,
       })

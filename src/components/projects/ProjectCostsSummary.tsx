@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { ArrowUpRight, Wallet } from "lucide-react";
 import Link from "next/link";
+import { formatMoney } from "@/lib/finance/formatMoney";
 import { MaskedMoney } from "@/components/privacy/MaskedMoney";
 import { usePrivacyLockContext } from "@/components/privacy/PrivacyLockProvider";
 import { LinkedExpensesBlock } from "@/components/finance/LinkedExpensesBlock";
@@ -32,10 +33,16 @@ export function ProjectCostsSummary({
   const [savingQuick, setSavingQuick] = useState(false);
 
   const totalExpense = useMemo(() => sumExpenseAmounts(expenses), [expenses]);
-  const quotedRevenue = quotation?.subtotal ?? 0;
-  const netProfit = quotedRevenue - totalExpense;
-  const marginPercent = quotedRevenue > 0
-    ? Math.round((netProfit / quotedRevenue) * 100)
+  const isForeign = Boolean(quotation?.currency && quotation.currency !== "IDR");
+  const quotedRevenueIdr = quotation
+    ? quotation.total_idr ??
+      (isForeign
+        ? Math.round(quotation.subtotal * (quotation.exchange_rate_to_idr || 1))
+        : quotation.subtotal)
+    : 0;
+  const netProfit = quotedRevenueIdr - totalExpense;
+  const marginPercent = quotedRevenueIdr > 0
+    ? Math.round((netProfit / quotedRevenueIdr) * 100)
     : 0;
 
   const todayStr = format(new Date(), "yyyy-MM-dd");
@@ -55,10 +62,11 @@ export function ProjectCostsSummary({
             Quoted Package
           </span>
           <p className="mt-1 text-[18px] text-text-primary font-medium tabular-nums">
-            <MaskedMoney amount={quotedRevenue} visible={showAmounts} />
+            <MaskedMoney amount={quotedRevenueIdr} visible={showAmounts} />
           </p>
           <p className="mt-1 text-[11px] text-text-muted">
             {quotation ? quotation.quote_number : "No quotation linked"}
+            {isForeign && quotation ? ` · ${formatMoney(quotation.subtotal, quotation.currency)}` : ""}
           </p>
         </div>
 
@@ -79,7 +87,7 @@ export function ProjectCostsSummary({
             <span className="text-[11px] uppercase tracking-label text-text-muted">
               Net Shoot Profit
             </span>
-            {quotedRevenue > 0 ? (
+            {quotedRevenueIdr > 0 ? (
               <span className="text-[10px] uppercase tracking-label px-2 py-0.5 rounded-sm bg-status-delivered/10 text-status-delivered border border-status-delivered/20">
                 {marginPercent}% Margin
               </span>

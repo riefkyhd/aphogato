@@ -64,10 +64,20 @@ export interface IncomeEntry {
   entry_date: string;
   amount: number;
   currency: string;
+  exchange_rate_to_idr?: number;
+  exchange_rate_date?: string | null;
+  original_amount?: number | null;
   client_name: string | null;
   description: string | null;
   notes: string | null;
   created_at: string;
+}
+
+export interface ExchangeRateCache {
+  base_currency: string;
+  target_currency: string;
+  rate_to_idr: number;
+  fetched_at: string;
 }
 
 export interface ExpenseEntry {

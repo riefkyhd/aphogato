@@ -9,6 +9,7 @@ import { ArrowUpRight, CheckCircle2, FileText, MessageSquare, Receipt, User } fr
 import { Button } from "@/components/ui/Button";
 import { MaskedMoney } from "@/components/privacy/MaskedMoney";
 import { usePrivacyLockContext } from "@/components/privacy/PrivacyLockProvider";
+import { formatMoney } from "@/lib/finance/formatMoney";
 import type { CalendarEvent, IncomeEntry, Project } from "@/lib/types";
 import type { SavedQuotation } from "@/lib/quotations/db";
 
@@ -36,8 +37,40 @@ export function ProjectDealSection({
     setCurrentPaid(income?.amount ?? 0);
   }, [income]);
 
+  const currency = quotation?.currency || "IDR";
+  const isForeign = currency !== "IDR";
+  const lockedRate = quotation?.exchange_rate_to_idr || 1;
+  const [settlementRate, setSettlementRate] = useState(lockedRate);
+  const [showRateEdit, setShowRateEdit] = useState(false);
+
+  useEffect(() => {
+    if (quotation?.exchange_rate_to_idr) {
+      setSettlementRate(quotation.exchange_rate_to_idr);
+    }
+  }, [quotation?.exchange_rate_to_idr]);
+
   const totalQuoted = quotation?.subtotal ?? 0;
-  const balanceRemaining = Math.max(0, totalQuoted - currentPaid);
+  const totalQuotedIdr =
+    quotation?.total_idr ??
+    (isForeign ? Math.round(totalQuoted * lockedRate) : totalQuoted);
+
+  const currentPaidIdr = currentPaid;
+  const currentPaidForeign = isForeign
+    ? income?.original_amount ??
+      (lockedRate > 0 ? currentPaidIdr / lockedRate : 0)
+    : currentPaidIdr;
+
+  const balanceRemainingForeign = isForeign
+    ? Math.max(0, totalQuoted - currentPaidForeign)
+    : Math.max(0, totalQuoted - currentPaidIdr);
+
+  const balanceRemainingIdr = isForeign
+    ? Math.max(0, totalQuotedIdr - currentPaidIdr)
+    : Math.max(0, totalQuoted - currentPaidIdr);
+
+  const isPaidInFull = isForeign
+    ? balanceRemainingForeign <= 0
+    : balanceRemainingIdr <= 0;
 
   const clientPhone = quotation?.client_phone?.trim() ?? "";
   const clientSocial = quotation?.client_social?.trim() ?? "";
@@ -47,17 +80,26 @@ export function ProjectDealSection({
     : null;
 
   async function handleMarkBalancePaid() {
-    if (!quotation || balanceRemaining <= 0) return;
+    if (!quotation || isPaidInFull) return;
     setMarkingPaid(true);
 
     try {
+      const pelunasanForeign = balanceRemainingForeign;
+      const pelunasanIdr = isForeign
+        ? Math.round(pelunasanForeign * settlementRate)
+        : balanceRemainingIdr;
+      const finalTotalIdr = currentPaidIdr + pelunasanIdr;
+
       const res = await fetch("/api/finance/income", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           entry_date: format(new Date(), "yyyy-MM-dd"),
-          amount: totalQuoted,
-          currency: "IDR",
+          amount: finalTotalIdr,
+          currency: currency,
+          exchange_rate_to_idr: settlementRate,
+          exchange_rate_date: format(new Date(), "yyyy-MM-dd"),
+          original_amount: isForeign ? totalQuoted : null,
           client_name: project.client_name,
           description: `Pelunasan: ${quotation.quote_number} (${project.name})`,
           event_id: event?.id || undefined,
@@ -72,7 +114,7 @@ export function ProjectDealSection({
       }
 
       toast.success("Balance marked as paid in full");
-      setCurrentPaid(totalQuoted);
+      setCurrentPaid(finalTotalIdr);
       setMarkingPaid(false);
       router.refresh();
       if (onIncomeUpdated) onIncomeUpdated();
@@ -107,9 +149,20 @@ export function ProjectDealSection({
             </p>
             <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
               <span className="text-[11px] text-text-muted">Package Total</span>
-              <span className="text-[14px] text-text-primary tabular-nums font-medium">
-                <MaskedMoney amount={totalQuoted} visible={showAmounts} />
-              </span>
+              <div className="text-right">
+                <span className="text-[14px] text-text-primary tabular-nums font-medium block">
+                  <MaskedMoney
+                    amount={totalQuoted}
+                    currency={currency}
+                    visible={showAmounts}
+                  />
+                </span>
+                {isForeign ? (
+                  <span className="text-[11px] text-text-muted tabular-nums block">
+                    ≈ {formatMoney(totalQuotedIdr, "IDR")}
+                  </span>
+                ) : null}
+              </div>
             </div>
           </div>
 
@@ -118,26 +171,84 @@ export function ProjectDealSection({
               Payment &amp; Down Payment
             </span>
             <div className="mt-1 flex items-baseline justify-between">
-              <span className="text-[15px] text-status-delivered font-medium tabular-nums">
-                <MaskedMoney amount={currentPaid} visible={showAmounts} />
-              </span>
+              <div>
+                <span className="text-[15px] text-status-delivered font-medium tabular-nums block">
+                  <MaskedMoney
+                    amount={currentPaidIdr}
+                    currency="IDR"
+                    visible={showAmounts}
+                  />
+                </span>
+                {isForeign ? (
+                  <span className="text-[11px] text-text-muted tabular-nums block">
+                    ≈ {formatMoney(currentPaidForeign, currency)}
+                  </span>
+                ) : null}
+              </div>
               <span className="text-[10px] uppercase tracking-label px-2 py-0.5 rounded-sm bg-status-delivered/10 text-status-delivered border border-status-delivered/20">
-                {currentPaid >= totalQuoted && totalQuoted > 0 ? "Paid Full" : "DP Logged"}
+                {isPaidInFull && totalQuoted > 0 ? "Paid Full" : "DP Logged"}
               </span>
             </div>
             <p className="mt-2 text-[12px] text-text-muted">
-              {currentPaid >= totalQuoted
+              {isPaidInFull
                 ? "Total package value paid in full"
                 : "Remaining balance due on shoot / delivery"}
             </p>
             <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
               <span className="text-[11px] text-text-muted">Balance Due</span>
-              <span className="text-[14px] text-text-secondary tabular-nums">
-                <MaskedMoney amount={balanceRemaining} visible={showAmounts} />
-              </span>
+              <div className="text-right">
+                <span className="text-[14px] text-text-secondary tabular-nums font-medium block">
+                  <MaskedMoney
+                    amount={
+                      isForeign ? balanceRemainingForeign : balanceRemainingIdr
+                    }
+                    currency={currency}
+                    visible={showAmounts}
+                  />
+                </span>
+                {isForeign ? (
+                  <span className="text-[11px] text-text-muted tabular-nums block">
+                    ≈ {formatMoney(balanceRemainingIdr, "IDR")}
+                  </span>
+                ) : null}
+              </div>
             </div>
-            {balanceRemaining > 0 ? (
-              <div className="mt-3">
+            {!isPaidInFull && totalQuoted > 0 ? (
+              <div className="mt-3 space-y-2">
+                {isForeign ? (
+                  <div className="pt-2 border-t border-border">
+                    <div className="flex items-center justify-between text-[11px] text-text-muted mb-1">
+                      <span>Settlement rate: 1 {currency}</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowRateEdit((p) => !p)}
+                        className="text-text-secondary hover:text-text-primary underline text-[10px]"
+                      >
+                        {showRateEdit ? "Done" : "Adjust rate"}
+                      </button>
+                    </div>
+                    {showRateEdit ? (
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[11px] text-text-muted">Rp</span>
+                        <input
+                          type="number"
+                          step="any"
+                          value={settlementRate}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value);
+                            if (Number.isFinite(val) && val > 0)
+                              setSettlementRate(val);
+                          }}
+                          className="w-full h-7 px-2 text-[12px] bg-bg-surface border border-border text-text-primary"
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-text-secondary tabular-nums">
+                        Rp {Math.round(settlementRate).toLocaleString("id-ID")}
+                      </p>
+                    )}
+                  </div>
+                ) : null}
                 <Button
                   type="button"
                   size="sm"

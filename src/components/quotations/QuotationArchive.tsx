@@ -79,8 +79,17 @@ export function QuotationArchive({
               <p className="text-[13px] text-text-secondary mt-0.5 truncate">
                 {label}
               </p>
-              <p className="text-[11px] text-text-muted mt-1">
-                {formatListDate(item.quote_date)} · {formatMoney(item.subtotal)}
+              <p className="text-[11px] text-text-muted mt-1 flex flex-wrap items-center gap-1.5">
+                <span>{formatListDate(item.quote_date)}</span>
+                <span>·</span>
+                <span className="tabular-nums font-medium text-text-primary">
+                  {formatMoney(item.subtotal, item.currency)}
+                </span>
+                {item.currency && item.currency !== "IDR" ? (
+                  <span className="text-[10px] text-text-muted">
+                    (≈ {formatMoney(item.total_idr ?? Math.round(item.subtotal * (item.exchange_rate_to_idr || 1)), "IDR")})
+                  </span>
+                ) : null}
               </p>
             </button>
             <div className="flex items-center shrink-0 pr-1 py-1">

@@ -63,6 +63,20 @@ export function parseIncomeBody(body: Record<string, unknown>): {
         typeof body.currency === "string" && body.currency.trim()
           ? body.currency.trim().toUpperCase()
           : DEFAULT_CURRENCY,
+      exchange_rate_to_idr:
+        typeof body.exchange_rate_to_idr === "number" &&
+        body.exchange_rate_to_idr > 0
+          ? body.exchange_rate_to_idr
+          : 1,
+      exchange_rate_date:
+        typeof body.exchange_rate_date === "string" &&
+        body.exchange_rate_date.trim()
+          ? body.exchange_rate_date.trim()
+          : null,
+      original_amount:
+        typeof body.original_amount === "number" && body.original_amount >= 0
+          ? body.original_amount
+          : null,
       client_name:
         typeof body.client_name === "string"
           ? body.client_name.trim() || null
@@ -101,6 +115,36 @@ export function parseIncomePatchBody(body: Record<string, unknown>): {
 
   if (body.event_id !== undefined) {
     data.event_id = parseOptionalUuid(body.event_id);
+  }
+
+  if (body.currency !== undefined) {
+    if (typeof body.currency === "string" && body.currency.trim()) {
+      data.currency = body.currency.trim().toUpperCase();
+    }
+  }
+
+  if (body.exchange_rate_to_idr !== undefined) {
+    if (
+      typeof body.exchange_rate_to_idr === "number" &&
+      body.exchange_rate_to_idr > 0
+    ) {
+      data.exchange_rate_to_idr = body.exchange_rate_to_idr;
+    }
+  }
+
+  if (body.exchange_rate_date !== undefined) {
+    data.exchange_rate_date =
+      typeof body.exchange_rate_date === "string" &&
+      body.exchange_rate_date.trim()
+        ? body.exchange_rate_date.trim()
+        : null;
+  }
+
+  if (body.original_amount !== undefined) {
+    data.original_amount =
+      typeof body.original_amount === "number" && body.original_amount >= 0
+        ? body.original_amount
+        : null;
   }
 
   if (body.client_name !== undefined) {

@@ -13,15 +13,19 @@ export function quotationSubtotal(items: QuotationLineItem[]): number {
   return items.reduce((sum, item) => sum + lineItemTotal(item), 0);
 }
 
+export function quotationGrandTotal(items: QuotationLineItem[]): number {
+  return Math.max(0, quotationSubtotal(items));
+}
+
 export function quotationDownPayment(items: QuotationLineItem[]): number {
-  return Math.round(quotationSubtotal(items) * QUOTATION_DEPOSIT_RATE);
+  return Math.round(quotationGrandTotal(items) * QUOTATION_DEPOSIT_RATE);
 }
 
 export function quotationFinalBalance(
   items: QuotationLineItem[],
   depositPaid?: number
 ): number {
-  const total = quotationSubtotal(items);
+  const total = quotationGrandTotal(items);
   const deposit =
     depositPaid !== undefined && Number.isFinite(depositPaid) && depositPaid >= 0
       ? Math.round(depositPaid)

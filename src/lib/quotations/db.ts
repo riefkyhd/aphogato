@@ -1,4 +1,7 @@
-import { quotationSubtotal } from "@/lib/quotations/calculations";
+import {
+  quotationGrandTotal,
+  quotationSubtotal,
+} from "@/lib/quotations/calculations";
 import {
   createEmptyDeliverable,
   createEmptyLineItem,
@@ -14,6 +17,10 @@ export type SavedQuotation = {
   quote_number: string;
   quote_date: string | null;
   valid_until: string | null;
+  currency: string;
+  exchange_rate_to_idr: number;
+  exchange_rate_date: string | null;
+  total_idr: number | null;
   client_name: string | null;
   client_phone: string | null;
   client_social: string | null;
@@ -59,11 +66,27 @@ export function draftToInsertPayload(
   }
 
   const revision = options.revision ?? 0;
+  const currency = draft.currency?.trim() || "IDR";
+  const exchangeRateToIdr =
+    draft.exchangeRateToIdr && draft.exchangeRateToIdr > 0
+      ? draft.exchangeRateToIdr
+      : 1;
+  const exchangeRateDate = draft.exchangeRateDate || new Date().toISOString();
+  const subtotal = quotationSubtotal(lineItems);
+  const grandTotal = quotationGrandTotal(lineItems);
+  const totalIdr =
+    currency === "IDR"
+      ? grandTotal
+      : Math.round(grandTotal * exchangeRateToIdr);
 
   return {
     quote_number: quoteNumber,
     quote_date: draft.quoteDate || null,
     valid_until: draft.validUntil || null,
+    currency,
+    exchange_rate_to_idr: exchangeRateToIdr,
+    exchange_rate_date: exchangeRateDate,
+    total_idr: totalIdr,
     client_name: emptyToNull(draft.clientName),
     client_phone: emptyToNull(draft.clientPhone),
     client_social: emptyToNull(draft.clientSocial),
@@ -75,7 +98,7 @@ export function draftToInsertPayload(
     deliverables: draft.deliverables.filter((item) => item.description.trim()),
     notes: emptyToNull(draft.notes),
     terms: emptyToNull(draft.terms),
-    subtotal: quotationSubtotal(lineItems),
+    subtotal,
     parent_id: options.parentId ?? null,
     revision,
     updated_at: new Date().toISOString(),
@@ -83,11 +106,28 @@ export function draftToInsertPayload(
 }
 
 export function normalizeQuotation(row: Record<string, unknown>): SavedQuotation {
+  const currency = row.currency ? String(row.currency) : "IDR";
+  const exchangeRateToIdr =
+    row.exchange_rate_to_idr != null ? Number(row.exchange_rate_to_idr) : 1;
+  const subtotal = Number(row.subtotal);
+  const totalIdr =
+    row.total_idr != null
+      ? Number(row.total_idr)
+      : currency === "IDR"
+      ? subtotal
+      : Math.round(subtotal * exchangeRateToIdr);
+
   return {
     id: String(row.id),
     quote_number: String(row.quote_number),
     quote_date: row.quote_date ? String(row.quote_date) : null,
     valid_until: row.valid_until ? String(row.valid_until) : null,
+    currency,
+    exchange_rate_to_idr: exchangeRateToIdr,
+    exchange_rate_date: row.exchange_rate_date
+      ? String(row.exchange_rate_date)
+      : null,
+    total_idr: totalIdr,
     client_name: row.client_name ? String(row.client_name) : null,
     client_phone: row.client_phone ? String(row.client_phone) : null,
     client_social: row.client_social ? String(row.client_social) : null,
@@ -103,7 +143,7 @@ export function normalizeQuotation(row: Record<string, unknown>): SavedQuotation
       : [],
     notes: row.notes ? String(row.notes) : null,
     terms: row.terms ? String(row.terms) : null,
-    subtotal: Number(row.subtotal),
+    subtotal,
     parent_id: row.parent_id ? String(row.parent_id) : null,
     revision: Number(row.revision ?? 0),
     project_id: row.project_id ? String(row.project_id) : null,
@@ -118,6 +158,9 @@ export function savedQuotationToDraft(row: SavedQuotation): QuotationDraft {
     quoteNumber: row.quote_number,
     quoteDate: row.quote_date ?? "",
     validUntil: row.valid_until ?? "",
+    currency: row.currency || "IDR",
+    exchangeRateToIdr: row.exchange_rate_to_idr || 1,
+    exchangeRateDate: row.exchange_rate_date || null,
     clientName: row.client_name ?? "",
     clientPhone: row.client_phone ?? "",
     clientSocial: row.client_social ?? "",
