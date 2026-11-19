@@ -111,7 +111,7 @@ export function InvoiceClient({
   const balanceDue = quotationFinalBalance(draft.lineItems, draft.depositPaid);
 
   return (
-    <DashboardMain fullWidth>
+    <DashboardMain>
       <BackNavLink
         href="/dashboard"
         className="inline-flex items-center gap-2 text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors mb-6"

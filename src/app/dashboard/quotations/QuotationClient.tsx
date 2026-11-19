@@ -489,7 +489,7 @@ export function QuotationClient({
           : "";
 
   return (
-    <DashboardMain fullWidth>
+    <DashboardMain>
       <QuotationConfirmDialog
         open={discardAction !== null}
         title="Discard current draft?"
