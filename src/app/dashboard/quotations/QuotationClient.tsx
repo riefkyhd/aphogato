@@ -629,30 +629,20 @@ export function QuotationClient({
 
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] gap-6 xl:gap-8 items-start">
         <div className="space-y-6">
-          <section className="border border-border bg-bg-secondary p-4 sm:p-5 space-y-4">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-[11px] uppercase tracking-label text-text-muted">
-                Archive
-              </h2>
-              <span className="text-[11px] text-text-muted tabular-nums">
-                {savedQuotations.length} saved
-              </span>
-            </div>
-            <QuotationArchive
-              items={savedQuotations}
-              activeId={savedId}
-              onLoad={handleLoadSaved}
-              onRevision={requestRevision}
-              onFinalInvoice={(item) => {
-                window.location.assign(
-                  `/dashboard/invoices?from=${encodeURIComponent(item.id)}`
-                );
-              }}
-              onLaunchProject={(item) => setLaunchTarget(item)}
-              onRequestDelete={setDeleteTarget}
-              deletingId={deletingId}
-            />
-          </section>
+          <QuotationArchive
+            items={savedQuotations}
+            activeId={savedId}
+            onLoad={handleLoadSaved}
+            onRevision={requestRevision}
+            onFinalInvoice={(item) => {
+              window.location.assign(
+                `/dashboard/invoices?from=${encodeURIComponent(item.id)}`
+              );
+            }}
+            onLaunchProject={(item) => setLaunchTarget(item)}
+            onRequestDelete={setDeleteTarget}
+            deletingId={deletingId}
+          />
 
           <section className="border border-border bg-bg-secondary p-4 sm:p-5 space-y-4">
             <h2 className="text-[11px] uppercase tracking-label text-text-muted">
