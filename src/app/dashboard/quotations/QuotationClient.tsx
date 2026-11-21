@@ -569,7 +569,11 @@ export function QuotationClient({
             {FEATURES.invoices ? (
               <Tooltip label="Final payment invoice">
                 <Link
-                  href="/dashboard/invoices"
+                  href={
+                    activeSavedQuote
+                      ? `/dashboard/invoices?from=${encodeURIComponent(activeSavedQuote.id)}`
+                      : "/dashboard/invoices"
+                  }
                   className={`btn-secondary !text-[11px] !min-h-9 !px-3 !py-2 inline-flex items-center justify-center gap-1.5 ${toolbarButtonClass}`}
                 >
                   <Receipt className="h-3.5 w-3.5 shrink-0" aria-hidden />
