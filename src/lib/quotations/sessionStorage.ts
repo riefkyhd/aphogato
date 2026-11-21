@@ -23,6 +23,7 @@ function normalizeDraft(
     ...parsed,
     clientPhone: parsed.clientPhone ?? "",
     clientSocial: parsed.clientSocial ?? parsed.clientEmail ?? "",
+    paymentTerms: parsed.paymentTerms ?? "split",
     eventDate: parsed.eventDate ?? "",
     eventLocation: parsed.eventLocation ?? "",
     eventDuration: parsed.eventDuration ?? "",

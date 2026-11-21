@@ -38,7 +38,8 @@ export const QuotationPreview = forwardRef<
   const items = draft.lineItems.filter((i) => i.description.trim());
   const deliverables = draft.deliverables.filter((d) => d.description.trim());
   const total = quotationSubtotal(draft.lineItems);
-  const downPayment = quotationDownPayment(draft.lineItems);
+  const isFullPayment = draft.paymentTerms === "full";
+  const downPayment = isFullPayment ? 0 : quotationDownPayment(draft.lineItems);
   const currency = draft.currency || "IDR";
   const isForeign = currency !== "IDR";
   const exchangeRate = draft.exchangeRateToIdr || 1;
@@ -230,20 +231,36 @@ export const QuotationPreview = forwardRef<
                     ) : null}
                   </div>
                   <div className="border-t border-neutral-100 pt-3">
-                    <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-1 m-0">
-                      Down payment (50%)
-                    </p>
-                    <p className="text-[15px] tabular-nums text-neutral-900 m-0">
-                      {formatMoney(downPayment, currency)}
-                    </p>
-                    {isForeign ? (
-                      <p className="text-[11px] text-neutral-500 mt-0.5 tabular-nums m-0">
-                        ≈ {formatMoney(downPaymentIdr, "IDR")}
-                      </p>
-                    ) : null}
-                    <p className="text-[12px] text-neutral-500 mt-1.5 leading-relaxed m-0">
-                      Non-refundable. Required to secure the booking date.
-                    </p>
+                    {isFullPayment ? (
+                      <>
+                        <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-1 m-0">
+                          Payment terms
+                        </p>
+                        <p className="text-[14px] font-medium text-neutral-900 m-0">
+                          Full payment on invoice
+                        </p>
+                        <p className="text-[12px] text-neutral-500 mt-1 leading-relaxed m-0">
+                          No advance deposit required. Billed in full upon completion.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-1 m-0">
+                          Down payment (50%)
+                        </p>
+                        <p className="text-[15px] tabular-nums text-neutral-900 m-0">
+                          {formatMoney(downPayment, currency)}
+                        </p>
+                        {isForeign ? (
+                          <p className="text-[11px] text-neutral-500 mt-0.5 tabular-nums m-0">
+                            ≈ {formatMoney(downPaymentIdr, "IDR")}
+                          </p>
+                        ) : null}
+                        <p className="text-[12px] text-neutral-500 mt-1.5 leading-relaxed m-0">
+                          Non-refundable. Required to secure the booking date.
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
               </section>
@@ -253,7 +270,9 @@ export const QuotationPreview = forwardRef<
                     Payment
                   </p>
                   <p className="text-[12px] text-neutral-500 leading-relaxed m-0">
-                    Transfer the down payment to one of the bank accounts below:
+                    {isFullPayment
+                      ? "Payment will be billed via invoice. Bank accounts for settlement:"
+                      : "Transfer the down payment to one of the bank accounts below:"}
                   </p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">

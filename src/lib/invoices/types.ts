@@ -22,7 +22,9 @@ export type InvoiceDraft = {
   eventDuration: string;
   deliverables: QuotationDeliverable[];
   lineItems: QuotationLineItem[];
+  paymentMode?: "full" | "split" | "custom";
   depositPaid: number;
+  amountDue?: number;
   notes: string;
   terms: string;
 };

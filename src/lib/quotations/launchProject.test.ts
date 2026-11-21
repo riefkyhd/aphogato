@@ -117,4 +117,14 @@ describe("prepareLaunchPayloads", () => {
     expect(payload.income.original_amount).toBe(1000); // 50% of 2000 SGD
     expect(payload.income.amount).toBe(14000000); // 1000 SGD * 14000 = 14,000,000 IDR
   });
+
+  it("handles full payment quote (payment_terms = 'full') with 0 advance down payment", () => {
+    const fullQuote: SavedQuotation = {
+      ...mockQuote,
+      payment_terms: "full",
+    };
+    const payload = prepareLaunchPayloads(fullQuote);
+    expect(payload.income.amount).toBe(0);
+    expect(payload.income.original_amount).toBe(null);
+  });
 });

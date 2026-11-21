@@ -1,5 +1,5 @@
 import { addDays, format } from "date-fns";
-import { DEFAULT_INVOICE_TERMS } from "@/lib/invoices/defaults";
+import { DEFAULT_INVOICE_TERMS, DEFAULT_INVOICE_TERMS_FULL } from "@/lib/invoices/defaults";
 import type { InvoiceDraft } from "@/lib/invoices/types";
 import { quotationDownPayment } from "@/lib/quotations/calculations";
 import type { SavedQuotation } from "@/lib/quotations/db";
@@ -11,6 +11,10 @@ export function buildInvoiceNumber(quoteNumber: string): string {
 export function invoiceFromQuotation(quote: SavedQuotation): InvoiceDraft {
   const lineItems = quote.line_items.filter((item) => item.description.trim());
   const now = new Date();
+  const isFullPaymentQuote = quote.payment_terms === "full";
+  const depositPaid = isFullPaymentQuote ? 0 : quotationDownPayment(lineItems);
+  const paymentMode = isFullPaymentQuote ? "full" : "split";
+  const terms = isFullPaymentQuote ? DEFAULT_INVOICE_TERMS_FULL : DEFAULT_INVOICE_TERMS;
 
   return {
     invoiceNumber: buildInvoiceNumber(quote.quote_number),
@@ -31,8 +35,9 @@ export function invoiceFromQuotation(quote: SavedQuotation): InvoiceDraft {
     eventDuration: quote.event_duration ?? "",
     deliverables: quote.deliverables,
     lineItems,
-    depositPaid: quotationDownPayment(lineItems),
+    paymentMode,
+    depositPaid,
     notes: "",
-    terms: DEFAULT_INVOICE_TERMS,
+    terms,
   };
 }

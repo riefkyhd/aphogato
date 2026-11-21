@@ -39,6 +39,7 @@ export const InvoicePreview = forwardRef<HTMLElement, { draft: InvoiceDraft }>(
     );
     const total = quotationSubtotal(draft.lineItems);
     const balanceDue = quotationFinalBalance(draft.lineItems, draft.depositPaid);
+    const isFullPayment = draft.paymentMode === "full" || draft.depositPaid <= 0;
     const currency = draft.currency || "IDR";
     const isForeign = currency !== "IDR";
     const exchangeRate = draft.exchangeRateToIdr || 1;
@@ -230,43 +231,61 @@ export const InvoicePreview = forwardRef<HTMLElement, { draft: InvoiceDraft }>(
               <div className="mt-6 pt-4 border-t border-neutral-200 space-y-4">
                 <section className="quotation-totals flex justify-end">
                   <div className="w-full max-w-xs space-y-3 text-right">
-                    <div>
-                      <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-1 m-0">
-                        Total contract value
-                      </p>
-                      <p className="text-[15px] tabular-nums text-neutral-900 m-0">
-                        {formatMoney(total, currency)}
-                      </p>
-                      {isForeign ? (
-                        <p className="text-[11px] text-neutral-500 mt-0.5 tabular-nums m-0">
-                          ≈ {formatMoney(totalIdr, "IDR")}
+                    {isFullPayment ? (
+                      <div>
+                        <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-1 m-0">
+                          Total amount due
                         </p>
-                      ) : null}
-                    </div>
-                    <div className="border-t border-neutral-100 pt-3">
-                      <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-1 m-0">
-                        Deposit paid
-                      </p>
-                      <p className="text-[15px] tabular-nums text-neutral-900 m-0">
-                        {formatMoney(draft.depositPaid, currency)}
-                      </p>
-                      <p className="text-[12px] text-neutral-500 mt-1.5 leading-relaxed m-0">
-                        Received per quotation. Non-refundable.
-                      </p>
-                    </div>
-                    <div className="border-t border-neutral-200 pt-3">
-                      <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-1 m-0">
-                        Balance due
-                      </p>
-                      <p className="text-lg font-light tracking-[0.04em] tabular-nums text-neutral-900 m-0">
-                        {formatMoney(balanceDue, currency)}
-                      </p>
-                      {isForeign ? (
-                        <p className="text-[11px] text-neutral-500 mt-0.5 tabular-nums m-0">
-                          ≈ {formatMoney(balanceDueIdr, "IDR")}
+                        <p className="text-lg font-light tracking-[0.04em] tabular-nums text-neutral-900 m-0">
+                          {formatMoney(total, currency)}
                         </p>
-                      ) : null}
-                    </div>
+                        {isForeign ? (
+                          <p className="text-[11px] text-neutral-500 mt-0.5 tabular-nums m-0">
+                            ≈ {formatMoney(totalIdr, "IDR")}
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <>
+                        <div>
+                          <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-1 m-0">
+                            Total contract value
+                          </p>
+                          <p className="text-[15px] tabular-nums text-neutral-900 m-0">
+                            {formatMoney(total, currency)}
+                          </p>
+                          {isForeign ? (
+                            <p className="text-[11px] text-neutral-500 mt-0.5 tabular-nums m-0">
+                              ≈ {formatMoney(totalIdr, "IDR")}
+                            </p>
+                          ) : null}
+                        </div>
+                        <div className="border-t border-neutral-100 pt-3">
+                          <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-1 m-0">
+                            Deposit paid
+                          </p>
+                          <p className="text-[15px] tabular-nums text-neutral-900 m-0">
+                            {formatMoney(draft.depositPaid, currency)}
+                          </p>
+                          <p className="text-[12px] text-neutral-500 mt-1.5 leading-relaxed m-0">
+                            Received per quotation. Non-refundable.
+                          </p>
+                        </div>
+                        <div className="border-t border-neutral-200 pt-3">
+                          <p className="text-[10px] uppercase tracking-[0.1em] text-neutral-500 mb-1 m-0">
+                            Balance due
+                          </p>
+                          <p className="text-lg font-light tracking-[0.04em] tabular-nums text-neutral-900 m-0">
+                            {formatMoney(balanceDue, currency)}
+                          </p>
+                          {isForeign ? (
+                            <p className="text-[11px] text-neutral-500 mt-0.5 tabular-nums m-0">
+                              ≈ {formatMoney(balanceDueIdr, "IDR")}
+                            </p>
+                          ) : null}
+                        </div>
+                      </>
+                    )}
                   </div>
                 </section>
                 <section className="quotation-payment border-t border-neutral-100 pt-4 space-y-3">
@@ -275,7 +294,9 @@ export const InvoicePreview = forwardRef<HTMLElement, { draft: InvoiceDraft }>(
                       Payment
                     </p>
                     <p className="text-[12px] text-neutral-500 leading-relaxed m-0">
-                      Transfer the balance due to one of the bank accounts below:
+                      {isFullPayment
+                        ? "Transfer the total amount due to one of the bank accounts below:"
+                        : "Transfer the balance due to one of the bank accounts below:"}
                     </p>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">

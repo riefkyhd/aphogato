@@ -69,15 +69,17 @@ export async function POST(request: Request) {
     .select("*")
     .single();
 
-  // Graceful fallback if database migration 0029 has not yet been applied
+  // Graceful fallback if database migrations have not yet been applied
   if (
     error &&
-    (error.message?.includes("currency") ||
+    (error.message?.includes("payment_terms") ||
+      error.message?.includes("currency") ||
       error.message?.includes("schema cache") ||
       error.code === "PGRST204" ||
       error.code === "42703")
   ) {
     const legacyPayload = { ...payload };
+    delete (legacyPayload as Record<string, unknown>).payment_terms;
     delete (legacyPayload as Record<string, unknown>).currency;
     delete (legacyPayload as Record<string, unknown>).exchange_rate_to_idr;
     delete (legacyPayload as Record<string, unknown>).exchange_rate_date;

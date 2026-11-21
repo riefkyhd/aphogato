@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { cn } from "@/lib/utils";
 import {
   PageToolbarActions,
   toolbarButtonClass,
@@ -33,6 +34,8 @@ import {
   createBlankQuotation,
   createEmptyDeliverable,
   createEmptyLineItem,
+  DEFAULT_QUOTATION_TERMS,
+  DEFAULT_QUOTATION_TERMS_FULL,
   QUOTATION_STORAGE_KEY,
 } from "@/lib/quotations/defaults";
 import { useUnsavedChangesGuard } from "@/lib/hooks/useUnsavedChangesGuard";
@@ -699,6 +702,57 @@ export function QuotationClient({
                   value={draft.validUntil}
                   onChange={(e) => updateDraft({ validUntil: e.target.value })}
                 />
+              </div>
+
+              <div className="col-span-1 sm:col-span-2 pt-2 border-t border-border/70">
+                <Label>Payment structure</Label>
+                <div className="grid grid-cols-2 gap-2 mt-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateDraft({
+                        paymentTerms: "split",
+                        terms:
+                          draft.terms === DEFAULT_QUOTATION_TERMS_FULL
+                            ? DEFAULT_QUOTATION_TERMS
+                            : draft.terms,
+                      });
+                    }}
+                    className={cn(
+                      "px-3 py-2 text-[12px] font-medium border text-center transition-colors rounded-sm",
+                      (draft.paymentTerms || "split") === "split"
+                        ? "border-text-primary bg-bg-elevated text-text-primary shadow-sm"
+                        : "border-border bg-bg-primary text-text-muted hover:text-text-primary hover:border-border/80"
+                    )}
+                  >
+                    50% DP to book
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateDraft({
+                        paymentTerms: "full",
+                        terms:
+                          draft.terms === DEFAULT_QUOTATION_TERMS
+                            ? DEFAULT_QUOTATION_TERMS_FULL
+                            : draft.terms,
+                      });
+                    }}
+                    className={cn(
+                      "px-3 py-2 text-[12px] font-medium border text-center transition-colors rounded-sm",
+                      draft.paymentTerms === "full"
+                        ? "border-text-primary bg-bg-elevated text-text-primary shadow-sm"
+                        : "border-border bg-bg-primary text-text-muted hover:text-text-primary hover:border-border/80"
+                    )}
+                  >
+                    Full payment on invoice
+                  </button>
+                </div>
+                <p className="text-[11px] text-text-muted mt-1.5">
+                  {draft.paymentTerms === "full"
+                    ? "Full payment billed upon invoice delivery. No upfront booking deposit required."
+                    : "Standard booking terms: 50% deposit required to secure date, 50% balance upon delivery."}
+                </p>
               </div>
 
               {draft.currency && draft.currency !== "IDR" ? (

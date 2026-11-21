@@ -43,6 +43,7 @@ filename-sort order. To keep ordering unambiguous:
 | 0027 | `0027_gdrive_and_finals_delivery.sql` | Google Drive storage & finals delivery linkage |
 | 0028 | `0028_quotation_project_pipeline.sql` | Quotation-to-project pipeline linkage & deal status |
 | 0029 | `0029_multi_currency_support.sql` | Multi-currency support for quotations, invoices, income snapshots, and rate cache |
+| 0030 | `0030_quotation_payment_terms.sql` | Quotation payment terms: split (50% down payment) vs full (full payment on invoice) |
 
 ## Note on the `0026_photo_perceptual_hash.sql` rename
 

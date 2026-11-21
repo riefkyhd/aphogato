@@ -23,18 +23,22 @@ export function LaunchProjectDialog({
 }) {
   const router = useRouter();
   const [launching, setLaunching] = useState(false);
-  const [logDp, setLogDp] = useState(true);
+  const isFullPaymentQuote = quote?.payment_terms === "full";
+  const [logDp, setLogDp] = useState(!isFullPaymentQuote);
   const confirmRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
+    if (quote) {
+      setLogDp(quote.payment_terms !== "full");
+    }
     confirmRef.current?.focus();
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open, onClose, quote]);
 
   if (!quote) return null;
 
@@ -151,20 +155,30 @@ export function LaunchProjectDialog({
             <DollarSign className="h-4 w-4 text-text-muted mt-0.5 shrink-0" aria-hidden />
             <div className="min-w-0 flex-1">
               <p className="text-[11px] uppercase tracking-label text-text-muted">
-                Expected Down Payment (Income)
+                {isFullPaymentQuote ? "Payment structure" : "Expected Down Payment (Income)"}
               </p>
-              <p className="text-[14px] text-status-delivered font-medium tabular-nums">
-                {formatMoney(expectedDp, currency)}
-                {isForeign ? (
-                  <span className="text-[12px] text-text-secondary ml-1.5 font-normal">
-                    (≈ {formatMoney(expectedDpIdr, "IDR")})
+              {isFullPaymentQuote ? (
+                <p className="text-[14px] text-text-primary font-medium">
+                  Full payment on invoice
+                  <span className="text-[12px] text-text-secondary ml-2 font-normal">
+                    (Total {formatMoney(quote.subtotal, currency)}
+                    {isForeign ? ` ≈ ${formatMoney(totalIdr, "IDR")}` : ""})
                   </span>
-                ) : null}
-                <span className="text-[11px] text-text-muted ml-2 font-normal">
-                  (Total {formatMoney(quote.subtotal, currency)}
-                  {isForeign ? ` ≈ ${formatMoney(totalIdr, "IDR")}` : ""})
-                </span>
-              </p>
+                </p>
+              ) : (
+                <p className="text-[14px] text-status-delivered font-medium tabular-nums">
+                  {formatMoney(expectedDp, currency)}
+                  {isForeign ? (
+                    <span className="text-[12px] text-text-secondary ml-1.5 font-normal">
+                      (≈ {formatMoney(expectedDpIdr, "IDR")})
+                    </span>
+                  ) : null}
+                  <span className="text-[11px] text-text-muted ml-2 font-normal">
+                    (Total {formatMoney(quote.subtotal, currency)}
+                    {isForeign ? ` ≈ ${formatMoney(totalIdr, "IDR")}` : ""})
+                  </span>
+                </p>
+              )}
             </div>
           </div>
 
@@ -181,15 +195,21 @@ export function LaunchProjectDialog({
           </div>
         </div>
 
-        <label className="flex items-center gap-2.5 p-3 rounded-sm border border-border/70 bg-bg-primary/30 cursor-pointer text-[13px] text-text-primary hover:bg-bg-primary/50 transition-colors">
-          <input
-            type="checkbox"
-            checked={logDp}
-            onChange={(e) => setLogDp(e.target.checked)}
-            className="rounded-sm border-border text-text-primary focus:ring-0 h-4 w-4"
-          />
-          <span className="select-none">Log Down Payment (DP) to Finance now</span>
-        </label>
+        {!isFullPaymentQuote ? (
+          <label className="flex items-center gap-2.5 p-3 rounded-sm border border-border/70 bg-bg-primary/30 cursor-pointer text-[13px] text-text-primary hover:bg-bg-primary/50 transition-colors">
+            <input
+              type="checkbox"
+              checked={logDp}
+              onChange={(e) => setLogDp(e.target.checked)}
+              className="rounded-sm border-border text-text-primary focus:ring-0 h-4 w-4"
+            />
+            <span className="select-none">Log Down Payment (DP) to Finance now</span>
+          </label>
+        ) : (
+          <div className="p-3 rounded-sm border border-border/70 bg-bg-primary/30 text-[12px] text-text-muted">
+            Payment will be collected via invoice upon completion. No advance income will be logged.
+          </div>
+        )}
 
         <div className="pt-2 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
           <Button

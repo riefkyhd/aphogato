@@ -20,7 +20,7 @@ import {
 import { Tooltip } from "@/components/ui/Tooltip";
 import { format, parseISO } from "date-fns";
 import { formatMoney, parseMoneyInput } from "@/lib/finance/formatMoney";
-import { createBlankInvoice } from "@/lib/invoices/defaults";
+import { createBlankInvoice, DEFAULT_INVOICE_TERMS, DEFAULT_INVOICE_TERMS_FULL } from "@/lib/invoices/defaults";
 import { exportInvoicePdf } from "@/lib/invoices/exportInvoicePdf";
 import { invoiceFromQuotation } from "@/lib/invoices/fromQuotation";
 import type { InvoiceDraft } from "@/lib/invoices/types";
@@ -110,6 +110,13 @@ export function InvoiceClient({
   const total = quotationSubtotal(draft.lineItems);
   const balanceDue = quotationFinalBalance(draft.lineItems, draft.depositPaid);
 
+  const activePaymentMode: "full" | "split" | "custom" = useMemo(() => {
+    if (draft.paymentMode) return draft.paymentMode;
+    if (draft.depositPaid <= 0) return "full";
+    if (total > 0 && draft.depositPaid === Math.round(total * 0.5)) return "split";
+    return "custom";
+  }, [draft.paymentMode, draft.depositPaid, total]);
+
   return (
     <DashboardMain>
       <BackNavLink
@@ -126,12 +133,11 @@ export function InvoiceClient({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-xl sm:text-2xl font-light tracking-[0.05em] uppercase">
-              Final invoice
+              Invoice
             </h1>
             <p className="mt-2 text-[13px] text-text-secondary max-w-2xl">
-              Generate the remaining balance invoice after the quotation deposit
-              has been received. Pick a saved quotation to prefill client,
-              event, and pricing details.
+              Generate an invoice for full payment or the remaining balance after deposit.
+              Pick a saved quotation to prefill client, event, and pricing details.
             </p>
           </div>
           <PageToolbarActions>
@@ -292,41 +298,151 @@ export function InvoiceClient({
               </section>
 
               <section className="border border-border bg-bg-secondary p-4 sm:p-5 space-y-4">
-                <h2 className="text-[11px] uppercase tracking-label text-text-muted">
-                  Payment summary
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="deposit-paid">
-                      Deposit paid ({draft.currency || "IDR"})
-                    </Label>
-                    <Input
-                      id="deposit-paid"
-                      inputMode="numeric"
-                      value={
-                        draft.depositPaid > 0
-                          ? String(draft.depositPaid)
-                          : ""
-                      }
-                      onChange={(event) => {
-                        const parsed = parseMoneyInput(event.target.value);
-                        updateDraft({ depositPaid: parsed ?? 0 });
-                      }}
-                    />
-                    <p className="text-[11px] text-text-muted mt-1">
-                      Defaults to 50% of the quotation total.
-                    </p>
-                  </div>
-                  <div>
-                    <Label>Balance due</Label>
-                    <p className="text-[15px] text-text-primary tabular-nums py-2">
-                      {formatMoney(balanceDue, draft.currency)}
-                    </p>
-                    <p className="text-[11px] text-text-muted">
-                      Total {formatMoney(total, draft.currency)}
-                    </p>
-                  </div>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-[11px] uppercase tracking-label text-text-muted">
+                    Payment structure
+                  </h2>
+                  <span className="text-[11px] text-text-secondary">
+                    Total: {formatMoney(total, draft.currency)}
+                  </span>
                 </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateDraft({
+                        paymentMode: "full",
+                        depositPaid: 0,
+                        terms:
+                          draft.terms === DEFAULT_INVOICE_TERMS
+                            ? DEFAULT_INVOICE_TERMS_FULL
+                            : draft.terms,
+                      });
+                    }}
+                    className={cn(
+                      "px-2.5 py-2 text-[11px] sm:text-[12px] font-medium border text-center transition-colors rounded-sm",
+                      activePaymentMode === "full"
+                        ? "border-text-primary bg-bg-elevated text-text-primary shadow-sm"
+                        : "border-border bg-bg-primary text-text-muted hover:text-text-primary hover:border-border/80"
+                    )}
+                  >
+                    Full Payment (100%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const dp50 = Math.round(total * 0.5);
+                      updateDraft({
+                        paymentMode: "split",
+                        depositPaid: dp50,
+                        terms:
+                          draft.terms === DEFAULT_INVOICE_TERMS_FULL
+                            ? DEFAULT_INVOICE_TERMS
+                            : draft.terms,
+                      });
+                    }}
+                    className={cn(
+                      "px-2.5 py-2 text-[11px] sm:text-[12px] font-medium border text-center transition-colors rounded-sm",
+                      activePaymentMode === "split"
+                        ? "border-text-primary bg-bg-elevated text-text-primary shadow-sm"
+                        : "border-border bg-bg-primary text-text-muted hover:text-text-primary hover:border-border/80"
+                    )}
+                  >
+                    50% DP &amp; Balance
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateDraft({ paymentMode: "custom" });
+                    }}
+                    className={cn(
+                      "px-2.5 py-2 text-[11px] sm:text-[12px] font-medium border text-center transition-colors rounded-sm",
+                      activePaymentMode === "custom"
+                        ? "border-text-primary bg-bg-elevated text-text-primary shadow-sm"
+                        : "border-border bg-bg-primary text-text-muted hover:text-text-primary hover:border-border/80"
+                    )}
+                  >
+                    Custom Nominal
+                  </button>
+                </div>
+
+                {activePaymentMode === "full" ? (
+                  <div className="space-y-2 border border-border/70 bg-bg-primary/50 p-3.5 rounded-sm">
+                    <div className="flex items-center justify-between text-[13px]">
+                      <span className="text-text-secondary">Amount due on this invoice:</span>
+                      <span className="text-[16px] font-medium text-text-primary tabular-nums">
+                        {formatMoney(total, draft.currency)}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-text-muted">
+                      Full payment invoice. No prior quotation deposit is deducted.
+                    </p>
+                  </div>
+                ) : activePaymentMode === "split" ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div className="border border-border/70 bg-bg-primary/50 p-3 rounded-sm">
+                      <Label className="text-[11px] text-text-muted">Deposit already paid (50%)</Label>
+                      <p className="text-[14px] text-text-primary tabular-nums mt-1 font-medium">
+                        {formatMoney(draft.depositPaid, draft.currency)}
+                      </p>
+                      <p className="text-[10px] text-text-muted mt-0.5">50% quotation advance</p>
+                    </div>
+                    <div className="border border-border/70 bg-bg-primary/50 p-3 rounded-sm">
+                      <Label className="text-[11px] text-text-muted">Balance due on this invoice (50%)</Label>
+                      <p className="text-[14px] text-text-primary tabular-nums mt-1 font-medium">
+                        {formatMoney(balanceDue, draft.currency)}
+                      </p>
+                      <p className="text-[10px] text-text-muted mt-0.5">Remaining final balance</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="custom-deposit-paid">
+                          Deposit already paid ({draft.currency || "IDR"})
+                        </Label>
+                        <Input
+                          id="custom-deposit-paid"
+                          inputMode="numeric"
+                          placeholder="0"
+                          value={draft.depositPaid > 0 ? String(draft.depositPaid) : ""}
+                          onChange={(event) => {
+                            const parsed = parseMoneyInput(event.target.value) ?? 0;
+                            updateDraft({ depositPaid: parsed });
+                          }}
+                        />
+                        <p className="text-[11px] text-text-muted mt-1">
+                          Amount received before this invoice.
+                        </p>
+                      </div>
+                      <div>
+                        <Label htmlFor="custom-amount-due">
+                          Amount due on this invoice ({draft.currency || "IDR"})
+                        </Label>
+                        <Input
+                          id="custom-amount-due"
+                          inputMode="numeric"
+                          placeholder="0"
+                          value={balanceDue > 0 ? String(balanceDue) : ""}
+                          onChange={(event) => {
+                            const parsed = parseMoneyInput(event.target.value) ?? 0;
+                            const newDeposit = Math.max(0, total - parsed);
+                            updateDraft({ depositPaid: newDeposit });
+                          }}
+                        />
+                        <p className="text-[11px] text-text-muted mt-1">
+                          Remaining nominal to bill on this invoice.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] text-text-muted px-1">
+                      <span>Total contract: {formatMoney(total, draft.currency)}</span>
+                      <span>Balance due: {formatMoney(balanceDue, draft.currency)}</span>
+                    </div>
+                  </div>
+                )}
               </section>
 
               <section className="border border-border bg-bg-secondary p-4 sm:p-5 space-y-4">

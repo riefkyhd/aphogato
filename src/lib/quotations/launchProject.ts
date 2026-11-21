@@ -74,8 +74,9 @@ export function prepareLaunchPayloads(
   const rate = quote.exchange_rate_to_idr || 1;
   const isForeign = currency !== "IDR";
 
-  const dpAmount = quotationDownPayment(quote.line_items);
-  const dpForeign = dpAmount > 0 ? dpAmount : Math.round(quote.subtotal * 0.5);
+  const isFullPaymentQuote = quote.payment_terms === "full";
+  const dpAmount = isFullPaymentQuote ? 0 : quotationDownPayment(quote.line_items);
+  const dpForeign = isFullPaymentQuote ? 0 : (dpAmount > 0 ? dpAmount : Math.round(quote.subtotal * 0.5));
   const incomeAmountIdr = isForeign ? Math.round(dpForeign * rate) : dpForeign;
 
   return {

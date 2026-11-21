@@ -17,6 +17,7 @@ export type QuotationDraft = {
   currency?: string;
   exchangeRateToIdr?: number;
   exchangeRateDate?: string | null;
+  paymentTerms?: "split" | "full";
   clientName: string;
   clientPhone: string;
   clientSocial: string;

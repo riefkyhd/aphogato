@@ -259,7 +259,7 @@ export function ProjectDealSection({
                   className="w-full !text-[11px] !min-h-[44px] sm:!min-h-9 !py-1.5 uppercase tracking-label font-medium text-status-delivered border-status-delivered/30 hover:bg-status-delivered/10"
                 >
                   <CheckCircle2 className="h-3.5 w-3.5 mr-1" aria-hidden />
-                  Mark Balance Paid (Pelunasan)
+                  {currentPaid <= 0 ? "Mark Full Payment as Paid" : "Mark Balance Paid (Pelunasan)"}
                 </Button>
               </div>
             ) : null}
@@ -271,10 +271,10 @@ export function ProjectDealSection({
                 Invoice &amp; Billing
               </span>
               <p className="mt-1 text-[13px] text-text-primary">
-                1-Click Final Invoice
+                1-Click Invoice
               </p>
               <p className="mt-1 text-[12px] text-text-secondary leading-relaxed">
-                Generate or export the luxury client invoice prefilled from this quote.
+                Generate or export the client invoice prefilled from this quote.
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-border">
@@ -283,7 +283,7 @@ export function ProjectDealSection({
                 className="w-full inline-flex items-center justify-center gap-1.5 btn-primary !text-[11px] !min-h-[44px] sm:!min-h-9 !py-2 uppercase tracking-label font-medium"
               >
                 <Receipt className="h-3.5 w-3.5" aria-hidden />
-                Create Final Invoice
+                Generate Invoice
               </Link>
             </div>
           </div>
