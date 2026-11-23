@@ -27,6 +27,12 @@ export function normalizeServices(services: unknown): string[] {
   return [...DEFAULT_SERVICES];
 }
 
+export function formatServicesSummary(services: unknown): string {
+  const norm = normalizeServices(services);
+  const labels = norm.map((s) => SERVICE_TAG_LABELS[s] ?? s);
+  return labels.join(" + ") || "Photography";
+}
+
 export const PAYMENT_STATUS_VALUES = [
   "unpaid",
   "deposit_paid",

@@ -8,7 +8,7 @@ import {
   startOfMonth,
   subMonths,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, Download, Info } from "lucide-react";
+import { Camera, ChevronLeft, ChevronRight, Download, FileSpreadsheet, Info } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useUserPreferencesContext } from "@/components/preferences/UserPreferencesProvider";
@@ -19,6 +19,7 @@ import { CalendarListView } from "@/components/calendar/CalendarListView";
 import { CalendarMonthGrid } from "@/components/calendar/CalendarMonthGrid";
 import { ConnectGoogleCalendarButton } from "@/components/calendar/ConnectGoogleCalendarButton";
 import { DeleteEventDialog } from "@/components/calendar/DeleteEventDialog";
+import { ExportSocialModal } from "@/components/calendar/ExportSocialModal";
 import { usePrivacyLockContext } from "@/components/privacy/PrivacyLockProvider";
 import {
   EventDetailPanel,
@@ -92,6 +93,8 @@ export function CalendarClient({
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [exportingExcel, setExportingExcel] = useState(false);
+  const [socialModalOpen, setSocialModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
@@ -108,6 +111,34 @@ export function CalendarClient({
       isSameMonth(parseISO(e.shoot_date), currentMonth)
     );
   }, [events, view, currentMonth]);
+
+  const handleExportExcel = useCallback(async () => {
+    if (exportEvents.length === 0) {
+      toast.error("No events to export for this view");
+      return;
+    }
+    setExportingExcel(true);
+    try {
+      const { exportCalendarExcel } = await import(
+        "@/lib/calendar/exportCalendarExcel"
+      );
+      await exportCalendarExcel(exportEvents, {
+        title:
+          view === "month"
+            ? `Shoot Schedule • ${format(currentMonth, "MMMM yyyy")}`
+            : "Shoot Schedule • All Events",
+        filename:
+          view === "month"
+            ? `shoot-schedule-${format(currentMonth, "yyyy-MM")}.xlsx`
+            : `shoot-schedule-all-${format(new Date(), "yyyy-MM-dd")}.xlsx`,
+      });
+      toast.success("Excel schedule downloaded");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Excel export failed");
+    } finally {
+      setExportingExcel(false);
+    }
+  }, [exportEvents, view, currentMonth]);
 
   const panelFinanceRequestId = useRef(0);
 
@@ -460,6 +491,34 @@ export function CalendarClient({
           Calendar
         </h1>
         <PageToolbarActions>
+          <Tooltip label="Export social media schedule graphic (Story & Feed)">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className={toolbarButtonClass}
+              aria-label="Export social media schedule graphic"
+              onClick={() => setSocialModalOpen(true)}
+            >
+              <Camera className="h-3.5 w-3.5 mr-1.5 inline" aria-hidden />
+              Social Image
+            </Button>
+          </Tooltip>
+          <Tooltip label="Export beautified Excel schedule (.xlsx)">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className={toolbarButtonClass}
+              loading={exportingExcel}
+              disabled={exportingExcel}
+              aria-label="Export beautified Excel schedule"
+              onClick={() => void handleExportExcel()}
+            >
+              <FileSpreadsheet className="h-3.5 w-3.5 mr-1.5 inline" aria-hidden />
+              Excel
+            </Button>
+          </Tooltip>
           <Tooltip label="Export schedule as PDF">
             <Button
               type="button"
@@ -478,8 +537,8 @@ export function CalendarClient({
               void exportCalendarListPdf(exportEvents, {
                 title:
                   view === "month"
-                    ? `Shoot schedule — ${format(currentMonth, "MMMM yyyy")}`
-                    : "Shoot schedule — all events",
+                    ? `Shoot schedule • ${format(currentMonth, "MMMM yyyy")}`
+                    : "Shoot schedule • all events",
                 filename:
                   view === "month"
                     ? `shoot-schedule-${format(currentMonth, "yyyy-MM")}.pdf`
@@ -495,7 +554,7 @@ export function CalendarClient({
               }}
             >
               <Download className="h-3.5 w-3.5 mr-1.5 inline" aria-hidden />
-              Export PDF
+              PDF
             </Button>
           </Tooltip>
           {FEATURES.googleCalendarSync ? (
@@ -676,6 +735,13 @@ export function CalendarClient({
         deleting={deleting}
         onClose={() => !deleting && setDeleteDialogOpen(false)}
         onConfirm={confirmDelete}
+      />
+
+      <ExportSocialModal
+        open={socialModalOpen}
+        onClose={() => setSocialModalOpen(false)}
+        events={events}
+        defaultMonth={currentMonth}
       />
     </DashboardMain>
   );
