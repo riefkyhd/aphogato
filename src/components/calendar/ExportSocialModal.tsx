@@ -183,7 +183,7 @@ export function ExportSocialModal({
   if (!open) return null;
 
   // Responsive scale factor for live preview column
-  const previewScale = formatType === "story" ? 0.28 : 0.35;
+  const previewScale = formatType === "story" ? 0.36 : 0.42;
 
   return (
     <div
@@ -192,7 +192,7 @@ export function ExportSocialModal({
       aria-modal="true"
       aria-labelledby="export-social-title"
     >
-      <div className="relative w-full max-w-5xl max-h-[92vh] flex flex-col border border-border bg-bg-elevated shadow-2xl overflow-hidden rounded-sm">
+      <div className="relative w-full max-w-6xl max-h-[94vh] flex flex-col border border-border bg-bg-elevated shadow-2xl overflow-hidden rounded-sm">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-bg-secondary">
           <div className="flex items-center gap-2.5">
@@ -378,7 +378,7 @@ export function ExportSocialModal({
           </div>
 
           {/* Preview Column */}
-          <div className="p-6 bg-bg-primary/50 flex flex-col items-center justify-between min-w-[340px] max-w-[420px] overflow-hidden">
+          <div className="p-6 bg-bg-primary/50 flex flex-col items-center justify-between min-w-[420px] max-w-[490px] overflow-hidden">
             <div className="w-full flex items-center justify-between mb-4">
               <span className="text-[11px] uppercase tracking-label text-text-muted">
                 Live Preview

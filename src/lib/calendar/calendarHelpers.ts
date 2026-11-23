@@ -5,6 +5,7 @@ export const SHOOT_TYPE_COLORS: Record<ShootType, string> = {
   portrait: "#b8860b",
   event: "#2563eb",
   commercial: "#2e7d32",
+  sport: "#ea580c",
   other: "#555555",
 };
 
@@ -13,6 +14,7 @@ export const SHOOT_TYPE_LABELS: Record<ShootType, string> = {
   portrait: "Portrait",
   event: "Event",
   commercial: "Commercial",
+  sport: "Sport",
   other: "Other",
 };
 
@@ -28,6 +30,7 @@ export const SHOOT_TYPES: ShootType[] = [
   "portrait",
   "event",
   "commercial",
+  "sport",
   "other",
 ];
 export const EVENT_STATUSES: EventStatus[] = [

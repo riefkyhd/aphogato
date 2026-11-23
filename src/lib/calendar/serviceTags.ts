@@ -2,8 +2,8 @@ export const AVAILABLE_SERVICES = ["photography", "videography"] as const;
 export type KnownService = (typeof AVAILABLE_SERVICES)[number];
 
 export const SERVICE_TAG_LABELS: Record<string, string> = {
-  photography: "Photography",
-  videography: "Videography",
+  photography: "Photo",
+  videography: "Video",
 };
 
 export const DEFAULT_SERVICES: string[] = ["photography"];
@@ -30,7 +30,7 @@ export function normalizeServices(services: unknown): string[] {
 export function formatServicesSummary(services: unknown): string {
   const norm = normalizeServices(services);
   const labels = norm.map((s) => SERVICE_TAG_LABELS[s] ?? s);
-  return labels.join(" + ") || "Photography";
+  return labels.join(" + ") || "Photo";
 }
 
 export const PAYMENT_STATUS_VALUES = [

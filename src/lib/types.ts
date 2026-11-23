@@ -41,6 +41,7 @@ export type ShootType =
   | "portrait"
   | "event"
   | "commercial"
+  | "sport"
   | "other";
 export type EventStatus = "scheduled" | "shot" | "editing" | "delivered";
 
