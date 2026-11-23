@@ -56,11 +56,33 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("events")
     .insert(parsed.data)
     .select("*")
     .single();
+
+  if (
+    error &&
+    (error.message?.includes("services") ||
+      error.message?.includes("payment_status") ||
+      error.message?.includes("schema cache") ||
+      error.code === "PGRST204" ||
+      error.code === "42703")
+  ) {
+    const fallbackData = { ...parsed.data };
+    delete (fallbackData as Record<string, unknown>).services;
+    delete (fallbackData as Record<string, unknown>).payment_status;
+
+    const retry = await supabase
+      .from("events")
+      .insert(fallbackData)
+      .select("*")
+      .single();
+
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error || !data) {
     return NextResponse.json(

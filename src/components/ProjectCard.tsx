@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { ProjectCoverImage } from "@/components/projects/ProjectCoverImage";
 import { StatusDot, type ProjectStatus } from "@/components/StatusDot";
+import { ServiceBadges } from "@/components/common/ServiceBadges";
+import { PaymentStatusBadge } from "@/components/common/PaymentStatusBadge";
 import { cn } from "@/lib/utils";
 import type { Project, Photo } from "@/lib/types";
 
@@ -53,6 +55,10 @@ export function ProjectCard({ project }: { project: ProjectCardData }) {
           isNavigating ? "opacity-90" : "group-hover:from-black/85"
         )}
       />
+      <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 pointer-events-none z-10">
+        <ServiceBadges services={project.services} size="xs" />
+        <PaymentStatusBadge status={project.payment_status} size="xs" />
+      </div>
       <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5 pointer-events-none">
         <div className="text-text-primary text-base sm:text-lg font-light tracking-[0.05em] uppercase leading-tight line-clamp-2">
           {project.name}

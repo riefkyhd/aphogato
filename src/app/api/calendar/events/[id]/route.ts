@@ -43,12 +43,35 @@ export async function PATCH(
     }
   }
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("events")
     .update(parsed.data)
     .eq("id", params.id)
     .select("*")
     .single();
+
+  if (
+    error &&
+    (error.message?.includes("services") ||
+      error.message?.includes("payment_status") ||
+      error.message?.includes("schema cache") ||
+      error.code === "PGRST204" ||
+      error.code === "42703")
+  ) {
+    const fallbackData = { ...parsed.data };
+    delete (fallbackData as Record<string, unknown>).services;
+    delete (fallbackData as Record<string, unknown>).payment_status;
+
+    const retry = await supabase
+      .from("events")
+      .update(fallbackData)
+      .eq("id", params.id)
+      .select("*")
+      .single();
+
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

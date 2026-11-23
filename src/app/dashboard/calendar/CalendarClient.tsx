@@ -25,6 +25,10 @@ import {
   type CalendarProject,
 } from "@/components/calendar/EventDetailPanel";
 import {
+  PAYMENT_STATUS_LABELS,
+  type PaymentStatus,
+} from "@/lib/calendar/serviceTags";
+import {
   EventFormModal,
   type EventFormPrefill,
 } from "@/components/calendar/EventFormModal";
@@ -329,6 +333,33 @@ export function CalendarClient({
     }
   }, [panelEvent]);
 
+  const handlePaymentStatusChange = useCallback(
+    async (nextStatus: PaymentStatus) => {
+      if (!panelEvent) return;
+      try {
+        const res = await fetch(`/api/calendar/events/${panelEvent.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ payment_status: nextStatus }),
+        });
+        const json = await res.json();
+        if (!res.ok) {
+          toast.error(json.error ?? "Failed to update payment status");
+          return;
+        }
+        const updated = json as CalendarEvent;
+        setEvents((prev) =>
+          prev.map((e) => (e.id === updated.id ? updated : e))
+        );
+        setPanelEvent(updated);
+        toast.success(`Payment marked as ${PAYMENT_STATUS_LABELS[nextStatus]}`);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Network error");
+      }
+    },
+    [panelEvent]
+  );
+
   const panelIncome = panelEvent
     ? incomeByEventId[panelEvent.id] ?? null
     : null;
@@ -611,6 +642,7 @@ export function CalendarClient({
           financeEvents={financeEvents}
           financeProjects={projects}
           onExpensesChanged={() => void refreshExpenses()}
+          onPaymentStatusChange={handlePaymentStatusChange}
           open={panelOpen}
           onEdit={openEditEvent}
           onDelete={requestDelete}

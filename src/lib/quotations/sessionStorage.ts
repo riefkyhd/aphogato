@@ -24,6 +24,7 @@ function normalizeDraft(
     clientPhone: parsed.clientPhone ?? "",
     clientSocial: parsed.clientSocial ?? parsed.clientEmail ?? "",
     paymentTerms: parsed.paymentTerms ?? "split",
+    services: Array.isArray(parsed.services) ? parsed.services : ["photography"],
     eventDate: parsed.eventDate ?? "",
     eventLocation: parsed.eventLocation ?? "",
     eventDuration: parsed.eventDuration ?? "",

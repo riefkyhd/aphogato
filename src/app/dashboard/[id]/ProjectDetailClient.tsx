@@ -13,6 +13,8 @@ import { usePrivacyLockContext } from "@/components/privacy/PrivacyLockProvider"
 import { PhotoDropHint } from "@/components/PhotoDropHint";
 import { PhotoGallerySection } from "@/components/PhotoGallerySection";
 import { StatusDot, type ProjectStatus } from "@/components/StatusDot";
+import { ServiceBadges } from "@/components/common/ServiceBadges";
+import { PaymentStatusBadge } from "@/components/common/PaymentStatusBadge";
 import { CancelUploadDialog } from "@/components/CancelUploadDialog";
 import { UploadProgressDock } from "@/components/UploadProgressDock";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
@@ -344,6 +346,8 @@ export function ProjectDetailClient({
               </p>
               <div className="mt-2.5 flex flex-wrap items-center gap-2.5 text-[11px] uppercase tracking-label text-text-muted">
                 <StatusDot status={projectState.status as ProjectStatus} />
+                <ServiceBadges services={projectState.services} size="sm" />
+                <PaymentStatusBadge status={projectState.payment_status} size="sm" />
                 <span>
                   {photos.length} photo{photos.length === 1 ? "" : "s"}
                 </span>

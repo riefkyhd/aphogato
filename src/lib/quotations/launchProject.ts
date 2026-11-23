@@ -8,6 +8,7 @@ export type LaunchProjectPayloads = {
     client_name: string | null;
     max_photo_selection: number;
     quotation_id: string;
+    services?: string[];
   };
   event: {
     title: string;
@@ -17,6 +18,7 @@ export type LaunchProjectPayloads = {
     location: string | null;
     status: string;
     notes: string | null;
+    services?: string[];
   };
   income: {
     amount: number;
@@ -79,12 +81,18 @@ export function prepareLaunchPayloads(
   const dpForeign = isFullPaymentQuote ? 0 : (dpAmount > 0 ? dpAmount : Math.round(quote.subtotal * 0.5));
   const incomeAmountIdr = isForeign ? Math.round(dpForeign * rate) : dpForeign;
 
+  const services =
+    quote.services && quote.services.length > 0
+      ? quote.services
+      : ["photography"];
+
   return {
     project: {
       name: title,
       client_name: rawClient,
       max_photo_selection: maxSelection,
       quotation_id: quote.id,
+      services,
     },
     event: {
       title,
@@ -94,6 +102,7 @@ export function prepareLaunchPayloads(
       location: quote.event_location?.trim() || null,
       status: "scheduled",
       notes: quote.notes?.trim() ? `Quote ${quote.quote_number}: ${quote.notes.trim()}` : `Quote ${quote.quote_number}`,
+      services,
     },
     income: {
       amount: incomeAmountIdr,

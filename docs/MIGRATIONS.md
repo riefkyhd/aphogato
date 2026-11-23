@@ -44,6 +44,7 @@ filename-sort order. To keep ordering unambiguous:
 | 0028 | `0028_quotation_project_pipeline.sql` | Quotation-to-project pipeline linkage & deal status |
 | 0029 | `0029_multi_currency_support.sql` | Multi-currency support for quotations, invoices, income snapshots, and rate cache |
 | 0030 | `0030_quotation_payment_terms.sql` | Quotation payment terms: split (50% down payment) vs full (full payment on invoice) |
+| 0031 | `0031_service_tags_and_payment_status.sql` | Modular service tags (photography, videography) & 1-click payment status tracking |
 
 ## Note on the `0026_photo_perceptual_hash.sql` rename
 

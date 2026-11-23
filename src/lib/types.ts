@@ -1,5 +1,6 @@
 export type ProjectStatus = "pending" | "selected" | "editing" | "delivered";
 export type PhotoStage = "proof" | "final";
+export type { PaymentStatus } from "@/lib/calendar/serviceTags";
 
 export interface Project {
   id: string;
@@ -17,6 +18,8 @@ export interface Project {
   max_photo_selection: number;
   face_search_enabled: boolean;
   cover_photo_id: string | null;
+  services?: string[];
+  payment_status?: import("@/lib/calendar/serviceTags").PaymentStatus;
 }
 
 export interface Photo {
@@ -56,6 +59,8 @@ export interface CalendarEvent {
   google_event_id: string | null;
   synced_at: string | null;
   created_at: string;
+  services?: string[];
+  payment_status?: import("@/lib/calendar/serviceTags").PaymentStatus;
 }
 
 export interface IncomeEntry {

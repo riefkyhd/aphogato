@@ -13,6 +13,12 @@ import {
 } from "@/lib/calendar/calendarHelpers";
 import type { CalendarProject } from "@/components/calendar/EventDetailPanel";
 import { ClientNameInput } from "@/components/clients/ClientNameInput";
+import { ServiceTagSelector } from "@/components/common/ServiceTagSelector";
+import {
+  PAYMENT_STATUS_LABELS,
+  PAYMENT_STATUS_VALUES,
+  type PaymentStatus,
+} from "@/lib/calendar/serviceTags";
 import { Button } from "@/components/ui/Button";
 import { FormActions } from "@/components/ui/FormActions";
 import { Input } from "@/components/ui/Input";
@@ -61,6 +67,8 @@ export function EventFormModal({
   const [shootTime, setShootTime] = useState("");
   const [shootEndTime, setShootEndTime] = useState("");
   const [status, setStatus] = useState<EventStatus>("scheduled");
+  const [services, setServices] = useState<string[]>(["photography"]);
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("unpaid");
   const [notes, setNotes] = useState("");
   const [projectId, setProjectId] = useState("");
   const [incomeAmount, setIncomeAmount] = useState("");
@@ -71,6 +79,8 @@ export function EventFormModal({
       setTitle(event.title);
       setClientName(event.client_name ?? "");
       setShootType(event.shoot_type);
+      setServices(event.services && event.services.length > 0 ? event.services : ["photography"]);
+      setPaymentStatus(event.payment_status || "unpaid");
       setLocation(event.location ?? "");
       setShootDate(event.shoot_date);
       setShootTime(event.shoot_time ?? "");
@@ -83,6 +93,8 @@ export function EventFormModal({
       setTitle(prefill.title ?? "");
       setClientName(prefill.clientName ?? "");
       setShootType("other");
+      setServices(["photography"]);
+      setPaymentStatus("unpaid");
       setLocation(prefill.location ?? "");
       setShootDate(
         prefill.shootDate ||
@@ -100,6 +112,8 @@ export function EventFormModal({
       setTitle("");
       setClientName("");
       setShootType("other");
+      setServices(["photography"]);
+      setPaymentStatus("unpaid");
       setLocation("");
       setShootDate(
         initialDate
@@ -169,6 +183,8 @@ export function EventFormModal({
       title,
       client_name: clientName || null,
       shoot_type: shootType,
+      services,
+      payment_status: paymentStatus,
       location: location || null,
       shoot_date: shootDate,
       shoot_time: shootTime || null,
@@ -247,6 +263,13 @@ export function EventFormModal({
             </div>
           </div>
           <div>
+            <Label className="mb-1.5 block">Services</Label>
+            <ServiceTagSelector
+              value={services}
+              onChange={setServices}
+            />
+          </div>
+          <div>
             <Label htmlFor="ev-date">Date</Label>
             <Input
               id="ev-date"
@@ -317,18 +340,38 @@ export function EventFormModal({
               ))}
             </select>
           </div>
-          <div>
-            <Label htmlFor="ev-income">Client income (IDR)</Label>
-            <Input
-              id="ev-income"
-              inputMode="numeric"
-              placeholder="e.g. 1500000"
-              value={incomeAmount}
-              onChange={(e) => setIncomeAmount(e.target.value)}
-            />
-            <p className="mt-1 text-[11px] text-text-muted">
-              Optional. Saved to Finance and linked to this event.
-            </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="ev-income">Client income (IDR)</Label>
+              <Input
+                id="ev-income"
+                inputMode="numeric"
+                placeholder="e.g. 1500000"
+                value={incomeAmount}
+                onChange={(e) => setIncomeAmount(e.target.value)}
+              />
+              <p className="mt-1 text-[11px] text-text-muted">
+                Optional. Linked to this event.
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="ev-payment-status">Payment status</Label>
+              <select
+                id="ev-payment-status"
+                className={selectClass}
+                value={paymentStatus}
+                onChange={(e) => setPaymentStatus(e.target.value as PaymentStatus)}
+              >
+                {PAYMENT_STATUS_VALUES.map((val) => (
+                  <option key={val} value={val}>
+                    {PAYMENT_STATUS_LABELS[val]}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-[11px] text-text-muted">
+                Tracks deposit and final settlement status.
+              </p>
+            </div>
           </div>
           <div>
             <Label htmlFor="ev-notes">Notes</Label>

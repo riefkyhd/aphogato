@@ -15,6 +15,7 @@ import { QuotationConfirmDialog } from "@/components/quotations/QuotationConfirm
 import { LaunchProjectDialog } from "@/components/quotations/LaunchProjectDialog";
 import { QuotationPageFrame } from "@/components/quotations/QuotationPageFrame";
 import { QuotationPreview } from "@/components/quotations/QuotationPreview";
+import { ServiceTagSelector } from "@/components/common/ServiceTagSelector";
 import { BackNavLink } from "@/components/BackNavLink";
 import { SalesSectionNav } from "@/components/sales/SalesSectionNav";
 import { Button } from "@/components/ui/Button";
@@ -757,6 +758,14 @@ export function QuotationClient({
                     ? "Full payment billed upon invoice delivery. No upfront booking deposit required."
                     : "Standard booking terms: 50% deposit required to secure date, 50% balance upon delivery."}
                 </p>
+              </div>
+
+              <div className="col-span-1 sm:col-span-2 pt-2 border-t border-border/70">
+                <Label className="mb-1.5 block">Services</Label>
+                <ServiceTagSelector
+                  value={draft.services || ["photography"]}
+                  onChange={(services) => updateDraft({ services })}
+                />
               </div>
 
               {draft.currency && draft.currency !== "IDR" ? (

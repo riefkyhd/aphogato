@@ -5,6 +5,10 @@ import {
   SHOOT_TYPES,
   validateTimeRange,
 } from "@/lib/calendar/calendarHelpers";
+import {
+  normalizePaymentStatus,
+  normalizeServices,
+} from "@/lib/calendar/serviceTags";
 import type { CalendarEvent, EventStatus, ShootType } from "@/lib/types";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -92,6 +96,8 @@ export function parseEventInsertBody(body: Record<string, unknown>): {
         typeof body.project_id === "string" && body.project_id
           ? body.project_id
           : null,
+      services: normalizeServices(body.services),
+      payment_status: normalizePaymentStatus(body.payment_status),
     },
   };
 }
@@ -170,6 +176,14 @@ export function parseEventPatchBody(body: Record<string, unknown>): {
       typeof body.project_id === "string" && body.project_id
         ? body.project_id
         : null;
+  }
+
+  if (body.services !== undefined) {
+    data.services = normalizeServices(body.services);
+  }
+
+  if (body.payment_status !== undefined) {
+    data.payment_status = normalizePaymentStatus(body.payment_status);
   }
 
   if (Object.keys(data).length === 0) {

@@ -9,6 +9,10 @@ import { getCloudinaryAccount } from "@/lib/cloudinary/accounts";
 import { getDefaultCloudinaryAccountId } from "@/lib/cloudinary/settings";
 import { isImageKitConfigured } from "@/lib/imagekit/config";
 import { normalizeStorageProvider } from "@/lib/storage/provider";
+import {
+  normalizePaymentStatus,
+  normalizeServices,
+} from "@/lib/calendar/serviceTags";
 
 export const runtime = "nodejs";
 
@@ -25,6 +29,8 @@ export async function POST(request: Request) {
     storage_provider?: string;
     gdrive_folder_id?: string;
     face_search_enabled?: unknown;
+    services?: unknown;
+    payment_status?: unknown;
   };
   try {
     body = await request.json();
@@ -105,22 +111,48 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: project, error: projectError } = await supabase
+  const projectInsertData: Record<string, unknown> = {
+    name,
+    client_name: clientName,
+    cloudinary_folder,
+    cloudinary_account,
+    storage_provider,
+    gdrive_folder_id: body.gdrive_folder_id?.trim() || null,
+    gallery_token,
+    status: "pending",
+    max_photo_selection: maxParsed.value,
+    face_search_enabled: faceSearchParsed.value,
+    services: normalizeServices(body.services),
+    payment_status: normalizePaymentStatus(body.payment_status),
+  };
+
+  let { data: project, error: projectError } = await supabase
     .from("projects")
-    .insert({
-      name,
-      client_name: clientName,
-      cloudinary_folder,
-      cloudinary_account,
-      storage_provider,
-      gdrive_folder_id: body.gdrive_folder_id?.trim() || null,
-      gallery_token,
-      status: "pending",
-      max_photo_selection: maxParsed.value,
-      face_search_enabled: faceSearchParsed.value,
-    })
+    .insert(projectInsertData)
     .select("id, cloudinary_folder")
     .single();
+
+  if (
+    projectError &&
+    (projectError.message?.includes("services") ||
+      projectError.message?.includes("payment_status") ||
+      projectError.message?.includes("schema cache") ||
+      projectError.code === "PGRST204" ||
+      projectError.code === "42703")
+  ) {
+    const fallbackData = { ...projectInsertData };
+    delete fallbackData.services;
+    delete fallbackData.payment_status;
+
+    const retry = await supabase
+      .from("projects")
+      .insert(fallbackData)
+      .select("id, cloudinary_folder")
+      .single();
+
+    project = retry.data;
+    projectError = retry.error;
+  }
 
   if (projectError || !project) {
     return NextResponse.json(

@@ -6,6 +6,10 @@ import { parseMaxPhotoSelectionInput } from "@/lib/photoSelectionLimit";
 import { renameProject } from "@/lib/renameProject";
 import { normalizeProject } from "@/lib/normalizeProject";
 import { parseFaceSearchEnabledInput } from "@/lib/faces/validation";
+import {
+  normalizePaymentStatus,
+  normalizeServices,
+} from "@/lib/calendar/serviceTags";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -26,6 +30,8 @@ export async function PATCH(
     gdrive_folder_id?: unknown;
     gdrive_finals_folder_id?: unknown;
     gdrive_finals_share_url?: unknown;
+    services?: unknown;
+    payment_status?: unknown;
   };
   try {
     body = await request.json();
@@ -40,6 +46,8 @@ export async function PATCH(
   const hasGDriveFolderId = body.gdrive_folder_id !== undefined;
   const hasGDriveFinalsFolderId = body.gdrive_finals_folder_id !== undefined;
   const hasGDriveFinalsShareUrl = body.gdrive_finals_share_url !== undefined;
+  const hasServices = body.services !== undefined;
+  const hasPaymentStatus = body.payment_status !== undefined;
 
   if (
     !hasName &&
@@ -48,7 +56,9 @@ export async function PATCH(
     !hasCoverPhotoId &&
     !hasGDriveFolderId &&
     !hasGDriveFinalsFolderId &&
-    !hasGDriveFinalsShareUrl
+    !hasGDriveFinalsShareUrl &&
+    !hasServices &&
+    !hasPaymentStatus
   ) {
     return NextResponse.json(
       {
@@ -158,18 +168,60 @@ export async function PATCH(
         : null;
   }
 
+  if (hasServices) {
+    updatePayload.services = normalizeServices(body.services);
+  }
+
+  if (hasPaymentStatus) {
+    updatePayload.payment_status = normalizePaymentStatus(body.payment_status);
+  }
+
   if (Object.keys(updatePayload).length === 0) {
     return NextResponse.json({ error: "No valid fields to update" }, {
       status: 400,
     });
   }
 
-  const { data: project, error } = await supabase
+  let { data: project, error } = await supabase
     .from("projects")
     .update(updatePayload)
     .eq("id", params.id)
     .select("*")
     .single();
+
+  if (
+    error &&
+    (error.message?.includes("services") ||
+      error.message?.includes("payment_status") ||
+      error.message?.includes("schema cache") ||
+      error.code === "PGRST204" ||
+      error.code === "42703")
+  ) {
+    const fallbackPayload = { ...updatePayload };
+    delete fallbackPayload.services;
+    delete fallbackPayload.payment_status;
+
+    if (Object.keys(fallbackPayload).length > 0) {
+      const retry = await supabase
+        .from("projects")
+        .update(fallbackPayload)
+        .eq("id", params.id)
+        .select("*")
+        .single();
+
+      project = retry.data;
+      error = retry.error;
+    } else {
+      // If only services or payment_status were sent and columns don't exist yet, return existing row
+      const { data: existing } = await supabase
+        .from("projects")
+        .select("*")
+        .eq("id", params.id)
+        .single();
+      project = existing;
+      error = null;
+    }
+  }
 
   if (error || !project) {
     return NextResponse.json(

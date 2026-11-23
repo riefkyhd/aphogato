@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { ModalShell } from "@/components/ui/ModalShell";
 import { formatMoney } from "@/lib/finance/formatMoney";
 import { quotationDownPayment } from "@/lib/quotations/calculations";
+import { ServiceBadges } from "@/components/common/ServiceBadges";
 import type { SavedQuotation } from "@/lib/quotations/db";
 
 export function LaunchProjectDialog({
@@ -125,6 +126,7 @@ export function LaunchProjectDialog({
               <p className="text-[14px] text-text-primary font-medium truncate">
                 {title}
               </p>
+              <ServiceBadges services={quote.services} size="xs" className="mt-1" />
               {quote.client_name ? (
                 <p className="text-[12px] text-text-secondary">
                   Client: {quote.client_name}

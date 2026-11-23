@@ -99,6 +99,9 @@ export async function POST(
   }
 
   // 4. Create Project
+  const shouldLogDp = body.log_dp !== false;
+  const initialPaymentStatus = shouldLogDp ? "deposit_paid" : "unpaid";
+
   const projectInsertData: Record<string, unknown> = {
     name: payloads.project.name,
     client_name: payloads.project.client_name,
@@ -109,6 +112,8 @@ export async function POST(
     status: "pending",
     max_photo_selection: payloads.project.max_photo_selection,
     quotation_id: quote.id,
+    services: payloads.project.services,
+    payment_status: initialPaymentStatus,
   };
 
   let project: { id: string } | null = null;
@@ -119,8 +124,10 @@ export async function POST(
     .single();
 
   if (projErr) {
-    // If quotation_id column doesn't exist yet, retry without it
+    // If quotation_id, services, or payment_status columns don't exist yet, retry without them
     delete projectInsertData.quotation_id;
+    delete projectInsertData.services;
+    delete projectInsertData.payment_status;
     const retry = await supabase
       .from("projects")
       .insert(projectInsertData)
@@ -141,7 +148,7 @@ export async function POST(
   const projectId = project.id;
 
   // 5. Create Calendar Event
-  const { data: event } = await supabase
+  const { data: eventData, error: eventErr } = await supabase
     .from("events")
     .insert({
       title: payloads.event.title,
@@ -152,14 +159,34 @@ export async function POST(
       status: payloads.event.status,
       notes: payloads.event.notes,
       project_id: projectId,
+      services: payloads.event.services,
+      payment_status: initialPaymentStatus,
     })
     .select("id")
     .single();
 
+  let event = eventData;
+  if (eventErr) {
+    const retryEvent = await supabase
+      .from("events")
+      .insert({
+        title: payloads.event.title,
+        client_name: payloads.event.client_name,
+        shoot_date: payloads.event.shoot_date,
+        shoot_time: payloads.event.shoot_time,
+        location: payloads.event.location,
+        status: payloads.event.status,
+        notes: payloads.event.notes,
+        project_id: projectId,
+      })
+      .select("id")
+      .single();
+    event = retryEvent.data;
+  }
+
   const eventId = event?.id ?? null;
 
   // 6. Log Down Payment in Income Entries
-  const shouldLogDp = body.log_dp !== false;
   let incomeId: string | null = null;
   const isCustomDp = typeof body.dp_amount === "number" && body.dp_amount >= 0;
   const isForeign = payloads.income.currency !== "IDR";

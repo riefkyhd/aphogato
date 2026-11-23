@@ -7,6 +7,12 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { PageLoadingOverlay } from "@/components/PageLoadingOverlay";
 import { ClientNameInput } from "@/components/clients/ClientNameInput";
+import { ServiceTagSelector } from "@/components/common/ServiceTagSelector";
+import {
+  PAYMENT_STATUS_LABELS,
+  PAYMENT_STATUS_VALUES,
+  type PaymentStatus,
+} from "@/lib/calendar/serviceTags";
 import { NewProjectCloudinaryField } from "@/components/cloudinary/NewProjectCloudinaryField";
 import { NewProjectStorageField } from "@/components/imagekit/NewProjectStorageField";
 import type { StorageProvider } from "@/lib/storage/provider";
@@ -23,6 +29,8 @@ export function NewProjectForm() {
   const { preferences, loaded: prefsLoaded } = useUserPreferencesContext();
   const [name, setName] = useState("");
   const [clientName, setClientName] = useState("");
+  const [services, setServices] = useState<string[]>(["photography"]);
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("unpaid");
   const [maxSelection, setMaxSelection] = useState(
     String(DEFAULT_MAX_PHOTO_SELECTION)
   );
@@ -57,6 +65,8 @@ export function NewProjectForm() {
         body: JSON.stringify({
           name,
           client_name: clientName,
+          services,
+          payment_status: paymentStatus,
           max_photo_selection: Number(maxSelection),
           cloudinary_account: cloudinaryAccount || undefined,
           storage_provider: storageProvider,
@@ -101,6 +111,28 @@ export function NewProjectForm() {
         value={clientName}
         onChange={setClientName}
       />
+      <div>
+        <Label className="mb-1.5 block">Services</Label>
+        <ServiceTagSelector
+          value={services}
+          onChange={setServices}
+        />
+      </div>
+      <div>
+        <Label htmlFor="payment-status">Initial payment status</Label>
+        <select
+          id="payment-status"
+          className="input-dark w-full"
+          value={paymentStatus}
+          onChange={(e) => setPaymentStatus(e.target.value as PaymentStatus)}
+        >
+          {PAYMENT_STATUS_VALUES.map((val) => (
+            <option key={val} value={val}>
+              {PAYMENT_STATUS_LABELS[val]}
+            </option>
+          ))}
+        </select>
+      </div>
       <NewProjectStorageField
         value={storageProvider}
         onChange={setStorageProvider}

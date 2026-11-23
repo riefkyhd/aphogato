@@ -5,11 +5,18 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { ArrowUpRight, CheckCircle2, FileText, MessageSquare, Receipt, User } from "lucide-react";
+import { ArrowUpRight, CheckCircle2, Clock, FileText, MessageSquare, Receipt, User } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { MaskedMoney } from "@/components/privacy/MaskedMoney";
 import { usePrivacyLockContext } from "@/components/privacy/PrivacyLockProvider";
 import { formatMoney } from "@/lib/finance/formatMoney";
+import { quotationDownPayment } from "@/lib/quotations/calculations";
+import { PaymentStatusBadge } from "@/components/common/PaymentStatusBadge";
+import { PaymentStatusButton } from "@/components/common/PaymentStatusButton";
+import {
+  PAYMENT_STATUS_LABELS,
+  type PaymentStatus,
+} from "@/lib/calendar/serviceTags";
 import type { CalendarEvent, IncomeEntry, Project } from "@/lib/types";
 import type { SavedQuotation } from "@/lib/quotations/db";
 
@@ -113,6 +120,21 @@ export function ProjectDealSection({
         return;
       }
 
+      await Promise.all([
+        fetch(`/api/projects/${project.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ payment_status: "paid_in_full" }),
+        }).catch(() => null),
+        event?.id
+          ? fetch(`/api/calendar/events/${event.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ payment_status: "paid_in_full" }),
+            }).catch(() => null)
+          : Promise.resolve(),
+      ]);
+
       toast.success("Balance marked as paid in full");
       setCurrentPaid(finalTotalIdr);
       setMarkingPaid(false);
@@ -121,6 +143,90 @@ export function ProjectDealSection({
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Network error");
       setMarkingPaid(false);
+    }
+  }
+
+  async function handleMarkDepositPaid() {
+    if (!quotation) return;
+    setMarkingPaid(true);
+
+    try {
+      const dpAmount = quotationDownPayment(quotation.line_items);
+      const expectedDp =
+        dpAmount > 0 ? dpAmount : Math.round(totalQuoted * 0.5);
+      const expectedDpIdr = isForeign
+        ? Math.round(expectedDp * lockedRate)
+        : expectedDp;
+
+      const res = await fetch("/api/finance/income", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          entry_date: format(new Date(), "yyyy-MM-dd"),
+          amount: expectedDpIdr,
+          currency: currency,
+          exchange_rate_to_idr: lockedRate,
+          exchange_rate_date: format(new Date(), "yyyy-MM-dd"),
+          original_amount: isForeign ? expectedDp : null,
+          client_name: project.client_name,
+          description: `DP: ${quotation.quote_number} (${project.name})`,
+          event_id: event?.id || undefined,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error ?? "Failed to mark deposit as paid");
+        setMarkingPaid(false);
+        return;
+      }
+
+      await Promise.all([
+        fetch(`/api/projects/${project.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ payment_status: "deposit_paid" }),
+        }).catch(() => null),
+        event?.id
+          ? fetch(`/api/calendar/events/${event.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ payment_status: "deposit_paid" }),
+            }).catch(() => null)
+          : Promise.resolve(),
+      ]);
+
+      toast.success("Deposit marked as paid");
+      setCurrentPaid(expectedDpIdr);
+      setMarkingPaid(false);
+      router.refresh();
+      if (onIncomeUpdated) onIncomeUpdated();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Network error");
+      setMarkingPaid(false);
+    }
+  }
+
+  async function handleDirectPaymentStatusChange(newStatus: PaymentStatus) {
+    try {
+      await Promise.all([
+        fetch(`/api/projects/${project.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ payment_status: newStatus }),
+        }),
+        event?.id
+          ? fetch(`/api/calendar/events/${event.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ payment_status: newStatus }),
+            })
+          : Promise.resolve(),
+      ]);
+      toast.success(`Payment marked as ${PAYMENT_STATUS_LABELS[newStatus]}`);
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Network error");
     }
   }
 
@@ -185,14 +291,17 @@ export function ProjectDealSection({
                   </span>
                 ) : null}
               </div>
-              <span className="text-[10px] uppercase tracking-label px-2 py-0.5 rounded-sm bg-status-delivered/10 text-status-delivered border border-status-delivered/20">
-                {isPaidInFull && totalQuoted > 0 ? "Paid Full" : "DP Logged"}
-              </span>
+              <PaymentStatusBadge
+                status={isPaidInFull && totalQuoted > 0 ? "paid_in_full" : currentPaid > 0 ? "deposit_paid" : "unpaid"}
+                size="xs"
+              />
             </div>
             <p className="mt-2 text-[12px] text-text-muted">
               {isPaidInFull
                 ? "Total package value paid in full"
-                : "Remaining balance due on shoot / delivery"}
+                : currentPaid > 0
+                  ? "Deposit paid. Remaining balance due on shoot / delivery."
+                  : "No payment received yet."}
             </p>
             <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
               <span className="text-[11px] text-text-muted">Balance Due</span>
@@ -249,18 +358,47 @@ export function ProjectDealSection({
                     )}
                   </div>
                 ) : null}
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  loading={markingPaid}
-                  disabled={markingPaid}
-                  onClick={() => void handleMarkBalancePaid()}
-                  className="w-full !text-[11px] !min-h-[44px] sm:!min-h-9 !py-1.5 uppercase tracking-label font-medium text-status-delivered border-status-delivered/30 hover:bg-status-delivered/10"
-                >
-                  <CheckCircle2 className="h-3.5 w-3.5 mr-1" aria-hidden />
-                  {currentPaid <= 0 ? "Mark Full Payment as Paid" : "Mark Balance Paid (Pelunasan)"}
-                </Button>
+                {currentPaid <= 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      loading={markingPaid}
+                      disabled={markingPaid}
+                      onClick={() => void handleMarkDepositPaid()}
+                      className="w-full !text-[11px] !min-h-[44px] sm:!min-h-9 !py-1.5 uppercase tracking-label font-medium text-amber-400 border-amber-500/30 hover:bg-amber-500/10"
+                    >
+                      <Clock className="h-3.5 w-3.5 mr-1" aria-hidden />
+                      Mark Deposit Paid
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      loading={markingPaid}
+                      disabled={markingPaid}
+                      onClick={() => void handleMarkBalancePaid()}
+                      className="w-full !text-[11px] !min-h-[44px] sm:!min-h-9 !py-1.5 uppercase tracking-label font-medium text-status-delivered border-status-delivered/30 hover:bg-status-delivered/10"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5 mr-1" aria-hidden />
+                      Mark Full Paid
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    loading={markingPaid}
+                    disabled={markingPaid}
+                    onClick={() => void handleMarkBalancePaid()}
+                    className="w-full !text-[11px] !min-h-[44px] sm:!min-h-9 !py-1.5 uppercase tracking-label font-medium text-status-delivered border-status-delivered/30 hover:bg-status-delivered/10"
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" aria-hidden />
+                    Mark Balance Paid (Pelunasan)
+                  </Button>
+                )}
               </div>
             ) : null}
           </div>
@@ -295,7 +433,7 @@ export function ProjectDealSection({
           <p className="mt-1 text-[12px] text-text-secondary max-w-md mx-auto leading-relaxed">
             This project was created directly without a quotation. You can create a new quote to lock in pricing and terms.
           </p>
-          <div className="mt-4">
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/dashboard/quotations"
               className="btn-secondary !text-[11px] !min-h-[44px] sm:!min-h-9 !px-4 !py-2 inline-flex items-center gap-1.5 uppercase tracking-label"
@@ -303,6 +441,10 @@ export function ProjectDealSection({
               <FileText className="h-3.5 w-3.5" aria-hidden />
               Create Quotation
             </Link>
+            <PaymentStatusButton
+              status={project.payment_status}
+              onChange={handleDirectPaymentStatusChange}
+            />
           </div>
         </div>
       )}

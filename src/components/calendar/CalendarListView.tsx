@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import { formatEventTimeRange } from "@/lib/calendar/calendarHelpers";
 import { EventStatusDot } from "@/components/calendar/EventStatusDot";
 import { ShootTypeBadge } from "@/components/calendar/ShootTypeBadge";
+import { ServiceBadges } from "@/components/common/ServiceBadges";
+import { PaymentStatusBadge } from "@/components/common/PaymentStatusBadge";
 import { Button } from "@/components/ui/Button";
 import type { CalendarEvent } from "@/lib/types";
 
@@ -108,8 +110,9 @@ export function CalendarListView({
                 </span>
 
                 <div className="min-w-0 flex flex-col gap-1">
-                  <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5 min-w-0">
                     <ShootTypeBadge shootType={ev.shoot_type} className="shrink-0" />
+                    <ServiceBadges services={ev.services} size="xs" className="shrink-0" />
                     <span className="min-w-0 text-[14px] text-text-primary truncate">
                       {ev.title}
                     </span>
@@ -121,11 +124,14 @@ export function CalendarListView({
                   ) : null}
                 </div>
 
-                <EventStatusDot
-                  status={ev.status}
-                  showLabel={false}
-                  className="shrink-0"
-                />
+                <div className="flex items-center gap-2 shrink-0">
+                  <PaymentStatusBadge status={ev.payment_status} size="xs" />
+                  <EventStatusDot
+                    status={ev.status}
+                    showLabel={false}
+                    className="shrink-0"
+                  />
+                </div>
               </button>
             );
           })}

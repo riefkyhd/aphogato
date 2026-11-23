@@ -47,13 +47,15 @@ export async function PATCH(
   // Graceful fallback if database migrations have not yet been applied
   if (
     error &&
-    (error.message?.includes("payment_terms") ||
+    (error.message?.includes("services") ||
+      error.message?.includes("payment_terms") ||
       error.message?.includes("currency") ||
       error.message?.includes("schema cache") ||
       error.code === "PGRST204" ||
       error.code === "42703")
   ) {
     const legacyPayload = { ...payload };
+    delete (legacyPayload as Record<string, unknown>).services;
     delete (legacyPayload as Record<string, unknown>).payment_terms;
     delete (legacyPayload as Record<string, unknown>).currency;
     delete (legacyPayload as Record<string, unknown>).exchange_rate_to_idr;

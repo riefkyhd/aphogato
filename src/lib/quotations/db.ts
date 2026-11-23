@@ -22,6 +22,7 @@ export type SavedQuotation = {
   exchange_rate_date: string | null;
   total_idr: number | null;
   payment_terms?: "split" | "full" | null;
+  services?: string[];
   client_name: string | null;
   client_phone: string | null;
   client_social: string | null;
@@ -89,6 +90,7 @@ export function draftToInsertPayload(
     exchange_rate_date: exchangeRateDate,
     total_idr: totalIdr,
     payment_terms: draft.paymentTerms || "split",
+    services: draft.services && draft.services.length > 0 ? draft.services : ["photography"],
     client_name: emptyToNull(draft.clientName),
     client_phone: emptyToNull(draft.clientPhone),
     client_social: emptyToNull(draft.clientSocial),
@@ -131,6 +133,9 @@ export function normalizeQuotation(row: Record<string, unknown>): SavedQuotation
       : null,
     total_idr: totalIdr,
     payment_terms: row.payment_terms === "full" ? "full" : "split",
+    services: Array.isArray(row.services)
+      ? (row.services as string[])
+      : ["photography"],
     client_name: row.client_name ? String(row.client_name) : null,
     client_phone: row.client_phone ? String(row.client_phone) : null,
     client_social: row.client_social ? String(row.client_social) : null,
@@ -165,6 +170,7 @@ export function savedQuotationToDraft(row: SavedQuotation): QuotationDraft {
     exchangeRateToIdr: row.exchange_rate_to_idr || 1,
     exchangeRateDate: row.exchange_rate_date || null,
     paymentTerms: row.payment_terms === "full" ? "full" : "split",
+    services: row.services || ["photography"],
     clientName: row.client_name ?? "",
     clientPhone: row.client_phone ?? "",
     clientSocial: row.client_social ?? "",

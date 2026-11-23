@@ -32,6 +32,7 @@ export function createBlankQuotation(quoteNumber = ""): QuotationDraft {
     exchangeRateToIdr: 1,
     exchangeRateDate: null,
     paymentTerms: "split",
+    services: ["photography"],
     clientName: "",
     clientPhone: "",
     clientSocial: "",

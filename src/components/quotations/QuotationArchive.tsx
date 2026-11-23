@@ -18,6 +18,7 @@ import { IconButton } from "@/components/ui/IconButton";
 import { Tooltip } from "@/components/ui/Tooltip";
 import type { SavedQuotation } from "@/lib/quotations/db";
 import { formatMoney } from "@/lib/finance/formatMoney";
+import { ServiceBadges } from "@/components/common/ServiceBadges";
 import { cn } from "@/lib/utils";
 
 function formatListDate(iso: string | null): string {
@@ -208,9 +209,12 @@ export function QuotationArchive({
                           onClick={() => handleSelect(item)}
                           className="min-w-0 flex-1 text-left px-4 py-3"
                         >
-                          <p className="text-[12px] text-text-primary truncate">
-                            {item.quote_number}
-                          </p>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <p className="text-[12px] text-text-primary truncate">
+                              {item.quote_number}
+                            </p>
+                            <ServiceBadges services={item.services} size="xs" />
+                          </div>
                           <p className="text-[13px] text-text-secondary mt-0.5 truncate">
                             {label}
                           </p>

@@ -85,25 +85,37 @@ export function CalendarMonthGrid({
                 </span>
               </div>
               <div className="flex flex-col gap-0.5 flex-1 min-h-0 overflow-hidden">
-                {visible.map((ev) => (
-                  <button
-                    key={ev.id}
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEventClick(ev);
-                    }}
-                    className="truncate rounded-sm px-1 py-0.5 text-[10px] text-white text-left hover:opacity-90"
-                    style={{
-                      background:
-                        SHOOT_TYPE_COLORS[ev.shoot_type] ??
-                        SHOOT_TYPE_COLORS.other,
-                    }}
-                    title={ev.title}
-                  >
-                    {ev.title}
-                  </button>
-                ))}
+                {visible.map((ev) => {
+                  const hasVideo = ev.services?.includes("videography");
+                  const hasPhoto = ev.services?.includes("photography") ?? true;
+                  const serviceLabel = hasPhoto && hasVideo ? "P+V" : hasVideo ? "VID" : "PHOTO";
+                  const isPaid = ev.payment_status === "paid_in_full";
+                  const isDp = ev.payment_status === "deposit_paid";
+
+                  return (
+                    <button
+                      key={ev.id}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEventClick(ev);
+                      }}
+                      className="truncate rounded-sm px-1 py-0.5 text-[10px] text-white text-left hover:opacity-90 flex items-center justify-between gap-1"
+                      style={{
+                        background:
+                          SHOOT_TYPE_COLORS[ev.shoot_type] ??
+                          SHOOT_TYPE_COLORS.other,
+                      }}
+                      title={`${ev.title} (${serviceLabel} · ${ev.payment_status || "unpaid"})`}
+                    >
+                      <span className="truncate">{ev.title}</span>
+                      <span className="shrink-0 text-[8px] font-mono opacity-80 uppercase tracking-tighter">
+                        {serviceLabel}
+                        {isPaid ? " ✓" : isDp ? " •" : ""}
+                      </span>
+                    </button>
+                  );
+                })}
                 {overflow > 0 && (
                   <span className="text-[9px] text-text-muted px-0.5">
                     +{overflow} more

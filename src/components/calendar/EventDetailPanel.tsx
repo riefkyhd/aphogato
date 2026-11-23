@@ -12,6 +12,10 @@ import { usePrivacyLockContext } from "@/components/privacy/PrivacyLockProvider"
 import { ConnectGoogleCalendarButton } from "@/components/calendar/ConnectGoogleCalendarButton";
 import { EventStatusDot } from "@/components/calendar/EventStatusDot";
 import { ShootTypeBadge } from "@/components/calendar/ShootTypeBadge";
+import { ServiceBadges } from "@/components/common/ServiceBadges";
+import { PaymentStatusBadge } from "@/components/common/PaymentStatusBadge";
+import { PaymentStatusButton } from "@/components/common/PaymentStatusButton";
+import type { PaymentStatus } from "@/lib/calendar/serviceTags";
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
 import { Tooltip } from "@/components/ui/Tooltip";
@@ -46,6 +50,7 @@ export function EventDetailPanel({
   financeEvents,
   financeProjects,
   onExpensesChanged,
+  onPaymentStatusChange,
   open,
   onEdit,
   onDelete,
@@ -61,6 +66,7 @@ export function EventDetailPanel({
   financeEvents: FinanceEventOption[];
   financeProjects: FinanceProjectOption[];
   onExpensesChanged: () => void;
+  onPaymentStatusChange?: (next: PaymentStatus) => Promise<void> | void;
   open: boolean;
   onEdit: () => void;
   onDelete: () => void;
@@ -357,6 +363,14 @@ export function EventDetailPanel({
                 </div>
                 <div>
                   <dt className="text-[11px] uppercase tracking-label text-text-muted mb-1">
+                    Services
+                  </dt>
+                  <dd>
+                    <ServiceBadges services={event.services} size="sm" />
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] uppercase tracking-label text-text-muted mb-1">
                     Schedule
                   </dt>
                   <dd className="text-text-primary">
@@ -493,6 +507,20 @@ export function EventDetailPanel({
                     ) : null}
                   </p>
                 )}
+
+                <div className="mt-3 pt-3 border-t border-border flex items-center justify-between gap-2">
+                  <span className="text-[11px] uppercase tracking-label text-text-muted">
+                    Payment Status
+                  </span>
+                  {onPaymentStatusChange ? (
+                    <PaymentStatusButton
+                      status={event.payment_status}
+                      onChange={(next) => onPaymentStatusChange(next)}
+                    />
+                  ) : (
+                    <PaymentStatusBadge status={event.payment_status} size="sm" />
+                  )}
+                </div>
               </div>
 
               {!financeLoading && (income || eventExpenses.length > 0) ? (

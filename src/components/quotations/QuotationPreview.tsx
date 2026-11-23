@@ -8,6 +8,7 @@ import type { QuotationDraft } from "@/lib/quotations/types";
 import { formatMoney } from "@/lib/finance/formatMoney";
 import { QUOTATION_BANK_ACCOUNTS } from "@/lib/quotations/payment";
 import { PayPalIcon, WiseIcon } from "@/components/icons/PaymentIcons";
+import { ServiceBadges } from "@/components/common/ServiceBadges";
 
 function formatTermsParagraph(text: string): string {
   return text.replace(/\s*\n+\s*/g, " ").trim();
@@ -136,7 +137,17 @@ export const QuotationPreview = forwardRef<
             {draft.projectTitle.trim() ? (
               <div className="col-span-2">
                 <MetaLabel>Event</MetaLabel>
-                <dd className="break-words m-0">{draft.projectTitle.trim()}</dd>
+                <dd className="break-words m-0 flex flex-wrap items-center justify-between gap-2">
+                  <span>{draft.projectTitle.trim()}</span>
+                  <ServiceBadges services={draft.services} size="xs" />
+                </dd>
+              </div>
+            ) : draft.services && draft.services.length > 0 ? (
+              <div className="col-span-2">
+                <MetaLabel>Services</MetaLabel>
+                <dd className="m-0">
+                  <ServiceBadges services={draft.services} size="xs" />
+                </dd>
               </div>
             ) : null}
             <div>

@@ -1,4 +1,8 @@
 import { normalizeMaxPhotoSelection } from "@/lib/photoSelectionLimit";
+import {
+  normalizePaymentStatus,
+  normalizeServices,
+} from "@/lib/calendar/serviceTags";
 import type { Project } from "@/lib/types";
 
 /** Ensures project rows from Supabase include a valid max_photo_selection. */
@@ -19,5 +23,7 @@ export function normalizeProject(row: Project | Record<string, unknown>): Projec
     gdrive_folder_id: p.gdrive_folder_id ?? null,
     gdrive_finals_folder_id: p.gdrive_finals_folder_id ?? null,
     gdrive_finals_share_url: p.gdrive_finals_share_url ?? null,
+    services: normalizeServices(p.services),
+    payment_status: normalizePaymentStatus(p.payment_status),
   };
 }
