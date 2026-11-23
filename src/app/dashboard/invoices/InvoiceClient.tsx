@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, FileDown, FileText } from "lucide-react";
+import { ArrowLeft, FileDown, FileText, Lock } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -11,6 +11,7 @@ import { InvoicePreview } from "@/components/invoices/InvoicePreview";
 import { QuotationPageFrame } from "@/components/quotations/QuotationPageFrame";
 import { DashboardMain } from "@/components/layout/DashboardShell";
 import { Button } from "@/components/ui/Button";
+import { FormActions } from "@/components/ui/FormActions";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import {
@@ -18,6 +19,8 @@ import {
   toolbarButtonClass,
 } from "@/components/ui/PageToolbarActions";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { usePrivacyLockContext } from "@/components/privacy/PrivacyLockProvider";
+import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
 import { format, parseISO } from "date-fns";
 import { formatMoney, parseMoneyInput } from "@/lib/finance/formatMoney";
 import { createBlankInvoice, DEFAULT_INVOICE_TERMS, DEFAULT_INVOICE_TERMS_FULL } from "@/lib/invoices/defaults";
@@ -47,6 +50,18 @@ export function InvoiceClient({
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromId = searchParams.get("from");
+
+  const { isLocked, requestUnlock } = usePrivacyLockContext();
+  useBodyScrollLock(isLocked);
+
+  useEffect(() => {
+    if (isLocked) {
+      requestUnlock({
+        title: "Unlock invoices",
+        description: "Enter your privacy PIN to view and export invoices.",
+      });
+    }
+  }, [isLocked, requestUnlock]);
 
   const [selectedQuotationId, setSelectedQuotationId] = useState<string | null>(
     null
@@ -119,10 +134,11 @@ export function InvoiceClient({
 
   return (
     <DashboardMain>
-      <BackNavLink
-        href="/dashboard"
-        className="inline-flex items-center gap-2 text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors mb-6"
-      >
+      <div className={cn(isLocked && "blur-md pointer-events-none select-none")}>
+        <BackNavLink
+          href="/dashboard"
+          className="inline-flex items-center gap-2 text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary transition-colors mb-6"
+        >
         <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
         Home
       </BackNavLink>
@@ -489,19 +505,69 @@ export function InvoiceClient({
           </QuotationPageFrame>
         </div>
       </div>
-      {selectedQuotation ? (
-        <div className="lg:hidden sticky bottom-0 -mx-4 sm:-mx-6 mt-8 border-t border-border bg-bg-primary/95 backdrop-blur px-4 sm:px-6 py-3 flex gap-2 z-30 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
-          <Button
-            type="button"
-            size="sm"
-            className="flex-1 !min-h-[44px]"
-            loading={exporting}
-            onClick={() => void handleExportPdf()}
-            aria-label="Export invoice PDF"
-          >
-            <FileDown className="h-3.5 w-3.5 mr-1.5" aria-hidden />
-            PDF
-          </Button>
+        {selectedQuotation ? (
+          <div className="lg:hidden sticky bottom-0 -mx-4 sm:-mx-6 mt-8 border-t border-border bg-bg-primary/95 backdrop-blur px-4 sm:px-6 py-3 flex gap-2 z-30 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+            <Button
+              type="button"
+              size="sm"
+              className="flex-1 !min-h-[44px]"
+              loading={exporting}
+              onClick={() => void handleExportPdf()}
+              aria-label="Export invoice PDF"
+            >
+              <FileDown className="h-3.5 w-3.5 mr-1.5" aria-hidden />
+              PDF
+            </Button>
+          </div>
+        ) : null}
+      </div>
+
+      {isLocked ? (
+        <div
+          className="fixed inset-x-0 bottom-0 top-14 md:top-[60px] z-[45] flex items-center justify-center p-6 pb-[max(1rem,env(safe-area-inset-bottom))]"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="invoice-lock-title"
+        >
+          <div
+            className="absolute inset-0 bg-bg-primary/80 backdrop-blur-sm"
+            aria-hidden
+          />
+          <div className="relative max-w-sm w-full border border-border bg-bg-elevated p-6 text-center shadow-lg">
+            <Lock className="h-8 w-8 mx-auto text-text-muted mb-4" aria-hidden />
+            <h2
+              id="invoice-lock-title"
+              className="text-lg font-light tracking-[0.05em] uppercase"
+            >
+              Invoice locked
+            </h2>
+            <p className="mt-2 text-[13px] text-text-secondary">
+              Enter your privacy PIN to view and export invoices.
+            </p>
+            <FormActions className="mt-5 flex-col sm:flex-row sm:[&_button]:flex-1">
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full"
+                onClick={() => router.push("/dashboard")}
+              >
+                Back to Home
+              </Button>
+              <Button
+                type="button"
+                className="w-full"
+                onClick={() =>
+                  requestUnlock({
+                    title: "Unlock invoices",
+                    description:
+                      "Enter your privacy PIN to view and export invoices.",
+                  })
+                }
+              >
+                Enter PIN
+              </Button>
+            </FormActions>
+          </div>
         </div>
       ) : null}
     </DashboardMain>

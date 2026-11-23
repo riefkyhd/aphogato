@@ -105,6 +105,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 
+  if (data?.id && payload.project_id) {
+    try {
+      await supabase
+        .from("projects")
+        .update({ quotation_id: data.id })
+        .eq("id", payload.project_id)
+        .is("quotation_id", null);
+    } catch {
+      // Non-fatal if project link update fails
+    }
+  }
+
   return NextResponse.json(
     normalizeQuotation(data as Record<string, unknown>)
   );

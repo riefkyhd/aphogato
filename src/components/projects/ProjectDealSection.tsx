@@ -243,7 +243,7 @@ export function ProjectDealSection({
                 {quotation.quote_number}
               </span>
               <Link
-                href="/dashboard/quotations"
+                href={`/dashboard/quotations?id=${quotation.id}`}
                 className="text-[11px] uppercase tracking-label text-text-secondary hover:text-text-primary inline-flex items-center gap-1"
               >
                 View
@@ -435,7 +435,7 @@ export function ProjectDealSection({
           </p>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
             <Link
-              href="/dashboard/quotations"
+              href={`/dashboard/quotations?project_id=${project.id}&client=${encodeURIComponent(project.client_name || "")}&title=${encodeURIComponent(project.name)}`}
               className="btn-secondary !text-[11px] !min-h-[44px] sm:!min-h-9 !px-4 !py-2 inline-flex items-center gap-1.5 uppercase tracking-label"
             >
               <FileText className="h-3.5 w-3.5" aria-hidden />

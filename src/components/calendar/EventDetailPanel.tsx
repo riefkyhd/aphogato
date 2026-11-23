@@ -5,7 +5,7 @@ import { format, parseISO } from "date-fns";
 import { useTouchLike } from "@/hooks/useTouchLike";
 import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
 import { formatSyncedAgo } from "@/lib/calendar/parseSyncedAt";
-import { Eye, EyeOff, X } from "lucide-react";
+import { Eye, EyeOff, FileText, Plus, Receipt, X } from "lucide-react";
 import Link from "next/link";
 import { MaskedMoneyText } from "@/components/privacy/MaskedMoney";
 import { usePrivacyLockContext } from "@/components/privacy/PrivacyLockProvider";
@@ -35,7 +35,15 @@ import { cn } from "@/lib/utils";
 const DISMISS_DRAG_PX = 72;
 const AXIS_LOCK_PX = 10;
 
-export type CalendarProject = { id: string; name: string };
+export type CalendarProject = {
+  id: string;
+  name: string;
+  quotation_id?: string | null;
+  quotation?: {
+    id: string;
+    quote_number: string;
+  } | null;
+};
 
 type DragMode = "none" | "pending" | "horizontal" | "vertical";
 
@@ -411,6 +419,47 @@ export function EventDetailPanel({
                     >
                       Open shoot workspace →
                     </Link>
+                  </div>
+                )}
+                {FEATURES.quotations && (
+                  <div>
+                    <dt className="text-[11px] uppercase tracking-label text-text-muted mb-1">
+                      Quotation & Invoice
+                    </dt>
+                    <dd className="mt-1 flex flex-wrap items-center gap-2">
+                      {linkedProject?.quotation ? (
+                        <>
+                          <Link
+                            href={`/dashboard/quotations?id=${linkedProject.quotation.id}`}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm border border-border bg-bg-secondary hover:bg-bg-elevated text-text-primary text-[11px] uppercase tracking-label transition-colors"
+                          >
+                            <FileText className="h-3.5 w-3.5 text-text-muted" aria-hidden />
+                            <span>Quote {linkedProject.quotation.quote_number}</span>
+                          </Link>
+                          {FEATURES.invoices && (
+                            <Link
+                              href={`/dashboard/invoices?from=${linkedProject.quotation.id}`}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm border border-border bg-bg-secondary hover:bg-bg-elevated text-text-primary text-[11px] uppercase tracking-label transition-colors"
+                            >
+                              <Receipt className="h-3.5 w-3.5 text-text-muted" aria-hidden />
+                              <span>Invoice</span>
+                            </Link>
+                          )}
+                        </>
+                      ) : (
+                        <Link
+                          href={
+                            event.project_id
+                              ? `/dashboard/quotations?project_id=${event.project_id}&client=${encodeURIComponent(event.client_name || "")}&title=${encodeURIComponent(event.title)}`
+                              : `/dashboard/quotations?client=${encodeURIComponent(event.client_name || "")}&title=${encodeURIComponent(event.title)}`
+                          }
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm border border-dashed border-border hover:border-text-secondary bg-transparent hover:bg-bg-secondary text-text-secondary hover:text-text-primary text-[11px] uppercase tracking-label transition-colors"
+                        >
+                          <Plus className="h-3.5 w-3.5" aria-hidden />
+                          <span>Create Quotation</span>
+                        </Link>
+                      )}
+                    </dd>
                   </div>
                 )}
                 {event.notes && (

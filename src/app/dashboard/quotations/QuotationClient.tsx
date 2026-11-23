@@ -1,12 +1,16 @@
 "use client";
 
-import { ArrowLeft, ArrowUpRight, FileDown, Plus, Receipt, Rocket, RotateCcw, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, FileDown, Lock, Plus, Receipt, Rocket, RotateCcw, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { FEATURES } from "@/lib/features";
 import { DashboardMain } from "@/components/layout/DashboardShell";
+import { usePrivacyLockContext } from "@/components/privacy/PrivacyLockProvider";
+import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
+import { FormActions } from "@/components/ui/FormActions";
 import { ClientEventTools } from "@/components/quotations/ClientEventTools";
 import { ClientNameInput } from "@/components/clients/ClientNameInput";
 import { buildCalendarPrefillUrl } from "@/lib/quotations/calendarPrefill";
@@ -83,6 +87,25 @@ export function QuotationClient({
   priceListItems: PriceListItem[];
   initialSavedQuotations: SavedQuotation[];
 }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryQuoteId = searchParams.get("id");
+  const queryProjectId = searchParams.get("project_id");
+  const queryClient = searchParams.get("client");
+  const queryTitle = searchParams.get("title");
+
+  const { isLocked, requestUnlock } = usePrivacyLockContext();
+  useBodyScrollLock(isLocked);
+
+  useEffect(() => {
+    if (isLocked) {
+      requestUnlock({
+        title: "Unlock quotations",
+        description: "Enter your privacy PIN to view and manage quotations.",
+      });
+    }
+  }, [isLocked, requestUnlock]);
+
   const [draft, setDraft] = useState<QuotationDraft>(() =>
     createBlankQuotation()
   );
@@ -160,6 +183,39 @@ export function QuotationClient({
       setHydrated(true);
     }
   }, [initialSavedQuotations]);
+
+  const deepLinkHandledRef = useRef(false);
+  useEffect(() => {
+    if (!hydrated || deepLinkHandledRef.current) return;
+    if (queryQuoteId) {
+      const match = savedQuotations.find((q) => q.id === queryQuoteId);
+      if (match) {
+        deepLinkHandledRef.current = true;
+        loadSavedItem(match);
+        return;
+      }
+    }
+    if (queryProjectId || queryClient || queryTitle) {
+      deepLinkHandledRef.current = true;
+      setSavedId(null);
+      setRevisionParentId(null);
+      setDraftRevision(0);
+      setDraft((prev) => ({
+        ...prev,
+        projectId: queryProjectId || prev.projectId,
+        clientName: queryClient || prev.clientName,
+        projectTitle: queryTitle || prev.projectTitle,
+      }));
+    }
+  }, [
+    hydrated,
+    queryQuoteId,
+    queryProjectId,
+    queryClient,
+    queryTitle,
+    savedQuotations,
+    loadSavedItem,
+  ]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -494,7 +550,8 @@ export function QuotationClient({
 
   return (
     <DashboardMain>
-      <QuotationConfirmDialog
+      <div className={cn(isLocked && "blur-md pointer-events-none select-none")}>
+        <QuotationConfirmDialog
         open={discardAction !== null}
         title="Discard current draft?"
         description={discardDescription}
@@ -1209,6 +1266,56 @@ export function QuotationClient({
         quote={launchTarget}
         onClose={() => setLaunchTarget(null)}
       />
+      </div>
+
+      {isLocked ? (
+        <div
+          className="fixed inset-x-0 bottom-0 top-14 md:top-[60px] z-[45] flex items-center justify-center p-6 pb-[max(1rem,env(safe-area-inset-bottom))]"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="quotation-lock-title"
+        >
+          <div
+            className="absolute inset-0 bg-bg-primary/80 backdrop-blur-sm"
+            aria-hidden
+          />
+          <div className="relative max-w-sm w-full border border-border bg-bg-elevated p-6 text-center shadow-lg">
+            <Lock className="h-8 w-8 mx-auto text-text-muted mb-4" aria-hidden />
+            <h2
+              id="quotation-lock-title"
+              className="text-lg font-light tracking-[0.05em] uppercase"
+            >
+              Quotation locked
+            </h2>
+            <p className="mt-2 text-[13px] text-text-secondary">
+              Enter your privacy PIN to view and manage quotations.
+            </p>
+            <FormActions className="mt-5 flex-col sm:flex-row sm:[&_button]:flex-1">
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full"
+                onClick={() => router.push("/dashboard")}
+              >
+                Back to Home
+              </Button>
+              <Button
+                type="button"
+                className="w-full"
+                onClick={() =>
+                  requestUnlock({
+                    title: "Unlock quotations",
+                    description:
+                      "Enter your privacy PIN to view and manage quotations.",
+                  })
+                }
+              >
+                Enter PIN
+              </Button>
+            </FormActions>
+          </div>
+        </div>
+      ) : null}
     </DashboardMain>
   );
 }

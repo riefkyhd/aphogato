@@ -21,6 +21,7 @@ export default async function CalendarPage() {
   const [
     eventsRes,
     projectsRes,
+    quotationsRes,
     isGoogleConnected,
     isOAuthConfigured,
     clientsRes,
@@ -33,8 +34,11 @@ export default async function CalendarPage() {
       .order("shoot_date", { ascending: true }),
     supabase
       .from("projects")
-      .select("id, name")
+      .select("id, name, quotation_id")
       .order("name", { ascending: true }),
+    supabase
+      .from("quotations")
+      .select("id, quote_number, project_id"),
     isGoogleCalendarConnected(),
     Promise.resolve(isGoogleOAuthConfigured()),
     supabase.from("clients").select("*").order("name", { ascending: true }),
@@ -46,7 +50,29 @@ export default async function CalendarPage() {
   ]);
 
   const initialEvents = (eventsRes.data ?? []) as CalendarEvent[];
-  const projects = projectsRes.data ?? [];
+  const rawProjects = projectsRes.data ?? [];
+  const rawQuotations = quotationsRes.data ?? [];
+
+  const quoteByProj = new Map<string, { id: string; quote_number: string }>();
+  const quoteById = new Map<string, { id: string; quote_number: string }>();
+  for (const q of rawQuotations) {
+    const qObj = { id: String(q.id), quote_number: String(q.quote_number) };
+    quoteById.set(qObj.id, qObj);
+    if (q.project_id) {
+      quoteByProj.set(String(q.project_id), qObj);
+    }
+  }
+
+  const projects = rawProjects.map((p) => {
+    const pQuoteId = p.quotation_id ? String(p.quotation_id) : null;
+    const quotation = (pQuoteId ? quoteById.get(pQuoteId) : null) ?? quoteByProj.get(p.id) ?? null;
+    return {
+      id: p.id,
+      name: p.name,
+      quotation_id: pQuoteId,
+      quotation,
+    };
+  });
 
   const rawClients = ((clientsRes.data ?? []) as Client[]).map((row) => ({
     ...row,

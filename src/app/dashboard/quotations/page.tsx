@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { QuotationClient } from "@/app/dashboard/quotations/QuotationClient";
 import { FEATURES } from "@/lib/features";
 import { FeatureDisabled } from "@/components/FeatureDisabled";
@@ -45,9 +46,11 @@ export default async function QuotationsPage() {
   );
 
   return (
-    <QuotationClient
-      priceListItems={items}
-      initialSavedQuotations={savedQuotations}
-    />
+    <Suspense fallback={null}>
+      <QuotationClient
+        priceListItems={items}
+        initialSavedQuotations={savedQuotations}
+      />
+    </Suspense>
   );
 }

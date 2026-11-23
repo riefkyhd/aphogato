@@ -5,7 +5,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { FEATURES } from "@/lib/features";
 import { DashboardMain } from "@/components/layout/DashboardShell";
 import { BackNavLink } from "@/components/BackNavLink";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText, Plus, Receipt } from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { DeletePhotosDialog } from "@/components/DeletePhotosDialog";
 import { DeleteProjectDialog } from "@/components/DeleteProjectDialog";
@@ -348,6 +349,39 @@ export function ProjectDetailClient({
                 <StatusDot status={projectState.status as ProjectStatus} />
                 <ServiceBadges services={projectState.services} size="sm" />
                 <PaymentStatusBadge status={projectState.payment_status} size="sm" />
+                {FEATURES.quotations && (
+                  initialQuotation ? (
+                    <div className="inline-flex items-center gap-1.5">
+                      <Link
+                        href={`/dashboard/quotations?id=${initialQuotation.id}`}
+                        className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm border border-border bg-bg-secondary hover:bg-bg-elevated text-text-primary text-[10px] uppercase tracking-label transition-colors"
+                        title="View quotation"
+                      >
+                        <FileText className="h-3 w-3 text-text-muted" aria-hidden />
+                        <span>Quote {initialQuotation.quote_number}</span>
+                      </Link>
+                      {FEATURES.invoices && (
+                        <Link
+                          href={`/dashboard/invoices?from=${initialQuotation.id}`}
+                          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm border border-border bg-bg-secondary hover:bg-bg-elevated text-text-primary text-[10px] uppercase tracking-label transition-colors"
+                          title="View invoice"
+                        >
+                          <Receipt className="h-3 w-3 text-text-muted" aria-hidden />
+                          <span>Invoice</span>
+                        </Link>
+                      )}
+                    </div>
+                  ) : (
+                    <Link
+                      href={`/dashboard/quotations?project_id=${projectState.id}&client=${encodeURIComponent(projectState.client_name || "")}&title=${encodeURIComponent(projectState.name)}`}
+                      className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm border border-dashed border-border hover:border-text-secondary bg-transparent hover:bg-bg-secondary text-text-secondary hover:text-text-primary text-[10px] uppercase tracking-label transition-colors"
+                      title="Create quotation for this project"
+                    >
+                      <Plus className="h-3 w-3" aria-hidden />
+                      <span>Create Quotation</span>
+                    </Link>
+                  )
+                )}
                 <span>
                   {photos.length} photo{photos.length === 1 ? "" : "s"}
                 </span>
