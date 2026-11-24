@@ -343,7 +343,7 @@ export function ProjectDetailClient({
                 {projectState.name}
               </h1>
               <p className="mt-1 text-text-secondary text-[14px]">
-                {projectState.client_name ?? "—"}
+                {projectState.client_name ?? "-"}
               </p>
               <div className="mt-2.5 flex flex-wrap items-center gap-2.5 text-[11px] uppercase tracking-label text-text-muted">
                 <StatusDot status={projectState.status as ProjectStatus} />

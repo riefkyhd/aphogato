@@ -95,7 +95,7 @@ export async function exportCalendarExcel(
     const [startCell] = kpi.cell.split(":");
     const c = sheet.getCell(startCell);
     c.value = kpi.label;
-    c.font = { name: "Helvetica", size: 8, bold: true, color: { argb: "FF71717A" } };
+    c.font = { name: "Helvetica", size: 8, bold: true, color: { argb: "FF3F3F46" } };
     c.alignment = { vertical: "middle", horizontal: "center" };
     c.fill = {
       type: "pattern",

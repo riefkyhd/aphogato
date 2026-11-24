@@ -20,9 +20,9 @@ const config: Config = {
           hover: "#3a3a3a",
         },
         text: {
-          primary: "#f0f0f0",
-          secondary: "#888888",
-          muted: "#555555",
+          primary: "#f4f4f5",
+          secondary: "#d4d4d8",
+          muted: "#a1a1aa",
         },
         accent: {
           DEFAULT: "#f0f0f0",

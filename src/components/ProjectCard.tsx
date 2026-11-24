@@ -65,7 +65,7 @@ export function ProjectCard({ project }: { project: ProjectCardData }) {
         </div>
         <div className="mt-1 flex items-center justify-between">
           <span className="text-[12px] text-text-secondary">
-            {project.client_name ?? "—"}
+            {project.client_name ?? "-"}
           </span>
           <StatusDot status={(project.status as ProjectStatus) ?? "pending"} />
         </div>

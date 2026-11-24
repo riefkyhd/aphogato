@@ -9,7 +9,7 @@ import type { PriceListItem } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Quotation — Gallery of Muhammad Hadid",
+  title: "Quotation | Gallery of Muhammad Hadid",
 };
 
 function normalizeItem(row: Record<string, unknown>): PriceListItem {

@@ -71,7 +71,7 @@ export function ProjectRename({
       }
 
       if (json.folderRenamed) {
-        toast.success("Project renamed — Cloudinary folder updated");
+        toast.success("Project renamed (Cloudinary folder updated)");
       } else {
         toast.success("Project name saved");
       }

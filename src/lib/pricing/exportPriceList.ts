@@ -23,7 +23,7 @@ export function formatPriceListCsv(items: PriceListItem[]): string {
   ];
 
   if (active.length === 0) {
-    lines.push(csvRow(["—", "—", "—", "—"]));
+    lines.push(csvRow(["-", "-", "-", "-"]));
   } else {
     for (const item of active) {
       lines.push(

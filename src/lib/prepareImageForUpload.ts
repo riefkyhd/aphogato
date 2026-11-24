@@ -84,7 +84,7 @@ async function loadImageBitmap(file: File, signal?: AbortSignal): Promise<ImageB
     return await createImageBitmap(file);
   } catch {
     throw new Error(
-      `${file.name}: could not read image — try JPEG or PNG, or export HEIC from your device first`
+      `${file.name}: could not read image, try JPEG or PNG, or export HEIC from your device first`
     );
   }
 }
@@ -134,7 +134,7 @@ async function compressImageFile(
     }
 
     throw new Error(
-      `${file.name}: could not compress below 10MB — try a smaller image`
+      `${file.name}: could not compress below 10MB: try a smaller image`
     );
   } finally {
     bitmap.close();
@@ -165,7 +165,7 @@ export async function prepareImageForUpload(
 
   if (mimeType === "image/gif") {
     throw new Error(
-      `${file.name}: GIF is too large (max 10MB for upload) — try a smaller file`
+      `${file.name}: GIF is too large (max 10MB for upload): try a smaller file`
     );
   }
 

@@ -53,7 +53,7 @@ export function ImageKitSettings() {
           </h2>
           <p className="mt-2 max-w-2xl text-[13px] text-text-secondary leading-relaxed">
             Optional second storage provider. Choose ImageKit when creating a new
-            project — existing Cloudinary projects stay on Cloudinary.
+            project (existing Cloudinary projects stay on Cloudinary).
           </p>
         </div>
       </div>

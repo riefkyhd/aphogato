@@ -127,7 +127,7 @@ export function LinkedExpensesBlock({
       {expenses.length === 0 ? (
         <p className="text-[12px] text-text-secondary">
           {linkedContext
-            ? "Add costs above — category and amount are enough."
+            ? "Add costs above: category and amount are enough."
             : "No costs linked yet."}
         </p>
       ) : (

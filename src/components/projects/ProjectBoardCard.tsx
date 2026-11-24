@@ -127,7 +127,7 @@ export function ProjectBoardCard({
               {project.name}
             </p>
             <p className="mt-0.5 text-[11px] text-text-secondary truncate">
-              {project.client_name ?? "—"}
+              {project.client_name ?? "-"}
             </p>
             <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] uppercase tracking-label text-text-muted">
               <span>{project.photo_count} photos</span>

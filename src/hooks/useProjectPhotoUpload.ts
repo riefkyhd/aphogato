@@ -78,7 +78,7 @@ export function useProjectPhotoUpload(
         if (cancelled) {
           toast.info(
             uploaded > 0
-              ? `Upload cancelled — ${uploaded} photo${uploaded === 1 ? "" : "s"} kept`
+              ? `Upload cancelled: ${uploaded} photo${uploaded === 1 ? "" : "s"} kept`
               : "Upload cancelled"
           );
         } else {
@@ -91,7 +91,7 @@ export function useProjectPhotoUpload(
             toast.warning(
               errors.length === 1
                 ? errors[0]
-                : `${errors.length} files failed — ${errors.slice(0, 2).join("; ")}${errors.length > 2 ? "…" : ""}`
+                : `${errors.length} files failed: ${errors.slice(0, 2).join("; ")}${errors.length > 2 ? "…" : ""}`
             );
           }
           if (uploaded === 0 && errors.length === 0) {
@@ -132,7 +132,7 @@ export function useProjectPhotoUpload(
         const waiting = Math.max(0, queueRef.current.length - 1);
         updateQueuedBatches(waiting);
         toast.info(
-          `Added ${files.length} photo${files.length === 1 ? "" : "s"} — ${waiting} batch${waiting === 1 ? "" : "es"} queued`
+          `Added ${files.length} photo${files.length === 1 ? "" : "s"}: ${waiting} batch${waiting === 1 ? "" : "es"} queued`
         );
       }
 

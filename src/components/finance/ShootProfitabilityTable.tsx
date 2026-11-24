@@ -78,7 +78,7 @@ export function ShootProfitabilityTable({
                   {row.income > 0 ? (
                     <MaskedMoney amount={row.income} visible={showAmounts} />
                   ) : (
-                    "—"
+                    "-"
                   )}
                 </dd>
               </div>
@@ -97,7 +97,7 @@ export function ShootProfitabilityTable({
                 <dd className="mt-0.5 tabular-nums text-text-secondary">
                   {row.marginPercent !== null && showAmounts
                     ? `${Math.round(row.marginPercent)}%`
-                    : "—"}
+                    : "-"}
                 </dd>
               </div>
             </dl>
@@ -130,13 +130,13 @@ export function ShootProfitabilityTable({
                 <td className="px-4 py-3 text-text-secondary whitespace-nowrap">
                   {row.date
                     ? format(parseISO(row.date), "d MMM yyyy")
-                    : "—"}
+                    : "-"}
                 </td>
                 <td className="px-4 py-3 text-right tabular-nums text-status-delivered">
                   {row.income > 0 ? (
                     <MaskedMoney amount={row.income} visible={showAmounts} />
                   ) : (
-                    "—"
+                    "-"
                   )}
                 </td>
                 <td className="px-4 py-3 text-right tabular-nums text-status-editing">
@@ -154,8 +154,8 @@ export function ShootProfitabilityTable({
                   {row.marginPercent !== null && showAmounts
                     ? `${Math.round(row.marginPercent)}%`
                     : row.income > 0
-                      ? "—"
-                      : "—"}
+                      ? "-"
+                      : "-"}
                 </td>
               </tr>
             ))}

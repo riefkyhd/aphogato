@@ -332,7 +332,7 @@ export function EventFormModal({
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
             >
-              <option value="">— No project —</option>
+              <option value="">(No project)</option>
               {projects.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}

@@ -3,10 +3,10 @@ import { NextResponse } from "next/server";
 export function GET() {
   return NextResponse.json(
     {
-      name: "aphogato — Muhammad Hadid Photography admin",
+      name: "aphogato: Muhammad Hadid Photography admin",
       short_name: "aphogato",
       description:
-        "Admin app for Muhammad Hadid Photography — galleries, clients, calendar, finance, quotations.",
+        "Admin app for Muhammad Hadid Photography: galleries, clients, calendar, finance, quotations.",
       start_url: "/dashboard",
       scope: "/",
       display: "standalone",

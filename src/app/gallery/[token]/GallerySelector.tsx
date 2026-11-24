@@ -606,7 +606,7 @@ export function GallerySelector({
             ) : isSelectionLocked ? (
               <div className="rounded-sm border border-border bg-bg-secondary/60 px-4 py-3">
                 <p className="text-[13px] text-text-primary leading-relaxed">
-                  Selection confirmed ({selectedCount} photo{selectedCount === 1 ? "" : "s"}). Editing is in progress — picks are locked.
+                  Selection confirmed ({selectedCount} photo{selectedCount === 1 ? "" : "s"}). Editing is in progress: picks are locked.
                 </p>
               </div>
             ) : isUpdateFlow && selectedCount > 0 ? (
@@ -709,7 +709,7 @@ export function GallerySelector({
               faceSearch.enabled &&
               faceSearch.status === "partial" ? (
                 <p className="mb-3 text-[12px] text-status-editing leading-relaxed">
-                  Face search is still indexing — results may be limited until
+                  Face search is still indexing: results may be limited until
                   most photos are indexed.
                 </p>
               ) : null}

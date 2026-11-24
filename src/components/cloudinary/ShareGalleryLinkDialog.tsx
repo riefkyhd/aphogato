@@ -55,12 +55,12 @@ function ShareCoverPreview({ src }: { src: string }) {
 function faceSearchShareLine(faceSearch: FaceSearchStatus): string | null {
   if (!faceSearch.enabled) return null;
   if (faceSearch.status === "ready") {
-    return "Face search: on — clients can filter photos by tapping their face.";
+    return "Face search: on. Clients can filter photos by tapping their face.";
   }
   if (faceSearch.status === "partial") {
-    return "Face search: indexing incomplete — clients may see limited results.";
+    return "Face search: indexing incomplete. Clients may see limited results.";
   }
-  return "Face search: on — not indexed yet; upload photos to enable client filtering.";
+  return "Face search: on (not indexed yet; upload photos to enable client filtering).";
 }
 
 function usageCalloutClass(level: CloudinaryAccountUsagePublic["level"]): string {

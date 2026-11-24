@@ -123,7 +123,7 @@ export function HomeClient({ data }: { data: HomeData }) {
           Home
         </h1>
         <p className="mt-2 text-[13px] text-text-secondary text-center sm:text-left">
-          Your day at a glance — shoots, money, and quotes.
+          Your day at a glance: shoots, money, and quotes.
         </p>
         <p className="mt-2 hidden sm:block text-[11px] uppercase tracking-label text-text-muted">
           Press{" "}
@@ -448,7 +448,7 @@ export function HomeClient({ data }: { data: HomeData }) {
           </div>
           {data.attentionProjects.length === 0 ? (
             <p className="text-[13px] text-text-secondary leading-relaxed">
-              You&apos;re all caught up — no galleries in the selection or
+              You&apos;re all caught up: no galleries in the selection or
               editing stage right now.
             </p>
           ) : (
@@ -464,7 +464,7 @@ export function HomeClient({ data }: { data: HomeData }) {
                         {project.name}
                       </p>
                       <p className="text-[11px] text-text-muted truncate mt-0.5">
-                        {project.client_name ?? "—"}
+                        {project.client_name ?? "-"}
                       </p>
                     </div>
                     <StatusDot status={project.status as ProjectStatus} />
@@ -507,7 +507,7 @@ export function HomeClient({ data }: { data: HomeData }) {
                           {project.name}
                         </p>
                         <p className="text-[11px] text-text-muted truncate mt-0.5">
-                          {project.client_name ?? "—"}
+                          {project.client_name ?? "-"}
                         </p>
                       </div>
                     </div>

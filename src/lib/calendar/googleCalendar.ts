@@ -284,7 +284,7 @@ export async function exchangeCodeForRefreshToken(
     throw new Error(
       json.error_description ??
         json.error ??
-        "No refresh token received — try disconnecting and reconnecting with consent"
+        "No refresh token received: try disconnecting and reconnecting with consent"
     );
   }
 

@@ -68,7 +68,7 @@ export function ClientSocialAccountsEditor({
       <Label>Social accounts</Label>
       {accounts.length === 0 ? (
         <p className="text-[12px] text-text-muted">
-          Add Instagram or Threads usernames — links open their profile.
+          Add Instagram or Threads usernames. Links open their profile.
         </p>
       ) : (
         <ul className="space-y-3">

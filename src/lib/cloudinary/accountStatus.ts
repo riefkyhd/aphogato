@@ -20,11 +20,11 @@ export const MEDIA_UNAVAILABLE_COVER_LABEL = "Cover unavailable";
 
 /** Dashboard / admin gallery banner when many images fail to load. */
 export const MEDIA_UNAVAILABLE_BANNER_ADMIN =
-  "Photos can’t load — the Cloudinary account for this project appears to be disabled or inactive. Re-enable it in the Cloudinary console to restore delivery.";
+  "Photos can’t load: the Cloudinary account for this project appears to be disabled or inactive. Re-enable it in the Cloudinary console to restore delivery.";
 
 /** Client-facing gallery banner (less internal jargon). */
 export const MEDIA_UNAVAILABLE_BANNER_GALLERY =
-  "Photos aren’t available right now — the storage account for this gallery is disabled or inactive. Please check back later, or contact the photographer.";
+  "Photos aren’t available right now. The storage account for this gallery is disabled or inactive. Please check back later, or contact the photographer.";
 
 export function extractErrorMessage(err: unknown): string {
   if (!err) return "";

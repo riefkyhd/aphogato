@@ -15,7 +15,7 @@ function formatTermsParagraph(text: string): string {
 }
 
 function formatDisplayDate(iso: string): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   try {
     return format(parseISO(iso), "d MMM yyyy");
   } catch {
@@ -116,7 +116,7 @@ export const QuotationPreview = forwardRef<
           </div>
           <div>
             <MetaLabel>Prepared for</MetaLabel>
-            <dd className="m-0">{draft.clientName.trim() || "—"}</dd>
+            <dd className="m-0">{draft.clientName.trim() || "-"}</dd>
             {draft.clientPhone.trim() ? (
               <dd className="text-neutral-600 text-[12px] mt-0.5 break-words m-0">
                 {draft.clientPhone.trim()}
@@ -156,12 +156,12 @@ export const QuotationPreview = forwardRef<
             </div>
             <div>
               <MetaLabel>Duration</MetaLabel>
-              <dd className="m-0">{draft.eventDuration.trim() || "—"}</dd>
+              <dd className="m-0">{draft.eventDuration.trim() || "-"}</dd>
             </div>
             <div className="col-span-2">
               <MetaLabel>Location</MetaLabel>
               <dd className="break-words m-0">
-                {draft.eventLocation.trim() || "—"}
+                {draft.eventLocation.trim() || "-"}
               </dd>
             </div>
           </dl>

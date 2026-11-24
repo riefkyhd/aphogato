@@ -21,7 +21,7 @@ export function ProjectsPageHeader({
             {title}
           </h1>
           <p className="mt-1 text-[13px] text-text-secondary text-center sm:text-left">
-            Unified workspace — proofing, pipeline, and client deliveries.
+            Unified workspace: proofing, pipeline, and client deliveries.
           </p>
         </div>
         {FEATURES.newProject ? (

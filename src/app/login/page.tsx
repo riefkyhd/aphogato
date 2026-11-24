@@ -3,7 +3,7 @@ import { sanitizeNextPath } from "@/lib/security/safeRedirect";
 import { LoginForm } from "./LoginForm";
 
 export const metadata = {
-  title: "Sign in — Gallery of Muhammad Hadid",
+  title: "Sign in | Gallery of Muhammad Hadid",
 };
 
 export default function LoginPage({

@@ -71,7 +71,7 @@ export function ProjectCostsSummary({
       )}
       {pinEnabled && isLocked && count > 0 && (
         <p className="mt-2 text-[11px] text-text-muted">
-          Amounts hidden — unlock Finance to view.
+          Amounts hidden. Unlock Finance to view.
         </p>
       )}
     </div>

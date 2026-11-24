@@ -49,7 +49,7 @@ export function ProjectCloudinaryAccountNote({
       {usage ? <> · {usage.headline}</> : null}.{" "}
       {photoCount > 0
         ? "This account is locked for this project once photos are uploaded."
-        : "Pick the account before uploading — it cannot be changed later."}{" "}
+        : "Pick the account before uploading: it cannot be changed later."}{" "}
       {FEATURES.cloudinarySettings && FEATURES.settings ? (
         <Link
           href="/dashboard/settings"

@@ -247,7 +247,7 @@ export function CloudinarySettings() {
                 const accountUsage = usage.find(
                   (entry) => entry.accountId === account.id
                 );
-                const suffix = accountUsage ? ` — ${accountUsage.headline}` : "";
+                const suffix = accountUsage ? ` (${accountUsage.headline})` : "";
                 return (
                   <option key={account.id} value={account.id}>
                     {account.label} ({account.cloudName}){suffix}

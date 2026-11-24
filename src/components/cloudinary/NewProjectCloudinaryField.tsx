@@ -88,7 +88,7 @@ export function NewProjectCloudinaryField({
               const accountUsage = usage.find(
                 (entry) => entry.accountId === account.id
               );
-              const suffix = accountUsage ? ` — ${accountUsage.headline}` : "";
+              const suffix = accountUsage ? ` (${accountUsage.headline})` : "";
               const suggested =
                 account.id === suggestedAccountId ? " · suggested" : "";
               return (
@@ -116,7 +116,7 @@ export function NewProjectCloudinaryField({
         ) : null}
         <p className="mt-2 text-[12px] text-text-muted leading-relaxed">
           Uploads and client gallery delivery use this account. Choose before
-          adding photos — it cannot be changed later without manual migration.
+          adding photos; it cannot be changed later without manual migration.
         </p>
         {showSuggestionNote ? (
           <p className="mt-2 text-[12px] text-status-delivered leading-relaxed">

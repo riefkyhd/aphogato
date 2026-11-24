@@ -83,7 +83,7 @@ export const SocialScheduleCard = forwardRef<
               <span className="inline-block border border-[#3F3F46] px-5 py-2 text-[16px] uppercase tracking-[0.2em] font-medium text-[#E4E4E7]">
                 Dates & Availability
               </span>
-              <p className="mt-3 text-[16px] tracking-wider text-[#71717A] uppercase">
+              <p className="mt-3 text-[16px] tracking-wider text-[#A1A1AA] uppercase">
                 {sortedEvents.length} Shoot{sortedEvents.length === 1 ? "" : "s"} Listed
               </p>
             </div>
@@ -94,10 +94,10 @@ export const SocialScheduleCard = forwardRef<
         <div className="relative z-10 flex-1 my-6 overflow-hidden flex flex-col justify-start">
           {sortedEvents.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-              <p className="text-[28px] font-light text-[#71717A] uppercase tracking-widest">
+              <p className="text-[28px] font-light text-[#A1A1AA] uppercase tracking-widest">
                 No Shoots Selected
               </p>
-              <p className="mt-3 text-[20px] text-[#52525B]">
+              <p className="mt-3 text-[20px] text-[#D4D4D8]">
                 Select events on the left to feature them in this graphic.
               </p>
             </div>
@@ -135,7 +135,7 @@ export const SocialScheduleCard = forwardRef<
                       </span>
                       <div className="flex flex-col text-[18px] uppercase tracking-[0.15em] leading-tight">
                         <span className="font-semibold text-white">{monthAbbr}</span>
-                        <span className="text-[#71717A]">{dayName}</span>
+                        <span className="text-[#D4D4D8]">{dayName}</span>
                       </div>
                     </div>
 
@@ -170,7 +170,7 @@ export const SocialScheduleCard = forwardRef<
                         ) : null}
                         {includeLocation && ev.location?.trim() ? (
                           <span className="inline-flex items-center gap-2 text-[#A1A1AA] truncate max-w-[360px]">
-                            <MapPin className="h-5 w-5 shrink-0 text-[#71717A]" />
+                            <MapPin className="h-5 w-5 shrink-0 text-[#A1A1AA]" />
                             {ev.location.trim()}
                           </span>
                         ) : null}
@@ -199,7 +199,7 @@ export const SocialScheduleCard = forwardRef<
               })}
 
               {remainingCount > 0 && (
-                <div className="py-5 text-center text-[18px] tracking-widest uppercase text-[#71717A]">
+                <div className="py-5 text-center text-[18px] tracking-widest uppercase text-[#D4D4D8]">
                   + {remainingCount} additional dates booked
                 </div>
               )}
@@ -217,7 +217,7 @@ export const SocialScheduleCard = forwardRef<
               DM @muhammadhadid or visit muhammadhadid.com
             </p>
           </div>
-          <div className="text-right text-[16px] tracking-[0.25em] text-[#71717A] uppercase font-medium">
+          <div className="text-right text-[16px] tracking-[0.25em] text-[#A1A1AA] uppercase font-medium">
             aphogato studio
           </div>
         </div>

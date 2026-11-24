@@ -10,9 +10,9 @@ export type GalleryErrorCode =
 
 export const GALLERY_MESSAGES = {
   staleSelection:
-    "Some photos in your selection are no longer in this gallery. The list has been refreshed — please review and save again.",
+    "Some photos in your selection are no longer in this gallery. The list has been refreshed; please review and save again.",
   staleSelectionSingle:
-    "A photo you selected is no longer in this gallery. The list has been refreshed — please review and save again.",
+    "A photo you selected is no longer in this gallery. The list has been refreshed; please review and save again.",
   galleryNotFound: "This gallery link is invalid or the project was removed.",
   loadFailed: "We couldn't load the gallery. Check your connection and try again.",
   saveFailed: "We couldn't save your selection. Please try again.",

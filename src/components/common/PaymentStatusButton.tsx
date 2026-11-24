@@ -29,8 +29,8 @@ export function PaymentStatusButton({
 
   const currentStyles = {
     unpaid: "border-border text-text-secondary hover:border-amber-500/40 hover:text-amber-400",
-    deposit_paid: "border-amber-500/30 text-amber-400 hover:border-status-delivered/40 hover:text-status-delivered",
-    paid_in_full: "border-status-delivered/30 text-status-delivered hover:border-border hover:text-text-secondary",
+    deposit_paid: "border-amber-500/30 text-amber-400 hover:border-emerald-500/40 hover:text-emerald-400",
+    paid_in_full: "border-emerald-500/30 text-emerald-400 hover:border-border hover:text-text-secondary",
   }[current];
 
   async function handleClick() {
@@ -59,14 +59,14 @@ export function PaymentStatusButton({
       {loading ? (
         <Loader2 className="h-3 w-3 animate-spin text-text-muted" aria-hidden />
       ) : current === "paid_in_full" ? (
-        <CheckCircle2 className="h-3 w-3 shrink-0 text-status-delivered" aria-hidden />
+        <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-400" aria-hidden />
       ) : current === "deposit_paid" ? (
         <Clock className="h-3 w-3 shrink-0 text-amber-400" aria-hidden />
       ) : (
         <DollarSign className="h-3 w-3 shrink-0 text-text-muted" aria-hidden />
       )}
       <span>{currentLabel}</span>
-      <span className="text-text-muted/60 text-[9px] flex items-center ml-0.5">
+      <span className="text-text-muted text-[9px] flex items-center ml-0.5">
         <ChevronRight className="h-2.5 w-2.5 shrink-0" aria-hidden />
         {nextLabel}
       </span>

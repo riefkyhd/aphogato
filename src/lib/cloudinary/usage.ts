@@ -367,7 +367,7 @@ export function buildNewProjectUsageHint(options: {
       message:
         suggestedAccountId && suggestedAccountId !== options.defaultAccountId
           ? "Default Cloudinary account is disabled or inactive. Switch to another account before creating projects, or re-enable the default in the Cloudinary console."
-          : "Default Cloudinary account is disabled or inactive. Re-enable it in the Cloudinary console (billing/plan) before creating projects — photos will not load while it stays disabled.",
+          : "Default Cloudinary account is disabled or inactive. Re-enable it in the Cloudinary console (billing/plan) before creating projects: photos will not load while it stays disabled.",
     };
   }
 

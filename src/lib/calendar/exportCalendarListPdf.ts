@@ -74,9 +74,9 @@ export async function exportCalendarListPdf(
 
   for (const ev of sortedEvents(events)) {
     const dateLabel = format(parseISO(ev.shoot_date), "MMM d, yyyy");
-    const timeLabel = formatEventTimeRange(ev.shoot_time, ev.shoot_end_time) || "—";
-    const client = ev.client_name?.trim() || "—";
-    const location = ev.location?.trim() || "—";
+    const timeLabel = formatEventTimeRange(ev.shoot_time, ev.shoot_end_time) || "-";
+    const client = ev.client_name?.trim() || "-";
+    const location = ev.location?.trim() || "-";
 
     const titleLines = doc.splitTextToSize(ev.title, colWidths.title - 1);
     const clientLines = doc.splitTextToSize(client, colWidths.client - 1);

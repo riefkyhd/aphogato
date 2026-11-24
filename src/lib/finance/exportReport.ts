@@ -86,7 +86,7 @@ export function formatFinanceReportCsv({
   ];
 
   if (filteredIncome.length === 0) {
-    lines.push(csvRow(["—", "—", "—", "—", "—", "—"]));
+    lines.push(csvRow(["-", "-", "-", "-", "-", "-"]));
   } else {
     for (const row of filteredIncome) {
       const linked = row.event_id
@@ -120,7 +120,7 @@ export function formatFinanceReportCsv({
   );
 
   if (filteredExpenses.length === 0) {
-    lines.push(csvRow(["—", "—", "—", "—", "—", "—", "—"]));
+    lines.push(csvRow(["-", "-", "-", "-", "-", "-", "-"]));
   } else {
     for (const row of filteredExpenses) {
       const scope = isGeneralExpense(row) ? "General" : "Linked";

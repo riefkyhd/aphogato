@@ -37,7 +37,7 @@ export function PaymentStatusBadge({
   const variantStyles = {
     unpaid: "border-border/70 bg-bg-surface/50 text-text-muted",
     deposit_paid: "border-amber-500/30 bg-amber-500/10 text-amber-400 font-medium",
-    paid_in_full: "border-status-delivered/30 bg-status-delivered/10 text-status-delivered font-medium",
+    paid_in_full: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 font-medium",
   }[norm];
 
   return (
@@ -51,7 +51,7 @@ export function PaymentStatusBadge({
     >
       {showIcon && (
         norm === "paid_in_full" ? (
-          <CheckCircle2 className={cn("shrink-0 text-status-delivered", iconSizes)} aria-hidden />
+          <CheckCircle2 className={cn("shrink-0 text-emerald-400", iconSizes)} aria-hidden />
         ) : norm === "deposit_paid" ? (
           <Clock className={cn("shrink-0 text-amber-400", iconSizes)} aria-hidden />
         ) : (

@@ -103,7 +103,7 @@ export function NewProjectForm() {
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Wedding — Derio &amp; Salma"
+          placeholder="Wedding: Derio &amp; Salma"
         />
       </div>
       <ClientNameInput

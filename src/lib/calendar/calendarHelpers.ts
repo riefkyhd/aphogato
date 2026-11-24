@@ -2,10 +2,10 @@ import type { ShootType, EventStatus } from "@/lib/types";
 
 export const SHOOT_TYPE_COLORS: Record<ShootType, string> = {
   wedding: "#7c3aed",
-  portrait: "#b8860b",
+  portrait: "#92400e",
   event: "#2563eb",
   commercial: "#2e7d32",
-  sport: "#ea580c",
+  sport: "#c2410c",
   other: "#555555",
 };
 

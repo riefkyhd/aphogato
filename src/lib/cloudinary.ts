@@ -105,7 +105,7 @@ async function listByPublicIdPrefix(
     if (!res.ok) {
       const body = await res.text();
       throw new Error(
-        `Cloudinary list failed: ${res.status} ${res.statusText} — ${body}`
+        `Cloudinary list failed: ${res.status} ${res.statusText}: ${body}`
       );
     }
 
@@ -156,7 +156,7 @@ async function listByAssetFolder(
     if (!res.ok) {
       const body = await res.text();
       throw new Error(
-        `Cloudinary search failed: ${res.status} ${res.statusText} — ${body}`
+        `Cloudinary search failed: ${res.status} ${res.statusText}: ${body}`
       );
     }
 

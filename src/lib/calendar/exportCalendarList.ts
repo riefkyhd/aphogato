@@ -12,12 +12,12 @@ export function formatCalendarListText(events: CalendarEvent[]): string {
 
   const lines = sorted.map((ev) => {
     const date = format(parseISO(ev.shoot_date), "yyyy-MM-dd (EEE)");
-    const client = ev.client_name?.trim() || "—";
-    const location = ev.location?.trim() || "—";
+    const client = ev.client_name?.trim() || "-";
+    const location = ev.location?.trim() || "-";
     const time =
       ev.shoot_time && ev.shoot_end_time
-        ? `${ev.shoot_time}–${ev.shoot_end_time}`
-        : ev.shoot_time || "—";
+        ? `${ev.shoot_time} - ${ev.shoot_end_time}`
+        : ev.shoot_time || "-";
     return `${date}\t${ev.title}\t${client}\t${location}\t${time}\t${ev.status}`;
   });
 

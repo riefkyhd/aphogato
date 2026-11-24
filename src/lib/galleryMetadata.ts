@@ -24,7 +24,7 @@ export async function buildGalleryMetadata(token: string): Promise<Metadata> {
 
   const { project, photos } = data;
   const title = project.client_name?.trim()
-    ? `${project.name} — ${project.client_name.trim()}`
+    ? `${project.name} · ${project.client_name.trim()}`
     : project.name;
   const description = galleryDescription(
     project.name,

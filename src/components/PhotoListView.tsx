@@ -140,7 +140,7 @@ function ListPreview({
         )}
         {failed ? (
           <p className="text-[11px] uppercase tracking-label text-text-muted text-center px-4 leading-relaxed">
-            Photo unavailable — Cloudinary account may be disabled
+            Photo unavailable (Cloudinary account may be disabled)
           </p>
         ) : (
           // eslint-disable-next-line @next/next/no-img-element

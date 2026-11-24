@@ -76,7 +76,7 @@ async function requestUploadSign(
         file.name,
         response.status,
         response.status === 413
-          ? "upload request too large — use direct upload"
+          ? "upload request too large: use direct upload"
           : "invalid server response"
       )
     );

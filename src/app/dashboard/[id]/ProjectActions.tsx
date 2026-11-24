@@ -248,7 +248,7 @@ export function ProjectActions({
         toast.warning(
           duplicateWarnings.length === 1
             ? duplicateWarnings[0]
-            : `${duplicateWarnings.length} duplicates skipped — ${duplicateWarnings.slice(0, 2).join("; ")}${duplicateWarnings.length > 2 ? "…" : ""}`
+            : `${duplicateWarnings.length} duplicates skipped: ${duplicateWarnings.slice(0, 2).join("; ")}${duplicateWarnings.length > 2 ? "…" : ""}`
         );
       }
       if (Array.isArray(json.photos)) {

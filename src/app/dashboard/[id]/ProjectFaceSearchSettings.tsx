@@ -104,7 +104,7 @@ export function ProjectFaceSearchSettings({
       const result = await reindexUnindexedProjectPhotos(
         project.id,
         (done, total, fileName) => {
-          setIndexProgress(`${done} / ${total} — ${fileName}`);
+          setIndexProgress(`${done} / ${total}: ${fileName}`);
         }
       );
       await loadStatus();
@@ -145,7 +145,7 @@ export function ProjectFaceSearchSettings({
       const result = await reindexAllProjectPhotos(
         project.id,
         (done, total, fileName) => {
-          setIndexProgress(`${done} / ${total} — ${fileName}`);
+          setIndexProgress(`${done} / ${total}: ${fileName}`);
         }
       );
       await loadStatus();
@@ -231,7 +231,7 @@ export function ProjectFaceSearchSettings({
           ) : null}
           {displayStatus.status === "partial" ? (
             <p className="mt-2 text-[12px] text-status-editing leading-relaxed">
-              Indexing incomplete — clients may see limited results until most
+              Indexing incomplete: clients may see limited results until most
               photos are indexed.
             </p>
           ) : null}

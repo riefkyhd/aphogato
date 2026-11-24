@@ -527,7 +527,7 @@ export function EventDetailPanel({
                   </p>
                 ) : income ? (
                   <>
-                    <p className="text-[15px] text-status-delivered tabular-nums">
+                    <p className="text-[15px] text-emerald-400 tabular-nums">
                       <MaskedMoneyText
                         text={formatMoney(income.amount, income.currency)}
                         visible={showIncome}
@@ -535,13 +535,13 @@ export function EventDetailPanel({
                     </p>
                     {pinEnabled && isLocked && (
                       <p className="mt-1 text-[11px] text-text-muted">
-                        Amount hidden — tap the eye icon to unlock.
+                        Amount hidden: tap the eye icon to unlock.
                       </p>
                     )}
                   </>
                 ) : (
                   <p className="text-[12px] text-text-secondary">
-                    Not recorded yet — add in Edit
+                    Not recorded yet. Add in Edit
                     {FEATURES.finance ? (
                       <>
                         {" "}
@@ -646,7 +646,7 @@ export function EventDetailPanel({
                   </p>
                 ) : (
                   <p className="text-[11px] uppercase tracking-label text-text-muted">
-                    ● Not synced — use Sync all in the toolbar
+                    ● Not synced. Use Sync all in the toolbar
                   </p>
                 )}
               </div>

@@ -8,7 +8,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Invoice — Gallery of Muhammad Hadid",
+  title: "Invoice | Gallery of Muhammad Hadid",
 };
 
 export default async function InvoicesPage() {
