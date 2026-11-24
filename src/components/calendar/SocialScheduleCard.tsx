@@ -71,6 +71,7 @@ export const SocialScheduleCard = forwardRef<
         style={{
           width: `${baseWidth}px`,
           height: `${baseHeight}px`,
+          boxSizing: "border-box",
           fontFamily:
             'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
           ...(hasTransform
@@ -81,25 +82,25 @@ export const SocialScheduleCard = forwardRef<
             : {}),
         }}
         className={`flex flex-col justify-between bg-[#0A0A0A] text-white ${
-          isStory ? "p-20" : "p-14"
+          isStory ? "p-[80px]" : "p-[56px]"
         } relative border border-[#27272A]`}
       >
         {/* 1. STUDIO HEADER */}
-        <div className="relative z-10 border-b-2 border-[#27272A] pb-8">
+        <div className="relative z-10 border-b-[2px] border-[#27272A] pb-[32px]">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-[24px] uppercase tracking-[0.3em] text-[#A1A1AA] font-semibold">
                 Muhammad Hadid
               </p>
-              <h1 className="mt-3 text-[62px] font-light tracking-[0.02em] uppercase text-white leading-tight max-w-[800px]">
+              <h1 className="mt-[12px] text-[62px] font-light tracking-[0.02em] uppercase text-white leading-tight max-w-[800px]">
                 {headline}
               </h1>
             </div>
             <div className="text-right">
-              <span className="inline-block border border-[#3F3F46] px-5 py-2 text-[16px] uppercase tracking-[0.2em] font-medium text-[#E4E4E7]">
+              <span className="inline-block border border-[#3F3F46] px-[20px] py-[8px] text-[16px] uppercase tracking-[0.2em] font-medium text-[#E4E4E7]">
                 Dates & Availability
               </span>
-              <p className="mt-3 text-[16px] tracking-wider text-[#A1A1AA] uppercase">
+              <p className="mt-[12px] text-[16px] tracking-wider text-[#A1A1AA] uppercase">
                 {sortedEvents.length} Shoot{sortedEvents.length === 1 ? "" : "s"} Listed
               </p>
             </div>
@@ -107,13 +108,13 @@ export const SocialScheduleCard = forwardRef<
         </div>
 
         {/* 2. EVENT LIST CONTAINER */}
-        <div className="relative z-10 flex-1 my-6 overflow-hidden flex flex-col justify-start">
+        <div className="relative z-10 flex-1 my-[24px] overflow-hidden flex flex-col justify-start">
           {sortedEvents.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-[32px]">
               <p className="text-[28px] font-light text-[#A1A1AA] uppercase tracking-widest">
                 No Shoots Selected
               </p>
-              <p className="mt-3 text-[20px] text-[#D4D4D8]">
+              <p className="mt-[12px] text-[20px] text-[#D4D4D8]">
                 Select events on the left to feature them in this graphic.
               </p>
             </div>
@@ -141,11 +142,11 @@ export const SocialScheduleCard = forwardRef<
                   <div
                     key={ev.id}
                     className={`flex items-center justify-between ${
-                      isStory ? "py-7" : "py-5"
-                    } gap-8`}
+                      isStory ? "py-[28px]" : "py-[20px]"
+                    } gap-[32px]`}
                   >
                     {/* Date Block */}
-                    <div className="flex items-center gap-4 shrink-0 w-[170px]">
+                    <div className="flex items-center gap-[16px] shrink-0 w-[170px]">
                       <span className="text-[64px] font-light tracking-tight text-white tabular-nums leading-none">
                         {dayNum}
                       </span>
@@ -156,24 +157,24 @@ export const SocialScheduleCard = forwardRef<
                     </div>
 
                     {/* Content Block */}
-                    <div className="flex-1 min-w-0 pr-4">
-                      <div className="flex items-center gap-3.5 flex-wrap">
+                    <div className="flex-1 min-w-0 pr-[16px]">
+                      <div className="flex items-center gap-[14px] flex-wrap">
                         <h3 className="text-[34px] font-medium tracking-[0.01em] text-white truncate max-w-[560px]">
                           {ev.title}
                         </h3>
                         {maskClientNames && (
-                          <span className="shrink-0 text-[14px] uppercase tracking-[0.15em] bg-[#27272A] text-[#E4E4E7] px-3.5 py-1 border border-[#3F3F46] font-semibold">
+                          <span className="shrink-0 text-[14px] uppercase tracking-[0.15em] bg-[#27272A] text-[#E4E4E7] px-[14px] py-[4px] border border-[#3F3F46] font-semibold">
                             Booked
                           </span>
                         )}
                         {isSport && (
-                          <span className="shrink-0 text-[14px] uppercase tracking-[0.15em] bg-[#C2410C]/20 text-[#FB923C] px-3.5 py-1 border border-[#C2410C]/50 font-semibold">
+                          <span className="shrink-0 text-[14px] uppercase tracking-[0.15em] bg-[#C2410C]/20 text-[#FB923C] px-[14px] py-[4px] border border-[#C2410C]/50 font-semibold">
                             Sport
                           </span>
                         )}
                       </div>
 
-                      <div className="mt-2 flex flex-wrap items-center gap-6 text-[22px] text-[#A1A1AA]">
+                      <div className="mt-[8px] flex flex-wrap items-center gap-[24px] text-[22px] text-[#A1A1AA]">
                         {!maskClientNames && (
                           <span className="text-[#E4E4E7] font-normal">
                             {clientDisplay}
@@ -185,7 +186,7 @@ export const SocialScheduleCard = forwardRef<
                           </span>
                         ) : null}
                         {includeLocation && ev.location?.trim() ? (
-                          <span className="inline-flex items-center gap-2 text-[#A1A1AA] truncate max-w-[360px]">
+                          <span className="inline-flex items-center gap-[8px] text-[#A1A1AA] truncate max-w-[360px]">
                             <MapPin size={22} className="shrink-0 text-[#A1A1AA]" strokeWidth={2} />
                             {ev.location.trim()}
                           </span>
@@ -195,15 +196,15 @@ export const SocialScheduleCard = forwardRef<
 
                     {/* Modular Service Badges */}
                     {includeServices && (
-                      <div className="flex items-center gap-3 shrink-0">
+                      <div className="flex items-center gap-[12px] shrink-0">
                         {hasPhoto && (
-                          <span className="inline-flex items-center gap-2 px-4 py-1.5 text-[15px] uppercase tracking-[0.12em] bg-white text-black font-semibold">
+                          <span className="inline-flex items-center gap-[8px] px-[16px] py-[6px] text-[15px] uppercase tracking-[0.12em] bg-white text-black font-semibold">
                             <Camera size={18} className="shrink-0 text-black" strokeWidth={2} />
                             Photo
                           </span>
                         )}
                         {hasVideo && (
-                          <span className="inline-flex items-center gap-2 px-4 py-1.5 text-[15px] uppercase tracking-[0.12em] border-2 border-white text-white font-semibold">
+                          <span className="inline-flex items-center gap-[8px] px-[16px] py-[6px] text-[15px] uppercase tracking-[0.12em] border-[2px] border-white text-white font-semibold">
                             <Video size={18} className="shrink-0 text-white" strokeWidth={2} />
                             Video
                           </span>
@@ -215,7 +216,7 @@ export const SocialScheduleCard = forwardRef<
               })}
 
               {remainingCount > 0 && (
-                <div className="py-5 text-center text-[18px] tracking-widest uppercase text-[#D4D4D8]">
+                <div className="py-[20px] text-center text-[18px] tracking-widest uppercase text-[#D4D4D8]">
                   + {remainingCount} additional dates booked
                 </div>
               )}
@@ -224,12 +225,12 @@ export const SocialScheduleCard = forwardRef<
         </div>
 
         {/* 3. STUDIO FOOTER */}
-        <div className="relative z-10 border-t-2 border-[#27272A] pt-8 flex items-center justify-between text-[#A1A1AA]">
+        <div className="relative z-10 border-t-[2px] border-[#27272A] pt-[32px] flex items-center justify-between text-[#A1A1AA]">
           <div>
             <p className="text-white font-light tracking-[0.1em] text-[22px] uppercase">
               Bookings & Enquiries
             </p>
-            <p className="mt-1 text-[18px] text-[#A1A1AA]">
+            <p className="mt-[4px] text-[18px] text-[#A1A1AA]">
               DM @muhammadhadid or visit muhammadhadid.com
             </p>
           </div>

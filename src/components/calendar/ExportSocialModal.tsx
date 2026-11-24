@@ -405,19 +405,14 @@ export function ExportSocialModal({
               </span>
             </div>
 
-            {/* 1:1 High-Resolution Offscreen Export Target (1080px base, scale=1, untransformed) */}
+            {/* 1:1 High-Resolution Offscreen Export Target (1080px base, scale=1, untransformed, opacity: 1 offscreen) */}
             <div
               aria-hidden="true"
               style={{
                 position: "fixed",
+                left: "-9999px",
                 top: 0,
-                left: 0,
-                width: "1080px",
-                height: `${formatType === "story" ? 1920 : 1350}px`,
-                overflow: "hidden",
-                opacity: 0.001,
                 pointerEvents: "none",
-                zIndex: -9999,
               }}
             >
               <SocialScheduleCard
