@@ -3,9 +3,9 @@
 import { forwardRef } from "react";
 import { format, parseISO } from "date-fns";
 import { Camera, MapPin, Video } from "lucide-react";
-import { formatEventTimeRange } from "@/lib/calendar/calendarHelpers";
+import { isShootType } from "@/lib/calendar/calendarHelpers";
 import { normalizeServices } from "@/lib/calendar/serviceTags";
-import type { CalendarEvent } from "@/lib/types";
+import type { CalendarEvent, ShootType } from "@/lib/types";
 
 export type SocialGraphicFormat = "story" | "feed";
 
@@ -13,11 +13,56 @@ export interface SocialScheduleCardProps {
   events: CalendarEvent[];
   headline?: string;
   format?: SocialGraphicFormat;
+  includeCategory?: boolean;
+  includeClientName?: boolean;
   maskClientNames?: boolean;
+  includeEndTime?: boolean;
   includeLocation?: boolean;
   includeServices?: boolean;
   scale?: number;
 }
+
+const CATEGORY_STYLES: Record<
+  ShootType,
+  { label: string; bg: string; border: string; text: string }
+> = {
+  sport: {
+    label: "Sport",
+    bg: "rgba(194, 65, 12, 0.2)",
+    border: "rgba(194, 65, 12, 0.5)",
+    text: "#FB923C",
+  },
+  wedding: {
+    label: "Wedding",
+    bg: "rgba(124, 58, 237, 0.2)",
+    border: "rgba(124, 58, 237, 0.5)",
+    text: "#C4B5FD",
+  },
+  portrait: {
+    label: "Portrait",
+    bg: "rgba(146, 64, 14, 0.2)",
+    border: "rgba(146, 64, 14, 0.5)",
+    text: "#FCD34D",
+  },
+  commercial: {
+    label: "Commercial",
+    bg: "rgba(46, 125, 50, 0.2)",
+    border: "rgba(46, 125, 50, 0.5)",
+    text: "#86EFAC",
+  },
+  event: {
+    label: "Event",
+    bg: "rgba(37, 99, 235, 0.2)",
+    border: "rgba(37, 99, 235, 0.5)",
+    text: "#93C5FD",
+  },
+  other: {
+    label: "Other",
+    bg: "rgba(63, 63, 70, 0.3)",
+    border: "rgba(82, 82, 91, 0.6)",
+    text: "#D4D4D8",
+  },
+};
 
 export const SocialScheduleCard = forwardRef<
   HTMLDivElement,
@@ -27,7 +72,10 @@ export const SocialScheduleCard = forwardRef<
     events,
     headline = "Shoot Schedule",
     format: cardFormat = "story",
+    includeCategory = true,
+    includeClientName = true,
     maskClientNames = false,
+    includeEndTime = true,
     includeLocation = true,
     includeServices = true,
     scale = 1,
@@ -125,14 +173,24 @@ export const SocialScheduleCard = forwardRef<
                 const dayNum = format(parsedDate, "dd");
                 const monthAbbr = format(parsedDate, "MMM").toUpperCase();
                 const dayName = format(parsedDate, "EEE").toUpperCase();
-                const timeRange = formatEventTimeRange(
-                  ev.shoot_time,
-                  ev.shoot_end_time
-                );
+                const timeDisplay = (() => {
+                  if (!ev.shoot_time && !ev.shoot_end_time) return null;
+                  if (!includeEndTime) {
+                    return ev.shoot_time || ev.shoot_end_time || null;
+                  }
+                  if (ev.shoot_time && ev.shoot_end_time) {
+                    return `${ev.shoot_time} - ${ev.shoot_end_time}`;
+                  }
+                  return ev.shoot_time || ev.shoot_end_time || null;
+                })();
                 const services = normalizeServices(ev.services);
                 const hasPhoto = services.includes("photography");
                 const hasVideo = services.includes("videography");
-                const isSport = ev.shoot_type === "sport";
+                const shootType: ShootType =
+                  ev.shoot_type && isShootType(ev.shoot_type)
+                    ? ev.shoot_type
+                    : "other";
+                const categoryStyle = CATEGORY_STYLES[shootType];
 
                 const clientDisplay = maskClientNames
                   ? "Reserved"
@@ -162,27 +220,34 @@ export const SocialScheduleCard = forwardRef<
                         <h3 className="text-[34px] font-medium tracking-[0.01em] text-white truncate max-w-[560px]">
                           {ev.title}
                         </h3>
-                        {maskClientNames && (
+                        {includeClientName && maskClientNames && (
                           <span className="shrink-0 text-[14px] uppercase tracking-[0.15em] bg-[#27272A] text-[#E4E4E7] px-[14px] py-[4px] border border-[#3F3F46] font-semibold">
                             Booked
                           </span>
                         )}
-                        {isSport && (
-                          <span className="shrink-0 text-[14px] uppercase tracking-[0.15em] bg-[#C2410C]/20 text-[#FB923C] px-[14px] py-[4px] border border-[#C2410C]/50 font-semibold">
-                            Sport
+                        {includeCategory && (
+                          <span
+                            style={{
+                              backgroundColor: categoryStyle.bg,
+                              borderColor: categoryStyle.border,
+                              color: categoryStyle.text,
+                            }}
+                            className="shrink-0 text-[14px] uppercase tracking-[0.15em] px-[14px] py-[4px] border border-solid font-semibold"
+                          >
+                            {categoryStyle.label}
                           </span>
                         )}
                       </div>
 
                       <div className="mt-[8px] flex flex-wrap items-center gap-[24px] text-[22px] text-[#A1A1AA]">
-                        {!maskClientNames && (
+                        {includeClientName && (
                           <span className="text-[#E4E4E7] font-normal">
                             {clientDisplay}
                           </span>
                         )}
-                        {timeRange ? (
+                        {timeDisplay ? (
                           <span className="tabular-nums text-[#A1A1AA]">
-                            {timeRange}
+                            {timeDisplay}
                           </span>
                         ) : null}
                         {includeLocation && ev.location?.trim() ? (

@@ -47,7 +47,10 @@ export function ExportSocialModal({
       ? format(parseISO(events[0].shoot_date), "MMMM yyyy")
       : "Upcoming";
   const [headline, setHeadline] = useState(`${initialMonthName} Schedule`);
+  const [includeCategory, setIncludeCategory] = useState(true);
+  const [includeClientName, setIncludeClientName] = useState(true);
   const [maskClientNames, setMaskClientNames] = useState(true);
+  const [includeEndTime, setIncludeEndTime] = useState(true);
   const [includeLocation, setIncludeLocation] = useState(true);
   const [includeServices, setIncludeServices] = useState(true);
 
@@ -279,17 +282,51 @@ export function ExportSocialModal({
             {/* Privacy & Display Toggles */}
             <div className="border border-border p-4 bg-bg-secondary/40 space-y-3">
               <span className="text-[11px] uppercase tracking-label text-text-muted block font-medium">
-                Privacy & Details
+                Display & Details
               </span>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <label className="flex items-center gap-2 cursor-pointer text-[12px] text-text-primary">
                   <input
                     type="checkbox"
-                    checked={maskClientNames}
+                    checked={includeCategory}
+                    onChange={(e) => setIncludeCategory(e.target.checked)}
+                    className="rounded-sm border-border text-text-primary focus:ring-0"
+                  />
+                  <span>Show Category</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer text-[12px] text-text-primary">
+                  <input
+                    type="checkbox"
+                    checked={includeClientName}
+                    onChange={(e) => setIncludeClientName(e.target.checked)}
+                    className="rounded-sm border-border text-text-primary focus:ring-0"
+                  />
+                  <span>Show Client Name</span>
+                </label>
+                <label
+                  className={`flex items-center gap-2 text-[12px] ${
+                    includeClientName
+                      ? "cursor-pointer text-text-primary"
+                      : "cursor-not-allowed opacity-40 text-text-muted"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    disabled={!includeClientName}
+                    checked={includeClientName && maskClientNames}
                     onChange={(e) => setMaskClientNames(e.target.checked)}
                     className="rounded-sm border-border text-text-primary focus:ring-0"
                   />
-                  <span>Mask Clients (Booked)</span>
+                  <span>Mask as Booked</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer text-[12px] text-text-primary">
+                  <input
+                    type="checkbox"
+                    checked={includeEndTime}
+                    onChange={(e) => setIncludeEndTime(e.target.checked)}
+                    className="rounded-sm border-border text-text-primary focus:ring-0"
+                  />
+                  <span>Show End Time</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer text-[12px] text-text-primary">
                   <input
@@ -420,7 +457,10 @@ export function ExportSocialModal({
                 events={selectedEvents}
                 headline={headline}
                 format={formatType}
+                includeCategory={includeCategory}
+                includeClientName={includeClientName}
                 maskClientNames={maskClientNames}
+                includeEndTime={includeEndTime}
                 includeLocation={includeLocation}
                 includeServices={includeServices}
                 scale={1}
@@ -433,7 +473,10 @@ export function ExportSocialModal({
                 events={selectedEvents}
                 headline={headline}
                 format={formatType}
+                includeCategory={includeCategory}
+                includeClientName={includeClientName}
                 maskClientNames={maskClientNames}
+                includeEndTime={includeEndTime}
                 includeLocation={includeLocation}
                 includeServices={includeServices}
                 scale={previewScale}
