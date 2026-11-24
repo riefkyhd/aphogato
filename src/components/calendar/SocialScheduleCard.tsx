@@ -13,6 +13,8 @@ export interface SocialScheduleCardProps {
   events: CalendarEvent[];
   headline?: string;
   format?: SocialGraphicFormat;
+  includeHeader?: boolean;
+  includeFooter?: boolean;
   includeCategory?: boolean;
   includeClientName?: boolean;
   maskClientNames?: boolean;
@@ -72,6 +74,8 @@ export const SocialScheduleCard = forwardRef<
     events,
     headline = "Shoot Schedule",
     format: cardFormat = "story",
+    includeHeader = true,
+    includeFooter = true,
     includeCategory = true,
     includeClientName = true,
     maskClientNames = false,
@@ -91,7 +95,8 @@ export const SocialScheduleCard = forwardRef<
     a.shoot_date.localeCompare(b.shoot_date)
   );
 
-  const maxItems = isStory ? 7 : 5;
+  const extraItems = (!includeHeader ? 1 : 0) + (!includeFooter ? 1 : 0);
+  const maxItems = (isStory ? 7 : 5) + extraItems;
   const visibleEvents = sortedEvents.slice(0, maxItems);
   const remainingCount = sortedEvents.length - maxItems;
 
@@ -134,29 +139,35 @@ export const SocialScheduleCard = forwardRef<
         } relative border border-[#27272A]`}
       >
         {/* 1. STUDIO HEADER */}
-        <div className="relative z-10 border-b-[2px] border-[#27272A] pb-[32px]">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-[24px] uppercase tracking-[0.3em] text-[#A1A1AA] font-semibold">
-                Muhammad Hadid
-              </p>
-              <h1 className="mt-[12px] text-[62px] font-light tracking-[0.02em] uppercase text-white leading-tight max-w-[800px]">
-                {headline}
-              </h1>
-            </div>
-            <div className="text-right">
-              <span className="inline-block border border-[#3F3F46] px-[20px] py-[8px] text-[16px] uppercase tracking-[0.2em] font-medium text-[#E4E4E7]">
-                Dates & Availability
-              </span>
-              <p className="mt-[12px] text-[16px] tracking-wider text-[#A1A1AA] uppercase">
-                {sortedEvents.length} Shoot{sortedEvents.length === 1 ? "" : "s"} Listed
-              </p>
+        {includeHeader && (
+          <div className="relative z-10 border-b-[2px] border-[#27272A] pb-[32px]">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[24px] uppercase tracking-[0.3em] text-[#A1A1AA] font-semibold">
+                  Muhammad Hadid
+                </p>
+                <h1 className="mt-[12px] text-[62px] font-light tracking-[0.02em] uppercase text-white leading-tight max-w-[800px]">
+                  {headline}
+                </h1>
+              </div>
+              <div className="text-right">
+                <span className="inline-block border border-[#3F3F46] px-[20px] py-[8px] text-[16px] uppercase tracking-[0.2em] font-medium text-[#E4E4E7]">
+                  Dates & Availability
+                </span>
+                <p className="mt-[12px] text-[16px] tracking-wider text-[#A1A1AA] uppercase">
+                  {sortedEvents.length} Shoot{sortedEvents.length === 1 ? "" : "s"} Listed
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* 2. EVENT LIST CONTAINER */}
-        <div className="relative z-10 flex-1 my-[24px] overflow-hidden flex flex-col justify-start">
+        <div
+          className={`relative z-10 flex-1 overflow-hidden flex flex-col justify-start ${
+            includeHeader ? "my-[24px]" : includeFooter ? "mb-[24px]" : "my-0"
+          }`}
+        >
           {sortedEvents.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center p-[32px]">
               <p className="text-[28px] font-light text-[#A1A1AA] uppercase tracking-widest">
@@ -290,19 +301,21 @@ export const SocialScheduleCard = forwardRef<
         </div>
 
         {/* 3. STUDIO FOOTER */}
-        <div className="relative z-10 border-t-[2px] border-[#27272A] pt-[32px] flex items-center justify-between text-[#A1A1AA]">
-          <div>
-            <p className="text-white font-light tracking-[0.1em] text-[22px] uppercase">
-              Bookings & Enquiries
-            </p>
-            <p className="mt-[4px] text-[18px] text-[#A1A1AA]">
-              DM @muhammadhadid or visit muhammadhadid.com
-            </p>
+        {includeFooter && (
+          <div className="relative z-10 border-t-[2px] border-[#27272A] pt-[32px] flex items-center justify-between text-[#A1A1AA]">
+            <div>
+              <p className="text-white font-light tracking-[0.1em] text-[22px] uppercase">
+                Bookings & Enquiries
+              </p>
+              <p className="mt-[4px] text-[18px] text-[#A1A1AA]">
+                DM @muhammadhadid or visit muhammadhadid.com
+              </p>
+            </div>
+            <div className="text-right text-[16px] tracking-[0.25em] text-[#A1A1AA] uppercase font-medium">
+              aphogato studio
+            </div>
           </div>
-          <div className="text-right text-[16px] tracking-[0.25em] text-[#A1A1AA] uppercase font-medium">
-            aphogato studio
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
