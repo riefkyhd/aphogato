@@ -36,7 +36,7 @@ export function ExportSocialModal({
 }: ExportSocialModalProps) {
   useBodyScrollLock(open);
 
-  const cardRef = useRef<HTMLDivElement>(null);
+  const exportCardRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
 
   // 1. Controls State
@@ -145,26 +145,43 @@ export function ExportSocialModal({
     setSelectedIds(new Set());
   }, []);
 
-  // 3. Export PNG Handler via html2canvas
+  // 3. Export PNG Handler via html-to-image (strict 1:1 SVG foreignObject capture)
   const handleDownload = useCallback(async () => {
-    const target = cardRef.current;
+    const target = exportCardRef.current;
     if (!target) {
-      toast.error("Graphic preview not ready");
+      toast.error("Graphic export element not ready");
       return;
     }
 
     setDownloading(true);
     try {
-      const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(target, {
-        scale: 1, // base element is already 1080px wide
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: "#0C0C0D",
-        logging: false,
-      });
+      if (typeof document !== "undefined" && document.fonts) {
+        await document.fonts.ready;
+      }
 
-      const dataUrl = canvas.toDataURL("image/png");
+      const { toPng } = await import("html-to-image");
+
+      const baseWidth = 1080;
+      const baseHeight = formatType === "story" ? 1920 : 1350;
+
+      const exportOptions = {
+        cacheBust: true,
+        width: baseWidth,
+        height: baseHeight,
+        canvasWidth: baseWidth,
+        canvasHeight: baseHeight,
+        pixelRatio: 1, // Strict 1:1 1080px base rendering
+        backgroundColor: "#0A0A0A",
+      };
+
+      // Safari primer pass to ensure SVG icons and styles are fully painted
+      try {
+        await toPng(target, exportOptions);
+      } catch {
+        // Ignore priming errors if any
+      }
+
+      const dataUrl = await toPng(target, exportOptions);
       const a = document.createElement("a");
       a.href = dataUrl;
       const filename = `schedule-${formatType}-${format(new Date(), "yyyy-MM-dd")}.png`;
@@ -388,10 +405,36 @@ export function ExportSocialModal({
               </span>
             </div>
 
+            {/* 1:1 High-Resolution Offscreen Export Target (1080px base, scale=1, untransformed) */}
+            <div
+              aria-hidden="true"
+              style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                width: "1080px",
+                height: `${formatType === "story" ? 1920 : 1350}px`,
+                overflow: "hidden",
+                opacity: 0.001,
+                pointerEvents: "none",
+                zIndex: -9999,
+              }}
+            >
+              <SocialScheduleCard
+                ref={exportCardRef}
+                events={selectedEvents}
+                headline={headline}
+                format={formatType}
+                maskClientNames={maskClientNames}
+                includeLocation={includeLocation}
+                includeServices={includeServices}
+                scale={1}
+              />
+            </div>
+
             {/* Scaled Preview Frame */}
             <div className="border border-border/60 shadow-xl overflow-hidden my-auto flex items-center justify-center bg-black">
               <SocialScheduleCard
-                ref={cardRef}
                 events={selectedEvents}
                 headline={headline}
                 format={formatType}

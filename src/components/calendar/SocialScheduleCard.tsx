@@ -47,13 +47,23 @@ export const SocialScheduleCard = forwardRef<
   const visibleEvents = sortedEvents.slice(0, maxItems);
   const remainingCount = sortedEvents.length - maxItems;
 
+  const hasTransform = scale !== 1;
+
   return (
     <div
-      style={{
-        width: `${baseWidth * scale}px`,
-        height: `${baseHeight * scale}px`,
-        overflow: "hidden",
-      }}
+      style={
+        hasTransform
+          ? {
+              width: `${baseWidth * scale}px`,
+              height: `${baseHeight * scale}px`,
+              overflow: "hidden",
+            }
+          : {
+              width: `${baseWidth}px`,
+              height: `${baseHeight}px`,
+              overflow: "hidden",
+            }
+      }
       className="relative shrink-0 select-none"
     >
       <div
@@ -61,12 +71,18 @@ export const SocialScheduleCard = forwardRef<
         style={{
           width: `${baseWidth}px`,
           height: `${baseHeight}px`,
-          transform: `scale(${scale})`,
-          transformOrigin: "top left",
+          fontFamily:
+            'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+          ...(hasTransform
+            ? {
+                transform: `scale(${scale})`,
+                transformOrigin: "top left",
+              }
+            : {}),
         }}
         className={`flex flex-col justify-between bg-[#0A0A0A] text-white ${
           isStory ? "p-20" : "p-14"
-        } font-sans relative border border-[#27272A]`}
+        } relative border border-[#27272A]`}
       >
         {/* 1. STUDIO HEADER */}
         <div className="relative z-10 border-b-2 border-[#27272A] pb-8">
@@ -151,7 +167,7 @@ export const SocialScheduleCard = forwardRef<
                           </span>
                         )}
                         {isSport && (
-                          <span className="shrink-0 text-[14px] uppercase tracking-[0.15em] bg-[#EA580C]/20 text-[#FB923C] px-3.5 py-1 border border-[#EA580C]/50 font-semibold">
+                          <span className="shrink-0 text-[14px] uppercase tracking-[0.15em] bg-[#C2410C]/20 text-[#FB923C] px-3.5 py-1 border border-[#C2410C]/50 font-semibold">
                             Sport
                           </span>
                         )}
@@ -170,7 +186,7 @@ export const SocialScheduleCard = forwardRef<
                         ) : null}
                         {includeLocation && ev.location?.trim() ? (
                           <span className="inline-flex items-center gap-2 text-[#A1A1AA] truncate max-w-[360px]">
-                            <MapPin className="h-5 w-5 shrink-0 text-[#A1A1AA]" />
+                            <MapPin size={22} className="shrink-0 text-[#A1A1AA]" strokeWidth={2} />
                             {ev.location.trim()}
                           </span>
                         ) : null}
@@ -182,13 +198,13 @@ export const SocialScheduleCard = forwardRef<
                       <div className="flex items-center gap-3 shrink-0">
                         {hasPhoto && (
                           <span className="inline-flex items-center gap-2 px-4 py-1.5 text-[15px] uppercase tracking-[0.12em] bg-white text-black font-semibold">
-                            <Camera className="h-4 w-4" />
+                            <Camera size={18} className="shrink-0 text-black" strokeWidth={2} />
                             Photo
                           </span>
                         )}
                         {hasVideo && (
                           <span className="inline-flex items-center gap-2 px-4 py-1.5 text-[15px] uppercase tracking-[0.12em] border-2 border-white text-white font-semibold">
-                            <Video className="h-4 w-4" />
+                            <Video size={18} className="shrink-0 text-white" strokeWidth={2} />
                             Video
                           </span>
                         )}
